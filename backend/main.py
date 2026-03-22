@@ -2,12 +2,18 @@ from fastapi import FastAPI
 import httpx
 import asyncio
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# Carica le variabili dal file .env
+load_dotenv()
 
 app = FastAPI()
 
-PROXMOX_HOST = "https://192.168.1.207:8006"
-TOKEN_ID = "root@pam!atlas"
-TOKEN_SECRET = "0325379d-fc1d-45a3-a39b-d7e3d9e8a6ca"
+# Leggi le credenziali dall'ambiente
+PROXMOX_HOST = os.getenv("PROXMOX_HOST")
+TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
+TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
 
 HEADERS = {
     "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
