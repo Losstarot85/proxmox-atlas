@@ -1,0 +1,101 @@
+# =========================
+# PYTHON
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.venv/
+env/
+ENV/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+pytest_cache/
+
+# =========================
+# NODE / FRONTEND (React/Vite)
+# =========================
+node_modules/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite
+.vite/
+
+# =========================
+# ENV / SECRETS
+# =========================
+.env
+.env.*
+*.env
+
+# =========================
+# DOCKER
+# =========================
+*.pid
+*.seed
+*.pid.lock
+
+# Docker override files
+docker-compose.override.yml
+
+# =========================
+# IDE / EDITOR
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# PROJECT SPECIFIC
+# =========================
+backend/__pycache__/
+
+# =========================
+# LOCAL CONFIG
+# =========================
+config.local.json
+*.local.yml
