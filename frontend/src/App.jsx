@@ -4,6 +4,7 @@ function App() {
   const [nodes, setNodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(null);
 
   useEffect(() => {
     const fetchNodes = async () => {
@@ -16,14 +17,15 @@ function App() {
 
         const data = await res.json();
 
-        // Se il backend ritorna errore custom
         if (data.error) {
           setError(data.error);
           setNodes([]);
         } else {
-          setNodes(data);
+          setNodes(data.nodes);
           setError(null);
         }
+
+        setLastUpdate(data.last_update);
 
       } catch (err) {
         console.error("Errore fetch nodes:", err);
@@ -35,6 +37,11 @@ function App() {
     };
 
     fetchNodes();
+
+    // 🔁 polling frontend ogni 10 secondi
+    const interval = setInterval(fetchNodes, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) return <p>Loading nodes...</p>;
@@ -43,10 +50,17 @@ function App() {
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Proxmox Atlas – Nodes</h1>
 
-      {/* 🔴 Messaggio errore */}
+      {/* 🕒 Ultimo aggiornamento */}
+      {!error && (
+        <p style={{ fontSize: "12px", color: "gray" }}>
+          Last update: {lastUpdate || "N/A"}
+        </p>
+      )}
+
+      {/* 🔴 Errore */}
       {error && (
         <div style={{ marginBottom: "15px", color: "red" }}>
-          ⚠️ {error}
+          ⚠ {error}
         </div>
       )}
 

@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 import httpx
+import asyncio
+from datetime import datetime
 
 app = FastAPI()
 
@@ -11,19 +13,28 @@ HEADERS = {
     "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
 }
 
+# 🔹 Cache in memoria
+cache = {
+    "nodes": [],
+    "last_update": None,
+    "error": None
+}
+
+
 @app.get("/")
 def root():
     return {"message": "Proxmox Atlas backend running"}
 
-@app.get("/nodes")
-async def get_nodes():
+
+# 🔹 Funzione che interroga Proxmox
+async def fetch_nodes_from_proxmox():
     url = f"{PROXMOX_HOST}/api2/json/nodes"
 
     try:
         async with httpx.AsyncClient(verify=False, timeout=5.0) as client:
             response = await client.get(url, headers=HEADERS)
 
-        response.raise_for_status()  # 👈 errore se HTTP != 200
+        response.raise_for_status()
 
         raw_data = response.json().get("data", [])
 
@@ -36,19 +47,40 @@ async def get_nodes():
             for n in raw_data
         ]
 
-        return nodes
+        cache["nodes"] = nodes
+        cache["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cache["error"] = None
+
+        print(f"[INFO] Cache aggiornata alle {cache['last_update']}")
 
     except httpx.RequestError:
-        # ❌ Proxmox spento / non raggiungibile
-        return {
-            "error": "Proxmox host unreachable",
-            "nodes": []
-        }
-
-    except httpx.HTTPStatusError as e:
-        # ❌ errore API Proxmox
-        raise HTTPException(status_code=502, detail=str(e))
+        cache["error"] = "Proxmox host unreachable"
+        cache["nodes"] = []
+        print("[ERROR] Proxmox non raggiungibile")
 
     except Exception as e:
-        # ❌ qualsiasi altro errore
-        raise HTTPException(status_code=500, detail=str(e))
+        cache["error"] = str(e)
+        print(f"[ERROR] {e}")
+
+
+# 🔹 Polling continuo
+async def poll_proxmox():
+    while True:
+        await fetch_nodes_from_proxmox()
+        await asyncio.sleep(30)  # ogni 30 secondi
+
+
+# 🔹 Avvio automatico polling
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(poll_proxmox())
+
+
+# 🔹 Endpoint che legge SOLO la cache
+@app.get("/nodes")
+def get_nodes():
+    return {
+        "nodes": cache["nodes"],
+        "last_update": cache["last_update"],
+        "error": cache["error"]
+    }
