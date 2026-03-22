@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 import httpx
 import asyncio
 from datetime import datetime
@@ -16,6 +16,7 @@ HEADERS = {
 # 🔹 Cache in memoria
 cache = {
     "nodes": [],
+    "vms": [],
     "last_update": None,
     "error": None
 }
@@ -26,7 +27,7 @@ def root():
     return {"message": "Proxmox Atlas backend running"}
 
 
-# 🔹 Funzione che interroga Proxmox
+# 🔹 Fetch NODI
 async def fetch_nodes_from_proxmox():
     url = f"{PROXMOX_HOST}/api2/json/nodes"
 
@@ -51,7 +52,7 @@ async def fetch_nodes_from_proxmox():
         cache["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cache["error"] = None
 
-        print(f"[INFO] Cache aggiornata alle {cache['last_update']}")
+        print(f"[INFO] Nodes cache aggiornata alle {cache['last_update']}")
 
     except httpx.RequestError:
         cache["error"] = "Proxmox host unreachable"
@@ -63,24 +64,75 @@ async def fetch_nodes_from_proxmox():
         print(f"[ERROR] {e}")
 
 
+# 🔹 Fetch VM
+async def fetch_vms_from_proxmox():
+    all_vms = []
+
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=5.0) as client:
+            # recupero nodi
+            nodes_res = await client.get(f"{PROXMOX_HOST}/api2/json/nodes", headers=HEADERS)
+            nodes_res.raise_for_status()
+
+            nodes = nodes_res.json().get("data", [])
+
+            # ciclo sui nodi
+            for node in nodes:
+                node_name = node.get("node")
+
+                vm_res = await client.get(
+                    f"{PROXMOX_HOST}/api2/json/nodes/{node_name}/qemu",
+                    headers=HEADERS
+                )
+
+                if vm_res.status_code != 200:
+                    continue
+
+                vms = vm_res.json().get("data", [])
+
+                for vm in vms:
+                    all_vms.append({
+                        "name": vm.get("name"),
+                        "vmid": vm.get("vmid"),
+                        "node": node_name,
+                        "status": vm.get("status")
+                    })
+
+        cache["vms"] = all_vms
+
+    except Exception as e:
+        print(f"[ERROR VM] {e}")
+
+
 # 🔹 Polling continuo
 async def poll_proxmox():
     while True:
         await fetch_nodes_from_proxmox()
-        await asyncio.sleep(30)  # ogni 30 secondi
+        await fetch_vms_from_proxmox()
+        await asyncio.sleep(30)
 
 
-# 🔹 Avvio automatico polling
+# 🔹 Startup
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(poll_proxmox())
 
 
-# 🔹 Endpoint che legge SOLO la cache
+# 🔹 Endpoint NODI
 @app.get("/nodes")
 def get_nodes():
     return {
         "nodes": cache["nodes"],
+        "last_update": cache["last_update"],
+        "error": cache["error"]
+    }
+
+
+# 🔹 Endpoint VM
+@app.get("/vms")
+def get_vms():
+    return {
+        "vms": cache["vms"],
         "last_update": cache["last_update"],
         "error": cache["error"]
     }
