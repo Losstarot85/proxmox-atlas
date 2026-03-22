@@ -22,7 +22,7 @@ HEADERS = {
 # 🔹 Cache in memoria
 cache = {
     "nodes": [],
-    "vms": [],
+    "resources": [], # Qui finiranno sia VM che LXC
     "last_update": None,
     "error": None
 }
@@ -70,51 +70,53 @@ async def fetch_nodes_from_proxmox():
         print(f"[ERROR] {e}")
 
 
-# 🔹 Fetch VM
-async def fetch_vms_from_proxmox():
-    all_vms = []
+# 🔹 Fetch Risorse (VM+LXC)
+async def fetch_resources_from_proxmox():
+    all_resources = []
+    resource_types = ["qemu", "lxc"] # Tipi di risorse da monitorare
 
     try:
-        async with httpx.AsyncClient(verify=False, timeout=5.0) as client:
-            # recupero nodi
+        async with httpx.AsyncClient(verify=False, timeout=10.0) as client:
+            # Recuperiamo prima i nodi per sapere dove cercare
             nodes_res = await client.get(f"{PROXMOX_HOST}/api2/json/nodes", headers=HEADERS)
             nodes_res.raise_for_status()
-
             nodes = nodes_res.json().get("data", [])
 
-            # ciclo sui nodi
             for node in nodes:
                 node_name = node.get("node")
-
-                vm_res = await client.get(
-                    f"{PROXMOX_HOST}/api2/json/nodes/{node_name}/qemu",
-                    headers=HEADERS
-                )
-
-                if vm_res.status_code != 200:
-                    continue
-
-                vms = vm_res.json().get("data", [])
-
-                for vm in vms:
-                    all_vms.append({
-                        "name": vm.get("name"),
-                        "vmid": vm.get("vmid"),
-                        "node": node_name,
-                        "status": vm.get("status")
-                    })
-
-        cache["vms"] = all_vms
+                
+                for r_type in resource_types:
+                    res = await client.get(
+                        f"{PROXMOX_HOST}/api2/json/nodes/{node_name}/{r_type}",
+                        headers=HEADERS
+                    )
+                    
+                    if res.status_code == 200:
+                        items = res.json().get("data", [])
+                        for item in items:
+                            all_resources.append({
+                                "vmid": item.get("vmid"),
+                                "name": item.get("name"),
+                                "node": node_name,
+                                "type": "VM" if r_type == "qemu" else "LXC", # Tag intelligente
+                                "status": item.get("status"),
+                                "uptime": item.get("uptime")
+                            })
+        
+        cache["resources"] = all_resources
+        cache["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[INFO] Risorse aggiornate: {len(all_resources)} elementi totali")
 
     except Exception as e:
-        print(f"[ERROR VM] {e}")
+        print(f"[ERROR RESOURCES] {e}")
+        cache["error"] = str(e)
 
 
 # 🔹 Polling continuo
 async def poll_proxmox():
     while True:
         await fetch_nodes_from_proxmox()
-        await fetch_vms_from_proxmox()
+        await fetch_resources_from_proxmox() # Chiama la funzione unificata
         await asyncio.sleep(15)
 
 
@@ -134,11 +136,11 @@ def get_nodes():
     }
 
 
-# 🔹 Endpoint VM
-@app.get("/vms")
-def get_vms():
+# 🔹 Endpoint Risorse (VM+LXC)
+@app.get("/resources")
+def get_resources():
     return {
-        "vms": cache["vms"],
+        "resources": cache["resources"],
         "last_update": cache["last_update"],
         "error": cache["error"]
     }
