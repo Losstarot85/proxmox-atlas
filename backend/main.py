@@ -115,7 +115,7 @@ async def poll_proxmox():
     while True:
         await fetch_nodes_from_proxmox()
         await fetch_vms_from_proxmox()
-        await asyncio.sleep(30)
+        await asyncio.sleep(15)
 
 
 # 🔹 Startup
