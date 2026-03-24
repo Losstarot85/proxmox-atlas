@@ -78,7 +78,27 @@ function App() {
   );
 }
 
-// Sotto-componente per le risorse per mantenere il codice pulito 
+// Formatta l'uso della CPU in percentuale (es. 0.054 -> 5.4%)
+const formatCPU = (cpu) => {
+  if (cpu == null) return "0.0%";
+  return (cpu * 100).toFixed(1) + "%";
+};
+
+// Formatta i Byte in Gigabyte (es. per la RAM)
+const formatBytesToGB = (bytes) => {
+  if (!bytes) return "0.00 GB";
+  return (bytes / (1024 ** 3)).toFixed(2) + " GB";
+};
+
+// Formatta il traffico di rete (MB o GB in base alla grandezza)
+const formatNetwork = (bytes) => {
+  if (!bytes) return "0 MB";
+  const mb = bytes / (1024 ** 2);
+  if (mb > 1024) return (mb / 1024).toFixed(2) + " GB";
+  return mb.toFixed(2) + " MB";
+};
+
+// Sotto-componente per le risorse aggiornato con le metriche
 function ResourceSection({ title, typeFilter, resources, styleConfig }) {
   const { tableStyle, thTdStyle } = styleConfig;
   const filtered = resources.filter(r => r.type === typeFilter);
@@ -91,22 +111,39 @@ function ResourceSection({ title, typeFilter, resources, styleConfig }) {
           <tr style={{ backgroundColor: "#f8f9fa" }}>
             <th style={thTdStyle}>ID</th>
             <th style={thTdStyle}>Name</th>
-            <th style={thTdStyle}>Node</th>
             <th style={thTdStyle}>Status</th>
+            {/* 🔹 Nuove Colonne */}
+            <th style={thTdStyle}>CPU Usage</th>
+            <th style={thTdStyle}>RAM Usage</th>
+            <th style={thTdStyle}>Net (In / Out)</th>
           </tr>
         </thead>
         <tbody>
           {filtered.length === 0 ? (
-            <tr><td colSpan="4" style={{...thTdStyle, textAlign: "center"}}>Nessun elemento trovato</td></tr>
+            <tr><td colSpan="6" style={{...thTdStyle, textAlign: "center"}}>Nessun elemento trovato</td></tr>
           ) : (
-            filtered.map(r => (
-              <tr key={`${r.type}-${r.vmid}`}>
-                <td style={thTdStyle}>{r.vmid}</td>
-                <td style={thTdStyle}>{r.name}</td>
-                <td style={thTdStyle}>{r.node}</td>
-                <td style={thTdStyle}>{r.status === "running" ? "🟢 Running" : "🔴 Stopped"}</td>
-              </tr>
-            ))
+            filtered.map(r => {
+              const isRunning = r.status === "running";
+              
+              return (
+                <tr key={`${r.type}-${r.vmid}`}>
+                  <td style={thTdStyle}>{r.vmid}</td>
+                  <td style={thTdStyle}>{r.name}</td>
+                  <td style={thTdStyle}>{isRunning ? "🟢 Running" : "🔴 Stopped"}</td>
+                  
+                  {/* 🔹 Metriche (mostrate solo se la macchina è accesa) */}
+                  <td style={thTdStyle}>
+                    {isRunning ? `${formatCPU(r.cpu)} / ${r.maxcpu} Core` : "-"}
+                  </td>
+                  <td style={thTdStyle}>
+                    {isRunning ? `${formatBytesToGB(r.mem)} / ${formatBytesToGB(r.maxmem)}` : "-"}
+                  </td>
+                  <td style={thTdStyle}>
+                    {isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

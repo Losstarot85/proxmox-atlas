@@ -98,9 +98,16 @@ async def fetch_resources_from_proxmox():
                                 "vmid": item.get("vmid"),
                                 "name": item.get("name"),
                                 "node": node_name,
-                                "type": "VM" if r_type == "qemu" else "LXC", # Tag intelligente
+                                "type": "VM" if r_type == "qemu" else "LXC",
                                 "status": item.get("status"),
-                                "uptime": item.get("uptime")
+                                "uptime": item.get("uptime"),
+                                # 🔹 NUOVI CAMPI PER LE METRICHE
+                                "cpu": item.get("cpu", 0.0),
+                                "maxcpu": item.get("maxcpu", 1),
+                                "mem": item.get("mem", 0),
+                                "maxmem": item.get("maxmem", 0),
+                                "netin": item.get("netin", 0),
+                                "netout": item.get("netout", 0)
                             })
         
         cache["resources"] = all_resources
