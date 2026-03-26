@@ -77,13 +77,10 @@ async def fetch_resources_from_proxmox():
 
     try:
         async with httpx.AsyncClient(verify=False, timeout=10.0) as client:
-            # Recuperiamo prima i nodi per sapere dove cercare
-            nodes_res = await client.get(f"{PROXMOX_HOST}/api2/json/nodes", headers=HEADERS)
-            nodes_res.raise_for_status()
-            nodes = nodes_res.json().get("data", [])
+            nodes = cache["nodes"]
 
             for node in nodes:
-                node_name = node.get("node")
+                node_name = node["name"]
                 
                 for r_type in resource_types:
                     res = await client.get(
