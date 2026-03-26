@@ -111,9 +111,16 @@ async def fetch_resources_from_proxmox():
         cache["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[INFO] Risorse aggiornate: {len(all_resources)} elementi totali")
 
+
+    except httpx.RequestError:
+        cache["error"] = "Proxmox host unreachable"
+        cache["resources"] = []
+        print("[ERROR] Proxmox non raggiungibile")
+
     except Exception as e:
-        print(f"[ERROR RESOURCES] {e}")
         cache["error"] = str(e)
+        cache["resources"] = []
+        print(f"[ERROR RESOURCES] {e}")
 
 
 # 🔹 Polling continuo
