@@ -7,6 +7,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [failedNodes, setFailedNodes] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,6 +20,7 @@ function App() {
         const res = await fetch("/api/resources");
         const data = await res.json();
         setResources(data.resources || []);
+        setFailedNodes(data.failed_nodes || []);
         if (data.error) setError(data.error);
       } catch (err) {
         setError("Errore di connessione al backend");
@@ -40,6 +42,11 @@ function App() {
         <h1>Proxmox Atlas</h1>
         <p className="subtitle">Ultimo aggiornamento: {lastUpdate}</p>
         {error && <p className="error">⚠️ {error}</p>}
+        {failedNodes.length > 0 && (
+          <p className="error">
+            ⚠️ Dati parziali — nodi non raggiungibili: {failedNodes.join(", ")}
+          </p>
+        )}
       </header>
 
       <section>

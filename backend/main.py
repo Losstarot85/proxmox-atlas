@@ -33,9 +33,10 @@ HEADERS = {
 # 🔹 Cache in memoria
 cache = {
     "nodes": [],
-    "resources": [], # Qui finiranno sia VM che LXC
+    "resources": [],
     "last_update": None,
-    "error": None
+    "error": None,
+    "failed_nodes": []
 }
 
 
@@ -84,7 +85,8 @@ async def fetch_nodes_from_proxmox():
 # 🔹 Fetch Risorse (VM+LXC)
 async def fetch_resources_from_proxmox():
     all_resources = []
-    resource_types = ["qemu", "lxc"] # Tipi di risorse da monitorare
+    failed_nodes = []
+    resource_types = ["qemu", "lxc"]
 
     try:
         async with httpx.AsyncClient(verify=False, timeout=10.0) as client:
@@ -92,14 +94,15 @@ async def fetch_resources_from_proxmox():
 
             for node in nodes:
                 node_name = node["name"]
-                
+                node_failed = False
+
                 for r_type in resource_types:
-                    res = await client.get(
-                        f"{PROXMOX_HOST}/api2/json/nodes/{node_name}/{r_type}",
-                        headers=HEADERS
-                    )
-                    
-                    if res.status_code == 200:
+                    try:
+                        res = await client.get(
+                            f"{PROXMOX_HOST}/api2/json/nodes/{node_name}/{r_type}",
+                            headers=HEADERS
+                        )
+                        res.raise_for_status()
                         items = res.json().get("data", [])
                         for item in items:
                             all_resources.append({
@@ -109,7 +112,6 @@ async def fetch_resources_from_proxmox():
                                 "type": "VM" if r_type == "qemu" else "LXC",
                                 "status": item.get("status"),
                                 "uptime": item.get("uptime"),
-                                # 🔹 NUOVI CAMPI PER LE METRICHE
                                 "cpu": item.get("cpu", 0.0),
                                 "maxcpu": item.get("maxcpu", 1),
                                 "mem": item.get("mem", 0),
@@ -117,20 +119,34 @@ async def fetch_resources_from_proxmox():
                                 "netin": item.get("netin", 0),
                                 "netout": item.get("netout", 0)
                             })
-        
-        cache["resources"] = all_resources
-        cache["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[INFO] Risorse aggiornate: {len(all_resources)} elementi totali")
+                    except Exception as e:
+                        print(f"[ERROR] Nodo {node_name} ({r_type}) non raggiungibile: {e}")
+                        node_failed = True
 
+                if node_failed and node_name not in failed_nodes:
+                    failed_nodes.append(node_name)
+
+        cache["resources"] = all_resources
+        cache["failed_nodes"] = failed_nodes
+        cache["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        if failed_nodes:
+            cache["error"] = f"Nodi parzialmente irraggiungibili: {', '.join(failed_nodes)}"
+        else:
+            cache["error"] = None
+
+        print(f"[INFO] Risorse aggiornate: {len(all_resources)} elementi, nodi falliti: {failed_nodes}")
 
     except httpx.RequestError:
         cache["error"] = "Proxmox host unreachable"
         cache["resources"] = []
+        cache["failed_nodes"] = []
         print("[ERROR] Proxmox non raggiungibile")
 
     except Exception as e:
         cache["error"] = str(e)
         cache["resources"] = []
+        cache["failed_nodes"] = []
         print(f"[ERROR RESOURCES] {e}")
 
 
@@ -158,5 +174,6 @@ def get_resources():
     return {
         "resources": cache["resources"],
         "last_update": cache["last_update"],
-        "error": cache["error"]
+        "error": cache["error"],
+        "failed_nodes": cache["failed_nodes"]
     }
