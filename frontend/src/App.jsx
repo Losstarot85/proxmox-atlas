@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [nodes, setNodes] = useState([]);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,30 +50,53 @@ function App() {
         )}
       </header>
 
-      <section>
-        <h2>Cluster Nodes</h2>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Node Name</th>
-              <th>Status</th>
-              <th>Type</th>
-            </tr>
-          </thead>
-          <tbody>
-            {nodes.map((n) => (
-              <tr key={n.name}>
-                <td>{n.name}</td>
-                <td>{n.status === "online" ? "🟢 Online" : "🔴 Offline"}</td>
-                <td>{n.type || "pve"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <nav className="tab-nav">
+        <button
+          className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`}
+          onClick={() => setActiveTab("dashboard")}
+        >
+          Dashboard
+        </button>
+        <button
+          className={`tab-button ${activeTab === "network" ? "active" : ""}`}
+          onClick={() => setActiveTab("network")}
+        >
+          Network
+        </button>
+      </nav>
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={resources} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={resources} />
+      {activeTab === "dashboard" && (
+        <>
+          <section>
+            <h2>Cluster Nodes</h2>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Node Name</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nodes.map((n) => (
+                  <tr key={n.name}>
+                    <td>{n.name}</td>
+                    <td>{n.status === "online" ? "🟢 Online" : "🔴 Offline"}</td>
+                    <td>{n.type || "pve"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <ResourceSection title="Virtual Machines" typeFilter="VM" resources={resources} />
+          <ResourceSection title="LXC Containers" typeFilter="LXC" resources={resources} />
+        </>
+      )}
+
+      {activeTab === "network" && (
+        <p style={{ color: "gray" }}>Network tab — coming soon</p>
+      )}
     </div>
   );
 }
