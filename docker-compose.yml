@@ -1,13 +1,11 @@
 services:
   backend:
-    image: python:3.12
+    build: ./backend
     container_name: proxmox-backend
-    working_dir: /app
     env_file:
       - .env
     volumes:
       - ./backend:/app
-    command: sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
 
