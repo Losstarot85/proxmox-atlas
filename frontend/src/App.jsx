@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./App.css";
 
 function App() {
   const [nodes, setNodes] = useState([]);
@@ -31,49 +32,40 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Helper per lo stile comune delle tabelle 
-  const tableStyle = { width: "100%", borderCollapse: "collapse", textAlign: "left", marginBottom: "30px" };
-  const thTdStyle = { padding: "12px", borderBottom: "1px solid #ddd" };
-
-  if (loading) return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading Atlas...</p>;
+  if (loading) return <p className="loading">Loading Atlas...</p>;
 
   return (
-    /* margin: "0 auto" centra solo orizzontalmente. padding-top aggiunge respiro in alto */
-    <div style={{ padding: "40px 20px", maxWidth: "1000px", margin: "0 auto" }}>
-      <header style={{ marginBottom: "40px", borderBottom: "2px solid #eee", paddingBottom: "20px" }}>
-        <h1 style={{ margin: 0 }}>Proxmox Atlas</h1>
-        <p style={{ color: "gray", margin: "5px 0 0 0" }}>Ultimo aggiornamento: {lastUpdate}</p>
-        {error && <p style={{ color: "red" }}>⚠️ {error}</p>}
+    <div className="container">
+      <header className="header">
+        <h1>Proxmox Atlas</h1>
+        <p className="subtitle">Ultimo aggiornamento: {lastUpdate}</p>
+        {error && <p className="error">⚠️ {error}</p>}
       </header>
 
-      {/* 🔹 SEZIONE NODI (Ora come tabella) */}
       <section>
         <h2>Cluster Nodes</h2>
-        <table style={tableStyle}>
+        <table className="data-table">
           <thead>
-            <tr style={{ backgroundColor: "#f8f9fa" }}>
-              <th style={thTdStyle}>Node Name</th>
-              <th style={thTdStyle}>Status</th>
-              <th style={thTdStyle}>Type</th>
+            <tr>
+              <th>Node Name</th>
+              <th>Status</th>
+              <th>Type</th>
             </tr>
           </thead>
           <tbody>
             {nodes.map((n) => (
               <tr key={n.name}>
-                <td style={thTdStyle}>{n.name}</td>
-                <td style={thTdStyle}>{n.status === "online" ? "🟢 Online" : "🔴 Offline"}</td>
-                <td style={thTdStyle}>{n.type || "pve"}</td>
+                <td>{n.name}</td>
+                <td>{n.status === "online" ? "🟢 Online" : "🔴 Offline"}</td>
+                <td>{n.type || "pve"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
 
-      {/* 🔹 SEZIONE VM */}
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={resources} styleConfig={{tableStyle, thTdStyle}} />
-
-      {/* 🔹 SEZIONE LXC */}
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={resources} styleConfig={{tableStyle, thTdStyle}} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={resources} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={resources} />
     </div>
   );
 }
@@ -99,48 +91,37 @@ const formatNetwork = (bytes) => {
 };
 
 // Sotto-componente per le risorse aggiornato con le metriche
-function ResourceSection({ title, typeFilter, resources, styleConfig }) {
-  const { tableStyle, thTdStyle } = styleConfig;
+function ResourceSection({ title, typeFilter, resources }) {
   const filtered = resources.filter(r => r.type === typeFilter);
 
   return (
     <section>
       <h2>{title}</h2>
-      <table style={tableStyle}>
+      <table className="data-table">
         <thead>
-          <tr style={{ backgroundColor: "#f8f9fa" }}>
-            <th style={thTdStyle}>ID</th>
-            <th style={thTdStyle}>Name</th>
-            <th style={thTdStyle}>Status</th>
-            {/* 🔹 Nuove Colonne */}
-            <th style={thTdStyle}>CPU Usage</th>
-            <th style={thTdStyle}>RAM Usage</th>
-            <th style={thTdStyle}>Net (In / Out)</th>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>CPU Usage</th>
+            <th>RAM Usage</th>
+            <th>Net (In / Out)</th>
           </tr>
         </thead>
         <tbody>
           {filtered.length === 0 ? (
-            <tr><td colSpan="6" style={{...thTdStyle, textAlign: "center"}}>Nessun elemento trovato</td></tr>
+            <tr><td colSpan="6" className="empty-row">Nessun elemento trovato</td></tr>
           ) : (
             filtered.map(r => {
               const isRunning = r.status === "running";
-              
               return (
                 <tr key={`${r.type}-${r.vmid}`}>
-                  <td style={thTdStyle}>{r.vmid}</td>
-                  <td style={thTdStyle}>{r.name}</td>
-                  <td style={thTdStyle}>{isRunning ? "🟢 Running" : "🔴 Stopped"}</td>
-                  
-                  {/* 🔹 Metriche (mostrate solo se la macchina è accesa) */}
-                  <td style={thTdStyle}>
-                    {isRunning ? `${formatCPU(r.cpu)} / ${r.maxcpu} Core` : "-"}
-                  </td>
-                  <td style={thTdStyle}>
-                    {isRunning ? `${formatBytesToGB(r.mem)} / ${formatBytesToGB(r.maxmem)}` : "-"}
-                  </td>
-                  <td style={thTdStyle}>
-                    {isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}
-                  </td>
+                  <td>{r.vmid}</td>
+                  <td>{r.name}</td>
+                  <td>{isRunning ? "🟢 Running" : "🔴 Stopped"}</td>
+                  <td>{isRunning ? `${formatCPU(r.cpu)} / ${r.maxcpu} Core` : "-"}</td>
+                  <td>{isRunning ? `${formatBytesToGB(r.mem)} / ${formatBytesToGB(r.maxmem)}` : "-"}</td>
+                  <td>{isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}</td>
                 </tr>
               );
             })
