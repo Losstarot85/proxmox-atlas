@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./App.css";
 
 function App() {
@@ -94,12 +94,11 @@ function App() {
         </>
       )}
 
-      {activeTab === "network" && (
-        <p style={{ color: "gray" }}>Network tab — coming soon</p>
-      )}
+      {activeTab === "network" && <NetworkTab />}
     </div>
   );
 }
+
 
 // Formatta l'uso della CPU in percentuale (es. 0.054 -> 5.4%)
 const formatCPU = (cpu) => {
@@ -107,11 +106,13 @@ const formatCPU = (cpu) => {
   return (cpu * 100).toFixed(1) + "%";
 };
 
+
 // Formatta i Byte in Gigabyte (es. per la RAM)
 const formatBytesToGB = (bytes) => {
   if (!bytes) return "0.00 GB";
   return (bytes / (1024 ** 3)).toFixed(2) + " GB";
 };
+
 
 // Formatta il traffico di rete (MB o GB in base alla grandezza)
 const formatNetwork = (bytes) => {
@@ -120,6 +121,7 @@ const formatNetwork = (bytes) => {
   if (mb > 1024) return (mb / 1024).toFixed(2) + " GB";
   return mb.toFixed(2) + " MB";
 };
+
 
 // Sotto-componente per le risorse aggiornato con le metriche
 function ResourceSection({ title, typeFilter, resources }) {
@@ -162,5 +164,120 @@ function ResourceSection({ title, typeFilter, resources }) {
     </section>
   );
 }
+
+
+// Contenuto del tab Network
+function NetworkTab() {
+  const [networkData, setNetworkData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [search, setSearch] = useState("");
+  const hasFetched = useRef(false);
+
+  const fetchNetwork = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/network");
+      const data = await res.json();
+      setNetworkData(data.network || []);
+      setLastUpdate(data.last_update);
+    } catch (err) {
+      console.error("Errore fetch network:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchNetwork();
+    }
+  }, []);
+
+  const filtered = networkData.filter(r => {
+    const term = search.toLowerCase();
+    const matchName = r.name?.toLowerCase().includes(term);
+    const matchIp = r.ips.some(ip => ip.ip.includes(term));
+    return matchName || matchIp;
+  });
+
+  return (
+    <section>
+      <h2>Network</h2>
+
+      <div className="network-toolbar">
+        <input
+          type="text"
+          className="network-search"
+          placeholder="Cerca per nome o indirizzo IP..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <button
+          className="refresh-button"
+          onClick={fetchNetwork}
+          disabled={loading}
+        >
+          {loading ? "Aggiornamento..." : "↻ Refresh"}
+        </button>
+      </div>
+
+      {lastUpdate && (
+        <p className="subtitle" style={{ marginBottom: "16px" }}>
+          Ultimo aggiornamento: {lastUpdate}
+        </p>
+      )}
+
+      {loading && !networkData.length ? (
+        <p className="network-loading">Recupero indirizzi IP in corso...</p>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Node</th>
+              <th>IP Addresses</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="empty-row">Nessun risultato trovato</td>
+              </tr>
+            ) : (
+              filtered.map(r => (
+                <tr key={`${r.type}-${r.vmid}`}>
+                  <td>{r.vmid}</td>
+                  <td>{r.name}</td>
+                  <td>{r.type}</td>
+                  <td>{r.node}</td>
+                  <td>
+                    {!r.agent_available ? (
+                      <span className="agent-unavailable">
+                        {r.type === "VM" ? "⚠️ Agent non disponibile" : "⚠️ Non raggiungibile"}
+                      </span>
+                    ) : r.ips.length === 0 ? (
+                      <span className="no-ips">Nessun IP trovato</span>
+                    ) : (
+                      <ul className="ip-list">
+                        {r.ips.map((ip, i) => (
+                          <li key={i}>{ip.interface}: {ip.ip}/{ip.prefix}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
+    </section>
+  );
+}
+
 
 export default App;

@@ -88,3 +88,70 @@
   font-weight: bold;
   border-bottom: 2px solid #000;
 }
+
+/* Network Tab */
+.network-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.network-search {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.network-search:focus {
+  outline: none;
+  border-color: #aaa;
+}
+
+.refresh-button {
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+.refresh-button:hover {
+  background: #e9ecef;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.network-loading {
+  text-align: center;
+  color: gray;
+  margin-top: 40px;
+}
+
+.no-ips {
+  color: gray;
+  font-style: italic;
+}
+
+.agent-unavailable {
+  color: #aaa;
+  font-style: italic;
+}
+
+.ip-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ip-list li {
+  font-family: monospace;
+  font-size: 0.95rem;
+}
