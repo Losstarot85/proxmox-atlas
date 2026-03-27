@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import httpx
 import asyncio
 from datetime import datetime
@@ -8,7 +9,17 @@ from dotenv import load_dotenv
 # Carica le variabili dal file .env
 load_dotenv()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(poll_proxmox())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+
+app = FastAPI(lifespan=lifespan)
 
 # Leggi le credenziali dall'ambiente
 PROXMOX_HOST = os.getenv("PROXMOX_HOST")
@@ -129,12 +140,6 @@ async def poll_proxmox():
         await fetch_nodes_from_proxmox()
         await fetch_resources_from_proxmox() # Chiama la funzione unificata
         await asyncio.sleep(15)
-
-
-# 🔹 Startup
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(poll_proxmox())
 
 
 # 🔹 Endpoint NODI
