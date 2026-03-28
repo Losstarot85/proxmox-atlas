@@ -155,3 +155,30 @@
   font-family: monospace;
   font-size: 0.95rem;
 }
+
+/* Cluster Section */
+.cluster-section {
+  margin-bottom: 50px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #eee;
+}
+
+.cluster-section:last-child {
+  border-bottom: none;
+}
+
+.cluster-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.cluster-header h2 {
+  margin: 0;
+}
+
+.cluster-update {
+  color: gray;
+  font-size: 0.875rem;
+}

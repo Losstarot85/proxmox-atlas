@@ -3,26 +3,34 @@ import "./App.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [nodes, setNodes] = useState([]);
-  const [resources, setResources] = useState([]);
+  const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const [failedNodes, setFailedNodes] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const nodeRes = await fetch("/api/nodes");
-        const nodeData = await nodeRes.json();
-        setNodes(nodeData.nodes || []);
-        setLastUpdate(nodeData.last_update);
+        const [nodeRes, resRes] = await Promise.all([
+          fetch("/api/nodes"),
+          fetch("/api/resources")
+        ]);
 
-        const res = await fetch("/api/resources");
-        const data = await res.json();
-        setResources(data.resources || []);
-        setFailedNodes(data.failed_nodes || []);
-        if (data.error) setError(data.error);
+        const nodeData = await nodeRes.json();
+        const resData = await resRes.json();
+
+        const merged = nodeData.clusters.map(c => {
+          const resCluster = resData.clusters.find(r => r.name === c.name) || {};
+          return {
+            name: c.name,
+            nodes: c.nodes || [],
+            last_update: c.last_update,
+            error: c.error || resCluster.error,
+            failed_nodes: resCluster.failed_nodes || [],
+            resources: resCluster.resources || []
+          };
+        });
+
+        setClusters(merged);
       } catch (err) {
         setError("Errore di connessione al backend");
       } finally {
@@ -30,10 +38,10 @@ function App() {
       }
     };
 
-    fetchData();
-    const interval = setInterval(fetchData, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  fetchData();
+  const interval = setInterval(fetchData, 15000);
+  return () => clearInterval(interval);
+}, []);
 
   if (loading) return <p className="loading">Loading Atlas...</p>;
 
@@ -41,13 +49,7 @@ function App() {
     <div className="container">
       <header className="header">
         <h1>Proxmox Atlas</h1>
-        <p className="subtitle">Ultimo aggiornamento: {lastUpdate}</p>
         {error && <p className="error">⚠️ {error}</p>}
-        {failedNodes.length > 0 && (
-          <p className="error">
-            ⚠️ Dati parziali — nodi non raggiungibili: {failedNodes.join(", ")}
-          </p>
-        )}
       </header>
 
       <nav className="tab-nav">
@@ -66,32 +68,9 @@ function App() {
       </nav>
 
       {activeTab === "dashboard" && (
-        <>
-          <section>
-            <h2>Cluster Nodes</h2>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Node Name</th>
-                  <th>Status</th>
-                  <th>Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nodes.map((n) => (
-                  <tr key={n.name}>
-                    <td>{n.name}</td>
-                    <td>{n.status === "online" ? "🟢 Online" : "🔴 Offline"}</td>
-                    <td>{n.type || "pve"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          <ResourceSection title="Virtual Machines" typeFilter="VM" resources={resources} />
-          <ResourceSection title="LXC Containers" typeFilter="LXC" resources={resources} />
-        </>
+        clusters.map(cluster => (
+          <ClusterSection key={cluster.name} cluster={cluster} />
+        ))
       )}
 
       {activeTab === "network" && <NetworkTab />}
@@ -121,6 +100,57 @@ const formatNetwork = (bytes) => {
   if (mb > 1024) return (mb / 1024).toFixed(2) + " GB";
   return mb.toFixed(2) + " MB";
 };
+
+
+// Componente cluster
+function ClusterSection({ cluster }) {
+  return (
+    <div className="cluster-section">
+      <div className="cluster-header">
+        <h2>{cluster.name}</h2>
+        <span className="cluster-update">
+          Aggiornato: {cluster.last_update || "—"}
+        </span>
+      </div>
+
+      {cluster.error && (
+        <p className="error">⚠️ {cluster.error}</p>
+      )}
+      {cluster.failed_nodes.length > 0 && (
+        <p className="error">
+          ⚠️ Dati parziali — nodi non raggiungibili: {cluster.failed_nodes.join(", ")}
+        </p>
+      )}
+
+      <h3>Nodes</h3>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Node Name</th>
+            <th>Status</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cluster.nodes.length === 0 ? (
+            <tr><td colSpan="3" className="empty-row">Nessun nodo trovato</td></tr>
+          ) : (
+            cluster.nodes.map(n => (
+              <tr key={n.name}>
+                <td>{n.name}</td>
+                <td>{n.status === "online" ? "🟢 Online" : "🔴 Offline"}</td>
+                <td>{n.type || "pve"}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} />
+    </div>
+  );
+}
 
 
 // Sotto-componente per le risorse aggiornato con le metriche
