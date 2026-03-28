@@ -198,7 +198,7 @@ function ResourceSection({ title, typeFilter, resources }) {
 
 // Contenuto del tab Network
 function NetworkTab() {
-  const [networkData, setNetworkData] = useState([]);
+  const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [search, setSearch] = useState("");
@@ -209,7 +209,7 @@ function NetworkTab() {
     try {
       const res = await fetch("/api/network");
       const data = await res.json();
-      setNetworkData(data.network || []);
+      setClusters(data.clusters || []);
       setLastUpdate(data.last_update);
     } catch (err) {
       console.error("Errore fetch network:", err);
@@ -225,12 +225,18 @@ function NetworkTab() {
     }
   }, []);
 
-  const filtered = networkData.filter(r => {
-    const term = search.toLowerCase();
-    const matchName = r.name?.toLowerCase().includes(term);
-    const matchIp = r.ips.some(ip => ip.ip.includes(term));
-    return matchName || matchIp;
-  });
+  // Filtra le risorse per ogni cluster in base al termine di ricerca
+  const filteredClusters = clusters.map(cluster => ({
+    ...cluster,
+    resources: cluster.resources.filter(r => {
+      const term = search.toLowerCase();
+      const matchName = r.name?.toLowerCase().includes(term);
+      const matchIp = r.ips.some(ip => ip.ip.includes(term));
+      return matchName || matchIp;
+    })
+  })).filter(cluster =>
+    search === "" || cluster.resources.length > 0
+  );
 
   return (
     <section>
@@ -259,51 +265,63 @@ function NetworkTab() {
         </p>
       )}
 
-      {loading && !networkData.length ? (
+      {loading && !clusters.length ? (
         <p className="network-loading">Recupero indirizzi IP in corso...</p>
+      ) : filteredClusters.length === 0 ? (
+        <p className="network-loading">Nessun risultato trovato</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Node</th>
-              <th>IP Addresses</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="empty-row">Nessun risultato trovato</td>
-              </tr>
-            ) : (
-              filtered.map(r => (
-                <tr key={`${r.type}-${r.vmid}`}>
-                  <td>{r.vmid}</td>
-                  <td>{r.name}</td>
-                  <td>{r.type}</td>
-                  <td>{r.node}</td>
-                  <td>
-                    {!r.agent_available ? (
-                      <span className="agent-unavailable">
-                        {r.type === "VM" ? "⚠️ Agent non disponibile" : "⚠️ Non raggiungibile"}
-                      </span>
-                    ) : r.ips.length === 0 ? (
-                      <span className="no-ips">Nessun IP trovato</span>
-                    ) : (
-                      <ul className="ip-list">
-                        {r.ips.map((ip, i) => (
-                          <li key={i}>{ip.interface}: {ip.ip}/{ip.prefix}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
+        filteredClusters.map(cluster => (
+          <div key={cluster.name} className="cluster-section">
+            <div className="cluster-header">
+              <h3>{cluster.name}</h3>
+            </div>
+
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Node</th>
+                  <th>IP Addresses</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {cluster.resources.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="empty-row">
+                      Nessuna risorsa attiva
+                    </td>
+                  </tr>
+                ) : (
+                  cluster.resources.map(r => (
+                    <tr key={`${r.type}-${r.vmid}`}>
+                      <td>{r.vmid}</td>
+                      <td>{r.name}</td>
+                      <td>{r.type}</td>
+                      <td>{r.node}</td>
+                      <td>
+                        {!r.agent_available ? (
+                          <span className="agent-unavailable">
+                            {r.type === "VM" ? "⚠️ Agent non disponibile" : "⚠️ Non raggiungibile"}
+                          </span>
+                        ) : r.ips.length === 0 ? (
+                          <span className="no-ips">Nessun IP trovato</span>
+                        ) : (
+                          <ul className="ip-list">
+                            {r.ips.map((ip, i) => (
+                              <li key={i}>{ip.interface}: {ip.ip}/{ip.prefix}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ))
       )}
     </section>
   );
