@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Cluster Lab 1",
+    "host": "https://192.168.1.1:8006",
+    "token_id": "root@pam!atlas",
+    "token_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  },
+  {
+    "name": "Cluster Lab 2",
+    "host": "https://192.168.1.2:8006",
+    "token_id": "root@pam!atlas",
+    "token_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+]

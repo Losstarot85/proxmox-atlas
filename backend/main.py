@@ -4,10 +4,15 @@ import httpx
 import asyncio
 from datetime import datetime
 import os
-from dotenv import load_dotenv
+import json
 
-# Carica le variabili dal file .env
-load_dotenv()
+
+# Carica la configurazione dei cluster
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "clusters.json")
+
+with open(CONFIG_PATH) as f:
+    CLUSTERS = json.load(f)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +26,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+
 # Leggi le credenziali dall'ambiente
 PROXMOX_HOST = os.getenv("PROXMOX_HOST")
 TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
@@ -30,13 +36,17 @@ HEADERS = {
     "Authorization": f"PVEAPIToken={TOKEN_ID}={TOKEN_SECRET}"
 }
 
+
 # 🔹 Cache in memoria
 cache = {
-    "nodes": [],
-    "resources": [],
-    "last_update": None,
-    "error": None,
-    "failed_nodes": []
+    cluster["name"]: {
+        "nodes": [],
+        "resources": [],
+        "last_update": None,
+        "error": None,
+        "failed_nodes": []
+    }
+    for cluster in CLUSTERS
 }
 
 
