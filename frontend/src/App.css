@@ -251,3 +251,141 @@
   color: var(--text);
   font-size: 0.875rem;
 }
+
+/* Settings Tab */
+.settings-section {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: var(--shadow);
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+
+.setting-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+}
+
+.setting-info p {
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.number-input {
+  width: 60px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  color: var(--text-h);
+  font-weight: 500;
+  text-align: right;
+  outline: none;
+}
+
+.unit {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.alert-box {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.warning-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid var(--warning);
+}
+
+.warning-box p {
+  color: var(--text);
+  margin-top: 4px;
+  font-size: 0.95rem;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-footer-right {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--sans);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+}
+
+.btn.primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn.outline {
+  background: transparent;
+  color: var(--text-h);
+  border: 1px solid var(--border);
+}
+
+.btn.outline:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.success-msg {
+  color: var(--success);
+  margin-bottom: 20px;
+  font-weight: 500;
+}

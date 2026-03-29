@@ -14,3 +14,34 @@ except FileNotFoundError:
 except json.JSONDecodeError as e:
     print(f"[FATAL] clusters.json contiene JSON non valido: {e}")
     raise SystemExit(1)
+
+SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "settings.json")
+DEFAULT_SETTINGS = {
+    "polling_interval": 15
+}
+
+SETTINGS = DEFAULT_SETTINGS.copy()
+
+def load_settings():
+    global SETTINGS
+    try:
+        if os.path.exists(SETTINGS_PATH):
+            with open(SETTINGS_PATH) as f:
+                loaded = json.load(f)
+                SETTINGS.update(loaded)
+        else:
+            save_settings(DEFAULT_SETTINGS)
+    except Exception as e:
+        print(f"[WARN] Impossibile caricare settings.json: {e}")
+
+def save_settings(new_settings):
+    global SETTINGS
+    try:
+        with open(SETTINGS_PATH, "w") as f:
+            json.dump(new_settings, f, indent=2)
+        SETTINGS.update(new_settings)
+    except Exception as e:
+        print(f"[ERROR] Impossibile salvare settings.json: {e}")
+
+load_settings()
+

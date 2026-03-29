@@ -100,3 +100,4 @@ backend/__pycache__/
 # =========================
 config.local.json
 *.local.yml
+settings.json
