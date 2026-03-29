@@ -42,7 +42,12 @@ async def fetch_resources_from_proxmox(cluster: dict):
                                 "mem": item.get("mem", 0),
                                 "maxmem": item.get("maxmem", 0),
                                 "netin": item.get("netin", 0),
-                                "netout": item.get("netout", 0)
+                                "netout": item.get("netout", 0),
+                                "diskread": item.get("diskread", 0),
+                                "diskwrite": item.get("diskwrite", 0),
+                                "pressure_cpu": float(item.get("pressurecpusome", 0)),
+                                "pressure_ram": float(item.get("pressurememorysome", 0)),
+                                "pressure_io": float(item.get("pressureiosome", 0))
                             })
                     except Exception as e:
                         print(f"[ERROR] [{cluster_name}] Nodo {node_name} ({r_type}): {e}")

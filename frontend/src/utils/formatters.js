@@ -17,3 +17,25 @@ export const formatNetwork = (bytes) => {
   if (mb > 1024) return (mb / 1024).toFixed(2) + " GB";
   return mb.toFixed(2) + " MB";
 };
+
+// Formatta Disk IO (R / W)
+export const formatIO = (readBytes, writeBytes) => {
+  if (readBytes == null || writeBytes == null) return "-";
+  return `R: ${formatNetwork(readBytes)}/s / W: ${formatNetwork(writeBytes)}/s`;
+};
+
+// Formatta Pressure Stall (es. 1.2 -> 1.2%)
+export const formatPressure = (value) => {
+  if (value == null) return "0.00%";
+  const p = Number(value);
+  if (isNaN(p)) return "0.00%";
+  return p.toFixed(2) + "%";
+};
+
+// Formatta Server LoadAvg
+export const formatLoad = (load) => {
+  if (load == null) return "0.00";
+  const p = Number(load);
+  if (isNaN(p)) return "0.00";
+  return p.toFixed(2);
+};
