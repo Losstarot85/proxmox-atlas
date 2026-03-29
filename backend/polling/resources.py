@@ -1,4 +1,5 @@
 import httpx
+import asyncio
 from datetime import datetime
 from cache import cache
 
@@ -28,6 +29,27 @@ async def fetch_resources_from_proxmox(cluster: dict):
                         )
                         res.raise_for_status()
                         items = res.json().get("data", [])
+                        
+                        if r_type == "qemu":
+                            running_vms = [item for item in items if item.get("status") == "running"]
+                            
+                            async def fetch_qemu_disk_io(vm_item):
+                                try:
+                                    vmid = vm_item.get("vmid")
+                                    status_res = await client.get(
+                                        f"{host}/api2/json/nodes/{node_name}/qemu/{vmid}/status/current",
+                                        headers=headers
+                                    )
+                                    status_res.raise_for_status()
+                                    status_data = status_res.json().get("data", {})
+                                    vm_item["diskread"] = status_data.get("diskread", 0)
+                                    vm_item["diskwrite"] = status_data.get("diskwrite", 0)
+                                except Exception as e:
+                                    print(f"[ERROR] [{cluster_name}] Dettagli I/O per VM {vmid}: {e}")
+
+                            if running_vms:
+                                await asyncio.gather(*(fetch_qemu_disk_io(vm) for vm in running_vms))
+
                         for item in items:
                             all_resources.append({
                                 "vmid": item.get("vmid"),
