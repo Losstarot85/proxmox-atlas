@@ -1,8 +1,9 @@
 import React from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
+import { Sparkline } from "./Sparkline";
 
 // Sotto-componente per le risorse (VM, LXC) con metriche
-export function ResourceSection({ title, typeFilter, resources }) {
+export function ResourceSection({ title, typeFilter, resources, clusterName, history }) {
   const filtered = resources.filter(r => r.type === typeFilter);
 
   return (
@@ -34,6 +35,16 @@ export function ResourceSection({ title, typeFilter, resources }) {
                   const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                   const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
 
+                  const resourceHistory = history?.map(h => {
+                     const clusterMatch = h.clusters?.find(c => c.name === clusterName);
+                     const resMatch = clusterMatch?.resources?.find(res => res.vmid === r.vmid);
+                     return {
+                       timestamp: h.timestamp,
+                       cpuPercent: resMatch && resMatch.maxcpu > 0 ? Number((resMatch.cpu * 100).toFixed(1)) : 0,
+                       ramPercent: resMatch && resMatch.maxmem > 0 ? Number((resMatch.mem / resMatch.maxmem * 100).toFixed(1)) : 0
+                     };
+                  }) || [];
+
                   return (
                     <tr key={`${r.type}-${r.vmid}`}>
                       <td className="mono-cell">{r.vmid}</td>
@@ -46,23 +57,23 @@ export function ResourceSection({ title, typeFilter, resources }) {
                       </td>
                       <td>
                         {isRunning ? (
-                          <div className="progress-bar-inline">
-                            <span className="progress-label">{cpuPercent}%</span>
-                            <div className="progress-bar-container">
-                              <div className="progress-bar-fill" style={{ width: `${cpuPercent}%` }}></div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Sparkline data={resourceHistory} dataKey="cpuPercent" color="#3b82f6" />
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                              <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
+                              <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
                             </div>
-                            <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
                           </div>
                         ) : "-"}
                       </td>
                       <td>
                         {isRunning ? (
-                          <div className="progress-bar-inline">
-                            <span className="progress-label">{ramPercent}%</span>
-                            <div className="progress-bar-container">
-                              <div className="progress-bar-fill" style={{ width: `${ramPercent}%`, background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)' }}></div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Sparkline data={resourceHistory} dataKey="ramPercent" color="#8b5cf6" />
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                              <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
+                              <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>
                             </div>
-                            <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>
                           </div>
                         ) : "-"}
                       </td>

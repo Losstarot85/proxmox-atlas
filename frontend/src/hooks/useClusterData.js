@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 
+const MAX_HISTORY_LENGTH = 40;
+
 export function useClusterData(pollingIntervalMs = 15000) {
   const [clusters, setClusters] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,7 +36,16 @@ export function useClusterData(pollingIntervalMs = 15000) {
           };
         });
 
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
         setClusters(merged);
+        setHistory(prev => {
+          const newHistory = [...prev, { timestamp, clusters: merged }];
+          if (newHistory.length > MAX_HISTORY_LENGTH) {
+            newHistory.shift();
+          }
+          return newHistory;
+        });
         setError(null);
       } catch (err) {
         if (active) {
@@ -53,5 +65,5 @@ export function useClusterData(pollingIntervalMs = 15000) {
     };
   }, [pollingIntervalMs]);
 
-  return { clusters, loading, error };
+  return { clusters, history, loading, error };
 }

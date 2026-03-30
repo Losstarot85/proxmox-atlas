@@ -30,7 +30,7 @@ function App() {
     fetchSettings();
   }, []);
 
-  const { clusters, loading, error } = useClusterData(pollingIntervalSeconds * 1000);
+  const { clusters, history, loading, error } = useClusterData(pollingIntervalSeconds * 1000);
 
   if (!initialSettingsLoaded) {
     return (
@@ -134,9 +134,9 @@ function App() {
 
         {activeTab === "dashboard" && (
           <>
-            <SummaryCards clusters={clusters} />
+            <SummaryCards clusters={clusters} history={history} />
             {clusters.map((cluster) => (
-              <ClusterSection key={cluster.name} cluster={cluster} />
+              <ClusterSection key={cluster.name} cluster={cluster} history={history} />
             ))}
           </>
         )}

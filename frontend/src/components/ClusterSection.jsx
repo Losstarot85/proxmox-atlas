@@ -1,8 +1,9 @@
 import React from "react";
 import { ResourceSection } from "./ResourceSection";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
+import { Sparkline } from "./Sparkline";
 
-export function ClusterSection({ cluster }) {
+export function ClusterSection({ cluster, history }) {
   return (
     <section className="cluster-section">
       <div className="cluster-header">
@@ -54,6 +55,16 @@ export function ClusterSection({ cluster }) {
                   const cpuPercent = isOnline && n.maxcpu > 0 ? (n.cpu * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? (n.mem / n.maxmem * 100).toFixed(1) : 0;
 
+                  const nodeHistory = history?.map(h => {
+                     const clusterMatch = h.clusters?.find(c => c.name === cluster.name);
+                     const nodeMatch = clusterMatch?.nodes?.find(nd => nd.name === n.name);
+                     return {
+                       timestamp: h.timestamp,
+                       cpuPercent: nodeMatch && nodeMatch.maxcpu > 0 ? Number((nodeMatch.cpu * 100).toFixed(1)) : 0,
+                       ramPercent: nodeMatch && nodeMatch.maxmem > 0 ? Number((nodeMatch.mem / nodeMatch.maxmem * 100).toFixed(1)) : 0
+                     };
+                  }) || [];
+
                   return (
                     <tr key={n.name}>
                       <td style={{ fontWeight: 500 }}>{n.name}</td>
@@ -65,23 +76,23 @@ export function ClusterSection({ cluster }) {
                       <td className="mono-cell">{isOnline ? formatLoad(n.loadavg) : "-"}</td>
                       <td>
                         {isOnline ? (
-                          <div className="progress-bar-inline">
-                            <span className="progress-label">{cpuPercent}%</span>
-                            <div className="progress-bar-container">
-                              <div className="progress-bar-fill" style={{ width: `${cpuPercent}%` }}></div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Sparkline data={nodeHistory} dataKey="cpuPercent" color="#3b82f6" />
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                              <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
+                              <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{n.maxcpu}C</span>
                             </div>
-                            <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{n.maxcpu}C</span>
                           </div>
                         ) : "-"}
                       </td>
                       <td>
                         {isOnline ? (
-                          <div className="progress-bar-inline">
-                            <span className="progress-label">{ramPercent}%</span>
-                            <div className="progress-bar-container">
-                              <div className="progress-bar-fill" style={{ width: `${ramPercent}%`, background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)' }}></div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Sparkline data={nodeHistory} dataKey="ramPercent" color="#8b5cf6" />
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                              <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
+                              <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(n.maxmem)}</span>
                             </div>
-                            <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(n.maxmem)}</span>
                           </div>
                         ) : "-"}
                       </td>
@@ -99,8 +110,8 @@ export function ClusterSection({ cluster }) {
         </div>
       </div>
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} history={history} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} history={history} />
     </section>
   );
 }

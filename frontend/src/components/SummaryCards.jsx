@@ -1,24 +1,12 @@
 import React from 'react';
+import { TimeSeriesChart } from './TimeSeriesChart';
 
-export function SummaryCards({ clusters }) {
-  // Calcolo aggregati
-  let totalCpu = 0;
-  let maxCpu = 0;
-  let totalMem = 0;
-  let maxMem = 0;
+export function SummaryCards({ clusters, history }) {
+  // Calcolo aggregati live (per i contatori)
   let runningVMs = 0;
   let runningLXCs = 0;
 
   clusters.forEach(cluster => {
-    cluster.nodes?.forEach(n => {
-      if (n.status === 'online') {
-        totalCpu += (n.cpu || 0) * n.maxcpu;
-        maxCpu += n.maxcpu;
-        totalMem += (n.mem || 0);
-        maxMem += (n.maxmem || 0);
-      }
-    });
-
     cluster.resources?.forEach(r => {
       if (r.status === 'running') {
         if (r.type === 'VM') runningVMs++;
@@ -27,25 +15,45 @@ export function SummaryCards({ clusters }) {
     });
   });
 
-  const cpuPercent = maxCpu > 0 ? ((totalCpu / maxCpu) * 100).toFixed(1) : 0;
-  const memPercent = maxMem > 0 ? ((totalMem / maxMem) * 100).toFixed(1) : 0;
+  // Costruiamo i dati aggregati per la history
+  const historyData = history?.map(h => {
+    let tCpu = 0, mCpu = 0, tMem = 0, mMem = 0;
+    h.clusters.forEach(c => {
+       c.nodes?.forEach(n => {
+         if (n.status === 'online') {
+            tCpu += (n.cpu || 0) * n.maxcpu;
+            mCpu += n.maxcpu;
+            tMem += (n.mem || 0);
+            mMem += (n.maxmem || 0);
+         }
+       });
+    });
+    
+    return {
+      timestamp: h.timestamp,
+      cpuPercent: mCpu > 0 ? Number(((tCpu / mCpu) * 100).toFixed(1)) : 0,
+      memPercent: mMem > 0 ? Number(((tMem / mMem) * 100).toFixed(1)) : 0
+    };
+  }) || [];
 
   return (
-    <div className="summary-container">
-      <div className="glass-card stat-card">
-        <div className="stat-header">Total CPU Usage</div>
-        <div className="stat-value">{cpuPercent}%</div>
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: `${cpuPercent}%` }}></div>
-        </div>
+    <div className="summary-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="glass-card stat-card" style={{ padding: '1rem', display: 'flex', gridColumn: 'span 2' }}>
+        <TimeSeriesChart 
+          data={historyData} 
+          dataKey="cpuPercent" 
+          title="Total CPU Usage" 
+          color="#3b82f6" 
+        />
       </div>
 
-      <div className="glass-card stat-card">
-        <div className="stat-header">Total RAM Usage</div>
-        <div className="stat-value">{memPercent}%</div>
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: `${memPercent}%`, background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)' }}></div>
-        </div>
+      <div className="glass-card stat-card" style={{ padding: '1rem', display: 'flex', gridColumn: 'span 2' }}>
+        <TimeSeriesChart 
+          data={historyData} 
+          dataKey="memPercent" 
+          title="Total RAM Usage" 
+          color="#8b5cf6" 
+        />
       </div>
 
       <div className="glass-card stat-card" style={{ borderLeft: '4px solid #10b981' }}>
