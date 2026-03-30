@@ -50,7 +50,6 @@ function App() {
 
   const activeNodes = clusters.reduce((acc, c) => acc + (c.nodes?.filter(n => n.status === "online").length || 0), 0);
   const totalNodes = clusters.reduce((acc, c) => acc + (c.nodes?.length || 0), 0);
-  const runningVms = clusters.reduce((acc, c) => acc + (c.resources?.filter(r => r.type === "VM" && r.status === "running").length || 0), 0);
 
   return (
     <div className="app-container">
@@ -102,9 +101,6 @@ function App() {
             </div>
             <div className="status-chip">
               Nodes <strong>{activeNodes}/{totalNodes}</strong>
-            </div>
-            <div className="status-chip">
-              Running VMs <strong>{runningVms}</strong>
             </div>
           </div>
         </header>
