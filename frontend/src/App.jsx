@@ -70,7 +70,7 @@ function App() {
         onMouseLeave={() => setIsSidebarHovered(false)}
       >
         <div className="logo-container">
-          <div className="logo-icon">💠</div>
+          <img src="/logo.png" alt="Proxmox Atlas Logo" className="logo-icon-img" />
           <div className="logo-text-group">
             <h1 className="logo-title">Proxmox Atlas</h1>
             <span className="logo-subtitle">Monitoring Hub</span>

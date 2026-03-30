@@ -46,11 +46,13 @@
   padding-left: 0.5rem;
 }
 
-.logo-icon {
-  font-size: 1.5rem;
+.logo-icon-img {
+  width: 32px;
+  height: 32px;
   min-width: 32px;
-  text-align: center;
-  color: var(--accent);
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .logo-text-group {
