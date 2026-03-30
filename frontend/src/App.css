@@ -221,8 +221,9 @@
 .progress-label {
   font-family: var(--mono);
   font-size: 0.85rem;
-  min-width: 45px;
-  text-align: right;
+  width: 45px;
+  display: inline-block;
+  text-align: left;
   color: var(--text-secondary);
 }
 
