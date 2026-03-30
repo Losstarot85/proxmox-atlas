@@ -10,6 +10,8 @@ function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [forceCollapse, setForceCollapse] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -51,36 +53,54 @@ function App() {
   const activeNodes = clusters.reduce((acc, c) => acc + (c.nodes?.filter(n => n.status === "online").length || 0), 0);
   const totalNodes = clusters.reduce((acc, c) => acc + (c.nodes?.length || 0), 0);
 
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    setForceCollapse(true);
+    setIsSidebarHovered(false);
+  };
+
+  const isExpanded = isSidebarHovered && !forceCollapse;
+
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
-      <aside className="sidebar">
+      <aside 
+        className={`sidebar ${isExpanded ? 'expanded' : ''}`}
+        onMouseEnter={() => { setIsSidebarHovered(true); setForceCollapse(false); }}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+      >
         <div className="logo-container">
-          <h1 className="logo-title">Proxmox Atlas</h1>
-          <span className="logo-subtitle">Monitoring Hub</span>
+          <div className="logo-icon">💠</div>
+          <div className="logo-text-group">
+            <h1 className="logo-title">Proxmox Atlas</h1>
+            <span className="logo-subtitle">Monitoring Hub</span>
+          </div>
         </div>
         
         <nav className="nav-links">
           <button
             className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
-            onClick={() => setActiveTab("dashboard")}
+            onClick={() => handleNavClick("dashboard")}
+            title={!isExpanded ? "Dashboard" : ""}
           >
             <span className="nav-icon">📊</span>
-            Dashboard
+            <span className="nav-text">Dashboard</span>
           </button>
           <button
             className={`nav-item ${activeTab === "network" ? "active" : ""}`}
-            onClick={() => setActiveTab("network")}
+            onClick={() => handleNavClick("network")}
+            title={!isExpanded ? "Network IP" : ""}
           >
             <span className="nav-icon">🌐</span>
-            Network IP
+            <span className="nav-text">Network IP</span>
           </button>
           <button
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
-            onClick={() => setActiveTab("settings")}
+            onClick={() => handleNavClick("settings")}
+            title={!isExpanded ? "Settings" : ""}
           >
             <span className="nav-icon">⚙️</span>
-            Settings
+            <span className="nav-text">Settings</span>
           </button>
         </nav>
       </aside>
