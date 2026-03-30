@@ -12,7 +12,7 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
 
   const handleSave = async () => {
     if (intervalVal < 5) {
-      setError("L'intervallo minimo non può scendere sotto i 5 secondi.");
+      setError("Minimum polling interval cannot be lower than 5 seconds.");
       return;
     }
     
@@ -29,7 +29,7 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
       
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.detail || "Errore durante il salvataggio");
+        throw new Error(d.detail || "Error saving settings");
       }
       
       const data = await res.json();
@@ -56,51 +56,56 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
   };
 
   return (
-    <section className="settings-section">
-      <h2>Global Configurations</h2>
-      
-      <div className="settings-card">
-        <div className="setting-row">
+    <div className="settings-content">
+      <div className="glass-card">
+        <div className="setting-group">
           <div className="setting-info">
             <h3>Proxmox Polling Interval</h3>
             <p>
-              Tempo in secondi che il backend attende tra un resoconto dati e il successivo. 
-              Altera dinamicamente sia l'API fetching del frontend sia lo sforzo di rete backend.
+              Seconds to wait between backend data updates. Alters dynamically both frontend API fetching and backend network load on cluster hosts.
             </p>
           </div>
           <div className="setting-control">
             <input 
               type="number" 
-              className="number-input"
+              className="input-number"
               min="5"
               value={intervalVal} 
               onChange={e => setIntervalVal(parseInt(e.target.value, 10) || 5)} 
             />
-            <span className="unit">sec</span>
+            <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>sec</span>
           </div>
         </div>
 
-        <div className="alert-box warning-box">
-          <span className="alert-icon">⚠️</span>
+        <div className="alert-message alert-warning">
+          <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>⚠️</span>
           <div>
-            <strong>Attenzione al carico del Cluster</strong>
-            <p>Valori troppo bassi possono saturare `pveproxy` e generare delay infrastrutturali al pannello Proxmox VE.</p>
+            <strong style={{ display: "block", marginBottom: "0.25rem", color: "var(--text-primary)" }}>Cluster Load Warning</strong>
+            <span>Setting very low intervals might saturate `pveproxy` service and cause infrastructure delays on your Proxmox VE panels. Use with caution.</span>
           </div>
         </div>
 
-        {error && <p className="error">{error}</p>}
-        {success && <p className="success-msg">✅ Impostazioni salvate correttamente.</p>}
+        {error && (
+          <div className="alert-message global-error">
+            <span>❌</span>
+            <span>{error}</span>
+          </div>
+        )}
+        
+        {success && (
+          <p className="msg-success">✅ Global settings saved successfully.</p>
+        )}
 
-        <div className="settings-footer">
-          <button className="btn outline" onClick={handleDefault} disabled={isSaving}>Load Default (15s)</button>
-          <div className="settings-footer-right">
-            <button className="btn outline" onClick={handleCancel} disabled={isSaving}>Cancel</button>
-            <button className="btn primary" onClick={handleSave} disabled={isSaving}>
-               {isSaving ? "Saving..." : "Save Settings"}
+        <div className="settings-actions">
+          <button className="btn" onClick={handleDefault} disabled={isSaving}>Load Default (15s)</button>
+          <div className="actions-right">
+            <button className="btn" onClick={handleCancel} disabled={isSaving}>Cancel</button>
+            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+               {isSaving ? "Saving..." : "Save Configuration"}
             </button>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

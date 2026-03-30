@@ -15,7 +15,7 @@ export function NetworkTab() {
       setClusters(data.clusters || []);
       setLastUpdate(data.last_update);
     } catch (err) {
-      console.error("Errore fetch network:", err);
+      console.error("Fetch network error:", err);
     } finally {
       setLoading(false);
     }
@@ -28,7 +28,6 @@ export function NetworkTab() {
     }
   }, []);
 
-  // Filtra le risorse per ogni cluster in base al termine di ricerca
   const filteredClusters = clusters.map(cluster => ({
     ...cluster,
     resources: cluster.resources.filter(r => {
@@ -37,95 +36,106 @@ export function NetworkTab() {
       const matchIp = r.ips.some(ip => ip.ip.includes(term));
       return matchName || matchIp;
     })
-  })).filter(cluster =>
-    search === "" || cluster.resources.length > 0
-  );
+  })).filter(cluster => search === "" || cluster.resources.length > 0);
 
   return (
-    <section>
-      <h2>Network</h2>
-
+    <div className="network-tab">
       <div className="network-toolbar">
         <input
           type="text"
-          className="network-search"
-          placeholder="Cerca per nome o indirizzo IP..."
+          className="search-input"
+          placeholder="Search by name or IP address..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <button
-          className="refresh-button"
+          className="btn btn-primary"
           onClick={fetchNetwork}
           disabled={loading}
         >
-          {loading ? "Aggiornamento..." : "↻ Refresh"}
+          {loading ? "Refreshing..." : "↻ Refresh Data"}
         </button>
       </div>
 
       {lastUpdate && (
-        <p className="subtitle" style={{ marginBottom: "16px" }}>
-          Ultimo aggiornamento: {lastUpdate}
+        <p className="last-update" style={{ marginBottom: "2rem" }}>
+          Last synchronization: {lastUpdate}
         </p>
       )}
 
       {loading && !clusters.length ? (
-        <p className="network-loading">Recupero indirizzi IP in corso...</p>
+        <div className="loading-view" style={{ height: "40vh" }}>
+          <div className="spinner"></div>
+          <p>Retrieving network interfaces and IP addresses...</p>
+        </div>
       ) : filteredClusters.length === 0 ? (
-        <p className="network-loading">Nessun risultato trovato</p>
+        <div className="empty-state" style={{ marginTop: "4rem" }}>
+          No network resources found matching your search.
+        </div>
       ) : (
         filteredClusters.map(cluster => (
           <div key={cluster.name} className="cluster-section">
             <div className="cluster-header">
-              <h3>{cluster.name}</h3>
+              <h2>{cluster.name}</h2>
             </div>
 
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Node</th>
-                  <th>IP Addresses</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cluster.resources.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="empty-row">
-                      Nessuna risorsa attiva
-                    </td>
-                  </tr>
-                ) : (
-                  cluster.resources.map(r => (
-                    <tr key={`${r.type}-${r.vmid}`}>
-                      <td>{r.vmid}</td>
-                      <td>{r.name}</td>
-                      <td>{r.type}</td>
-                      <td>{r.node}</td>
-                      <td>
-                        {!r.agent_available ? (
-                          <span className="agent-unavailable">
-                            {r.type === "VM" ? "⚠️ Agent non disponibile" : "⚠️ Non raggiungibile"}
-                          </span>
-                        ) : r.ips.length === 0 ? (
-                          <span className="no-ips">Nessun IP trovato</span>
-                        ) : (
-                          <ul className="ip-list">
-                            {r.ips.map((ip, i) => (
-                              <li key={i}>{ip.interface}: <span className="mono">{ip.ip}</span>/{ip.prefix}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </td>
+            <div className="table-wrapper">
+              <div className="responsive-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Node</th>
+                      <th>IP Addresses</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {cluster.resources.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="empty-state">
+                          No active resources found
+                        </td>
+                      </tr>
+                    ) : (
+                      cluster.resources.map(r => (
+                        <tr key={`${r.type}-${r.vmid}`}>
+                          <td className="mono-cell">{r.vmid}</td>
+                          <td style={{ fontWeight: 500 }}>{r.name}</td>
+                          <td>
+                            <span className="badge" style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)"}}>
+                              {r.type}
+                            </span>
+                          </td>
+                          <td>{r.node}</td>
+                          <td>
+                            {!r.agent_available ? (
+                              <span className="text-warning">
+                                {r.type === "VM" ? "⚠️ QEMU Guest Agent not running" : "⚠️ Interface details unreachable"}
+                              </span>
+                            ) : r.ips.length === 0 ? (
+                              <span className="text-muted">No external IPs detected</span>
+                            ) : (
+                              <ul className="ip-list">
+                                {r.ips.map((ip, i) => (
+                                  <li key={i}>
+                                    <span style={{color: 'var(--text-secondary)'}}>{ip.interface}:</span> <span className="mono-cell" style={{color: 'var(--text-primary)'}}>{ip.ip}</span><span style={{color: 'var(--text-secondary)'}}>/{ip.prefix}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         ))
       )}
-    </section>
+    </div>
   );
 }
