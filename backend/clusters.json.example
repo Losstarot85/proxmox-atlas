@@ -3,12 +3,15 @@
     "name": "Cluster Lab 1",
     "host": "https://192.168.1.1:8006",
     "token_id": "root@pam!atlas",
-    "token_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    "token_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "verify_ssl": false
   },
   {
-    "name": "Cluster Lab 2",
-    "host": "https://192.168.1.2:8006",
+    "name": "Cluster Lab 2 (PKI aziendale)",
+    "host": "https://proxmox.example.com:8006",
     "token_id": "root@pam!atlas",
-    "token_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    "token_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "verify_ssl": true
   }
 ]
+

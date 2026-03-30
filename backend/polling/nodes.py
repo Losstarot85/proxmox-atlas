@@ -8,10 +8,11 @@ async def fetch_nodes_from_proxmox(cluster: dict):
     cluster_name = cluster["name"]
     host = cluster["host"]
     headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
+    verify_ssl = cluster.get("verify_ssl", False)
     url = f"{host}/api2/json/nodes"
 
     try:
-        async with httpx.AsyncClient(verify=False, timeout=10.0) as client:
+        async with httpx.AsyncClient(verify=verify_ssl, timeout=10.0) as client:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
             raw_data = response.json().get("data", [])

@@ -9,12 +9,13 @@ async def fetch_resources_from_proxmox(cluster: dict):
     cluster_name = cluster["name"]
     host = cluster["host"]
     headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
+    verify_ssl = cluster.get("verify_ssl", False)
     all_resources = []
     failed_nodes = []
     resource_types = ["qemu", "lxc"]
 
     try:
-        async with httpx.AsyncClient(verify=False, timeout=10.0) as client:
+        async with httpx.AsyncClient(verify=verify_ssl, timeout=10.0) as client:
             nodes = cache[cluster_name]["nodes"]
 
             for node in nodes:
