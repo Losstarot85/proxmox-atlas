@@ -25,10 +25,17 @@ export function TimeSeriesChart({ data, dataKey, color = "#3b82f6", title, value
             <XAxis dataKey="timestamp" hide />
             <YAxis hide domain={[0, 100]} />
             <Tooltip 
-              contentStyle={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
-              itemStyle={{ color: color }}
+              contentStyle={{ 
+                backgroundColor: 'rgba(15, 15, 20, 0.95)', 
+                borderColor: color, 
+                borderWidth: '1px',
+                color: '#ececec', 
+                borderRadius: '8px',
+                boxShadow: `0 4px 15px ${color}33`
+              }}
+              itemStyle={{ color: color, fontWeight: 'bold', fontSize: '1.1rem' }}
               formatter={(val) => valueFormatter ? valueFormatter(val) : `${val}%`}
-              labelStyle={{ color: 'var(--text-secondary)' }}
+              labelStyle={{ color: '#a0a0a0', fontSize: '0.85rem', marginBottom: '4px' }}
             />
             <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#color${dataKey})`} isAnimationActive={false} />
           </AreaChart>
