@@ -4,6 +4,7 @@ services:
     container_name: proxmox-backend
     volumes:
       - ./backend:/app
+      - prometheus_config:/etc/prometheus
     ports:
       - "8000:8000"
     healthcheck:
@@ -28,3 +29,23 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: proxmox-prometheus
+    volumes:
+      - prometheus_config:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+
+volumes:
+  prometheus_config:
+  prometheus_data:

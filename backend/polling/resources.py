@@ -83,6 +83,19 @@ async def fetch_resources_from_proxmox(cluster: dict):
         cache[cluster_name]["failed_nodes"] = failed_nodes
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        from metrics import VM_CPU, VM_MEM_TOTAL, VM_MEM_USED, VM_DISK_READ, VM_DISK_WRITE, VM_NET_IN, VM_NET_OUT, VM_UPTIME
+        for r in all_resources:
+            lbls = {"cluster": cluster_name, "node": r["node"], "vmid": str(r["vmid"]), "type": r["type"], "name": r["name"]}
+            VM_CPU.labels(**lbls).set(r["cpu"])
+            VM_MEM_TOTAL.labels(**lbls).set(r["maxmem"])
+            VM_MEM_USED.labels(**lbls).set(r["mem"])
+            VM_DISK_READ.labels(**lbls).set(r["diskread"])
+            VM_DISK_WRITE.labels(**lbls).set(r["diskwrite"])
+            VM_NET_IN.labels(**lbls).set(r["netin"])
+            VM_NET_OUT.labels(**lbls).set(r["netout"])
+            if r.get("uptime") is not None:
+                VM_UPTIME.labels(**lbls).set(r["uptime"])
+
         if failed_nodes:
             cache[cluster_name]["error"] = f"Nodi parzialmente irraggiungibili: {', '.join(failed_nodes)}"
         else:

@@ -4,6 +4,7 @@ import { ClusterSection } from "./components/ClusterSection";
 import { NetworkTab } from "./components/NetworkTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { SummaryCards } from "./components/SummaryCards";
+import { TimeMachineModal } from "./components/TimeMachineModal";
 import "./App.css";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
+  const [timeMachineTarget, setTimeMachineTarget] = useState(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -136,7 +138,12 @@ function App() {
           <>
             <SummaryCards clusters={clusters} history={history} />
             {clusters.map((cluster) => (
-              <ClusterSection key={cluster.name} cluster={cluster} history={history} />
+              <ClusterSection 
+                key={cluster.name} 
+                cluster={cluster} 
+                history={history} 
+                onOpenTimeMachine={setTimeMachineTarget} 
+              />
             ))}
           </>
         )}
@@ -150,6 +157,11 @@ function App() {
           />
         )}
       </main>
+
+      <TimeMachineModal 
+        target={timeMachineTarget} 
+        onClose={() => setTimeMachineTarget(null)} 
+      />
     </div>
   );
 }

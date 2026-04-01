@@ -63,6 +63,15 @@ async def fetch_nodes_from_proxmox(cluster: dict):
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cache[cluster_name]["error"] = None
 
+        from metrics import NODE_CPU, NODE_MEM_TOTAL, NODE_MEM_USED, NODE_UPTIME
+        for n in nodes:
+            NODE_CPU.labels(cluster=cluster_name, node=n["name"]).set(n["cpu"])
+            NODE_MEM_TOTAL.labels(cluster=cluster_name, node=n["name"]).set(n["maxmem"])
+            NODE_MEM_USED.labels(cluster=cluster_name, node=n["name"]).set(n["mem"])
+            if "uptime" in n:
+                NODE_UPTIME.labels(cluster=cluster_name, node=n["name"]).set(n["uptime"])
+
+
         print(f"[INFO] [{cluster_name}] Nodes aggiornati: {len(nodes)} nodi")
 
     except httpx.RequestError:

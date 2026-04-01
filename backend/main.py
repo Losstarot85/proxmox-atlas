@@ -8,6 +8,10 @@ from routes import router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from prometheus_config import generate_prometheus_config
+    # Genera la configurazione Prometheus all'avvio assicurandosi sia in sync col polling
+    generate_prometheus_config()
+    
     task = asyncio.create_task(poll_proxmox())
     yield
     task.cancel()
@@ -22,6 +26,11 @@ app = FastAPI(
     description="Multi-cluster monitoring dashboard for Proxmox VE",
     lifespan=lifespan
 )
+
+from prometheus_client import make_asgi_app
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
+
 
 
 @app.get("/")

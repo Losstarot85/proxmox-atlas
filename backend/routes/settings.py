@@ -13,7 +13,7 @@ def get_settings():
     return SETTINGS
 
 @router.post("/settings")
-def update_settings(data: SettingsUpdate):
+async def update_settings(data: SettingsUpdate):
     """Aggiorna le impostazioni."""
     if data.polling_interval < 5:
         raise HTTPException(status_code=400, detail="Il polling interval minimo consentito è 5 secondi per non sovraccaricare Proxmox.")
@@ -23,4 +23,9 @@ def update_settings(data: SettingsUpdate):
     }
     
     save_settings(new_settings)
+    
+    from prometheus_config import generate_prometheus_config, reload_prometheus_config
+    generate_prometheus_config()
+    await reload_prometheus_config()
+    
     return {"message": "Impostazioni aggiornate con successo", "settings": SETTINGS}

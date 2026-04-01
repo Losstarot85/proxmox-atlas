@@ -3,7 +3,7 @@ import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } f
 import { Sparkline } from "./Sparkline";
 
 // Sotto-componente per le risorse (VM, LXC) con metriche
-export function ResourceSection({ title, typeFilter, resources, clusterName, history }) {
+export function ResourceSection({ title, typeFilter, resources, clusterName, history, onOpenTimeMachine }) {
   const filtered = resources.filter(r => r.type === typeFilter);
 
   return (
@@ -46,7 +46,12 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                   }) || [];
 
                   return (
-                    <tr key={`${r.type}-${r.vmid}`}>
+                    <tr 
+                      key={`${r.type}-${r.vmid}`}
+                      onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: 'VM', name: r.name })}
+                      style={{ cursor: 'pointer' }}
+                      className="hoverable-row"
+                    >
                       <td className="mono-cell">{r.vmid}</td>
                       <td style={{ fontWeight: 500 }}>{r.name}</td>
                       <td>

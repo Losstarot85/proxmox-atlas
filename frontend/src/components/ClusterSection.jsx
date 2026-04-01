@@ -3,7 +3,7 @@ import { ResourceSection } from "./ResourceSection";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 
-export function ClusterSection({ cluster, history }) {
+export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
   return (
     <section className="cluster-section">
       <div className="cluster-header">
@@ -66,7 +66,12 @@ export function ClusterSection({ cluster, history }) {
                   }) || [];
 
                   return (
-                    <tr key={n.name}>
+                    <tr 
+                      key={n.name} 
+                      onClick={() => onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
+                      style={{ cursor: 'pointer' }}
+                      className="hoverable-row"
+                    >
                       <td style={{ fontWeight: 500 }}>{n.name}</td>
                       <td>
                         {isOnline 
@@ -110,8 +115,8 @@ export function ClusterSection({ cluster, history }) {
         </div>
       </div>
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} history={history} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} history={history} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} history={history} onOpenTimeMachine={onOpenTimeMachine} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} history={history} onOpenTimeMachine={onOpenTimeMachine} />
     </section>
   );
 }
