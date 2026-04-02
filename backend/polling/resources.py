@@ -60,17 +60,17 @@ async def fetch_resources_from_proxmox(cluster: dict):
                                 "type": "VM" if r_type == "qemu" else "LXC",
                                 "status": item.get("status"),
                                 "uptime": item.get("uptime"),
-                                "cpu": item.get("cpu", 0.0),
-                                "maxcpu": item.get("maxcpu", 1),
-                                "mem": item.get("mem", 0),
-                                "maxmem": item.get("maxmem", 0),
-                                "netin": item.get("netin", 0),
-                                "netout": item.get("netout", 0),
-                                "diskread": item.get("diskread", 0),
-                                "diskwrite": item.get("diskwrite", 0),
-                                "pressure_cpu": float(item.get("pressurecpusome", 0)),
-                                "pressure_ram": float(item.get("pressurememorysome", 0)),
-                                "pressure_io": float(item.get("pressureiosome", 0))
+                                "cpu": float(item.get("cpu") or 0.0),
+                                "maxcpu": float(item.get("maxcpu") or 1.0),
+                                "mem": float(item.get("mem") or 0.0),
+                                "maxmem": float(item.get("maxmem") or 0.0),
+                                "netin": float(item.get("netin") or 0.0),
+                                "netout": float(item.get("netout") or 0.0),
+                                "diskread": float(item.get("diskread") or 0.0),
+                                "diskwrite": float(item.get("diskwrite") or 0.0),
+                                "pressure_cpu": float(item.get("pressurecpusome") or 0.0),
+                                "pressure_ram": float(item.get("pressurememorysome") or 0.0),
+                                "pressure_io": float(item.get("pressureiosome") or 0.0)
                             })
                     except Exception as e:
                         print(f"[ERROR] [{cluster_name}] Nodo {node_name} ({r_type}): {e}")
