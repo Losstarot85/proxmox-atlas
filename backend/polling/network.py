@@ -63,3 +63,37 @@ async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host
         result["agent_available"] = False
 
     return result
+
+import asyncio
+from cache import cache
+
+async def update_network_ips_for_cluster(cluster: dict):
+    cluster_name = cluster["name"]
+    host = cluster["host"]
+    headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
+    verify_ssl = cluster.get("verify_ssl", False)
+    
+    running_resources = [
+        r for r in cache[cluster_name].get("resources", [])
+        if r.get("status") == "running"
+    ]
+    
+    if not running_resources:
+        cache[cluster_name]["network"] = []
+        return
+        
+    try:
+        async with httpx.AsyncClient(verify=verify_ssl, timeout=10.0) as client:
+            sem = asyncio.Semaphore(10)
+            
+            async def fetch_with_sem(r):
+                async with sem:
+                    return await fetch_ips_for_resource(client, r, host, headers)
+            
+            tasks = [fetch_with_sem(r) for r in running_resources]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            valid_results = [res for res in results if not isinstance(res, Exception)]
+            cache[cluster_name]["network"] = valid_results
+    except Exception as e:
+        print(f"[ERROR Network Polling] {cluster_name}: {e}")

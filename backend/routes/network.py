@@ -15,22 +15,10 @@ async def get_network():
 
     for cluster in CLUSTERS:
         cluster_name = cluster["name"]
-        host = cluster["host"]
-        headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
-        verify_ssl = cluster.get("verify_ssl", False)
-
-        running_resources = [
-            r for r in cache[cluster_name]["resources"]
-            if r["status"] == "running"
-        ]
-
-        async with httpx.AsyncClient(verify=verify_ssl) as client:
-            tasks = [fetch_ips_for_resource(client, r, host, headers) for r in running_resources]
-            results = await asyncio.gather(*tasks)
-
+        
         results_by_cluster.append({
             "name": cluster_name,
-            "resources": list(results)
+            "resources": cache[cluster_name].get("network", [])
         })
 
     return {

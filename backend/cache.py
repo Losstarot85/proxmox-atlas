@@ -5,6 +5,7 @@ cache = {
     cluster["name"]: {
         "nodes": [],
         "resources": [],
+        "network": [],
         "last_update": None,
         "error": None,
         "failed_nodes": []

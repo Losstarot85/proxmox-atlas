@@ -33,3 +33,6 @@ async def poll_cluster(cluster: dict):
     """Polling sequenziale di un singolo cluster: prima nodi, poi risorse."""
     await fetch_nodes_from_proxmox(cluster)
     await fetch_resources_from_proxmox(cluster)
+    
+    from polling.network import update_network_ips_for_cluster
+    await update_network_ips_for_cluster(cluster)
