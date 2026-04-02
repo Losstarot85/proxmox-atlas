@@ -64,14 +64,35 @@ async def fetch_nodes_from_proxmox(cluster: dict):
         cache[cluster_name]["error"] = None
 
         from metrics import NODE_CPU, NODE_MEM_TOTAL, NODE_MEM_USED, NODE_UPTIME
+        
+        if "active_node_labels" not in cache[cluster_name]:
+            cache[cluster_name]["active_node_labels"] = set()
+            
+        current_node_labels = set()
+
         for n in nodes:
-            NODE_CPU.labels(cluster=cluster_name, node=n["name"]).set(n["cpu"])
-            NODE_MEM_TOTAL.labels(cluster=cluster_name, node=n["name"]).set(n["maxmem"])
-            NODE_MEM_USED.labels(cluster=cluster_name, node=n["name"]).set(n["mem"])
+            lbls = {"cluster": cluster_name, "node": n["name"]}
+            current_node_labels.add(tuple(lbls.items()))
+            
+            NODE_CPU.labels(**lbls).set(n["cpu"])
+            NODE_MEM_TOTAL.labels(**lbls).set(n["maxmem"])
+            NODE_MEM_USED.labels(**lbls).set(n["mem"])
             if "uptime" in n:
-                NODE_UPTIME.labels(cluster=cluster_name, node=n["name"]).set(n["uptime"])
+                NODE_UPTIME.labels(**lbls).set(n["uptime"])
 
-
+        # Pulizia Ghost Metrics
+        for labels_tuple in cache[cluster_name]["active_node_labels"] - current_node_labels:
+            old_lbls = dict(labels_tuple)
+            lv = (old_lbls["cluster"], old_lbls["node"])
+            try:
+                NODE_CPU.remove(*lv)
+                NODE_MEM_TOTAL.remove(*lv)
+                NODE_MEM_USED.remove(*lv)
+                NODE_UPTIME.remove(*lv)
+            except KeyError:
+                pass
+                
+        cache[cluster_name]["active_node_labels"] = current_node_labels
         print(f"[INFO] [{cluster_name}] Nodes aggiornati: {len(nodes)} nodi")
 
     except httpx.RequestError:

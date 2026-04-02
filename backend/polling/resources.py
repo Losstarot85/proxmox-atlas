@@ -84,8 +84,16 @@ async def fetch_resources_from_proxmox(cluster: dict):
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         from metrics import VM_CPU, VM_MEM_TOTAL, VM_MEM_USED, VM_DISK_READ, VM_DISK_WRITE, VM_NET_IN, VM_NET_OUT, VM_UPTIME
+        
+        if "active_vm_labels" not in cache[cluster_name]:
+            cache[cluster_name]["active_vm_labels"] = set()
+            
+        current_vm_labels = set()
+        
         for r in all_resources:
             lbls = {"cluster": cluster_name, "node": r["node"], "vmid": str(r["vmid"]), "type": r["type"], "name": r["name"]}
+            current_vm_labels.add(tuple(lbls.items()))
+            
             VM_CPU.labels(**lbls).set(r["cpu"])
             VM_MEM_TOTAL.labels(**lbls).set(r["maxmem"])
             VM_MEM_USED.labels(**lbls).set(r["mem"])
@@ -96,6 +104,24 @@ async def fetch_resources_from_proxmox(cluster: dict):
             if r.get("uptime") is not None:
                 VM_UPTIME.labels(**lbls).set(r["uptime"])
 
+        # Pulizia Ghost Metrics
+        for labels_tuple in cache[cluster_name]["active_vm_labels"] - current_vm_labels:
+            old_lbls = dict(labels_tuple)
+            lv = (old_lbls["cluster"], old_lbls["node"], old_lbls["vmid"], old_lbls["type"], old_lbls["name"])
+            try:
+                VM_CPU.remove(*lv)
+                VM_MEM_TOTAL.remove(*lv)
+                VM_MEM_USED.remove(*lv)
+                VM_DISK_READ.remove(*lv)
+                VM_DISK_WRITE.remove(*lv)
+                VM_NET_IN.remove(*lv)
+                VM_NET_OUT.remove(*lv)
+                VM_UPTIME.remove(*lv)
+            except KeyError:
+                pass
+                
+        cache[cluster_name]["active_vm_labels"] = current_vm_labels
+        
         if failed_nodes:
             cache[cluster_name]["error"] = f"Nodi parzialmente irraggiungibili: {', '.join(failed_nodes)}"
         else:
