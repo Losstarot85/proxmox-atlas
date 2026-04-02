@@ -33,7 +33,8 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                     "iowait": 0.0,
                     "pressure_cpu": 0.0,
                     "pressure_ram": 0.0,
-                    "pressure_io": 0.0
+                    "pressure_io": 0.0,
+                    "uptime": n.get("uptime")
                 }
 
                 if node_item["status"] == "online":
