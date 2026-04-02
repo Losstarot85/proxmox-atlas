@@ -52,16 +52,16 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
               ) : (
                 cluster.nodes.map(n => {
                   const isOnline = n.status === "online";
-                  const cpuPercent = isOnline && n.maxcpu > 0 ? (n.cpu * 100).toFixed(1) : 0;
-                  const ramPercent = isOnline && n.maxmem > 0 ? (n.mem / n.maxmem * 100).toFixed(1) : 0;
+                  const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
+                  const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
 
                   const nodeHistory = history?.map(h => {
                      const clusterMatch = h.clusters?.find(c => c.name === cluster.name);
                      const nodeMatch = clusterMatch?.nodes?.find(nd => nd.name === n.name);
                      return {
                        timestamp: h.timestamp,
-                       cpuPercent: nodeMatch && nodeMatch.maxcpu > 0 ? Number((nodeMatch.cpu * 100).toFixed(1)) : 0,
-                       ramPercent: nodeMatch && nodeMatch.maxmem > 0 ? Number((nodeMatch.mem / nodeMatch.maxmem * 100).toFixed(1)) : 0
+                       cpuPercent: nodeMatch && nodeMatch.maxcpu > 0 ? Number(((nodeMatch.cpu || 0) * 100).toFixed(1)) : 0,
+                       ramPercent: nodeMatch && nodeMatch.maxmem > 0 ? Number(((nodeMatch.mem || 0) / nodeMatch.maxmem * 100).toFixed(1)) : 0
                      };
                   }) || [];
 
