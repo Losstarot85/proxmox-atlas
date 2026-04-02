@@ -14,6 +14,9 @@ async def get_time_machine_data(
     step: int = Query(60, description="Step in secondi per aggregazione")
 ):
     """Interroga Prometheus per ricavare lo storico."""
+    window = max(300, step * 2)
+    window_str = f"{window}s"
+
     # Lista delle query in base al tipo
     queries = []
     if target_type.upper() == "NODE":
@@ -27,10 +30,10 @@ async def get_time_machine_data(
         queries = [
             ("cpu", f'proxmox_vm_cpu_usage_ratio{{vmid="{target_id}"}} * 100'),
             ("mem_used", f'proxmox_vm_mem_used_bytes{{vmid="{target_id}"}}'),
-            ("disk_read", f'irate(proxmox_vm_disk_read_bytes{{vmid="{target_id}"}}[5m])'),
-            ("disk_write", f'irate(proxmox_vm_disk_write_bytes{{vmid="{target_id}"}}[5m])'),
-            ("net_in", f'irate(proxmox_vm_net_in_bytes{{vmid="{target_id}"}}[5m])'),
-            ("net_out", f'irate(proxmox_vm_net_out_bytes{{vmid="{target_id}"}}[5m])'),
+            ("disk_read", f'rate(proxmox_vm_disk_read_bytes{{vmid="{target_id}"}}[{window_str}])'),
+            ("disk_write", f'rate(proxmox_vm_disk_write_bytes{{vmid="{target_id}"}}[{window_str}])'),
+            ("net_in", f'rate(proxmox_vm_net_in_bytes{{vmid="{target_id}"}}[{window_str}])'),
+            ("net_out", f'rate(proxmox_vm_net_out_bytes{{vmid="{target_id}"}}[{window_str}])'),
         ]
 
     results = []
@@ -45,7 +48,7 @@ async def get_time_machine_data(
                         "end": end,
                         "step": step
                     },
-                    timeout=10.0
+                    timeout=30.0
                 )
                 res.raise_for_status()
                 data = res.json()
