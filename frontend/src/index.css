@@ -38,9 +38,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-hover: rgba(255, 255, 255, 1);
+  --border: rgba(0, 0, 0, 0.1);
+  --border-accent: rgba(168, 85, 247, 0.4);
+  --accent: #9333ea;
+  --accent-light: #a855f7;
+  --accent-dark: #6b21a8;
+  --accent-glow: rgba(168, 85, 247, 0.15);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 15px rgba(168, 85, 247, 0.15);
+  
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {

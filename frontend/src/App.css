@@ -184,6 +184,30 @@
   font-family: var(--mono);
 }
 
+.theme-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.theme-toggle:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+  transform: rotate(15deg);
+}
+
 .global-error {
   background: var(--danger-bg);
   border: 1px solid var(--danger);

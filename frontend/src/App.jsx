@@ -15,6 +15,20 @@ function App() {
   const [forceCollapse, setForceCollapse] = useState(false);
   const [timeMachineTarget, setTimeMachineTarget] = useState(null);
 
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("atlas-theme");
+    if (saved) return saved;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return "light";
+    }
+    return "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("atlas-theme", theme);
+  }, [theme]);
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -124,6 +138,13 @@ function App() {
             <div className="status-chip">
               Nodes <strong>{activeNodes}/{totalNodes}</strong>
             </div>
+            <button 
+              className="theme-toggle" 
+              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
           </div>
         </header>
 
