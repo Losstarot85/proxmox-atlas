@@ -18,66 +18,74 @@ async def fetch_resources_from_proxmox(cluster: dict):
         async with httpx.AsyncClient(verify=verify_ssl, timeout=10.0) as client:
             nodes = cache[cluster_name]["nodes"]
 
+            async def fetch_node_resources(node_name, r_type):
+                try:
+                    res = await client.get(
+                        f"{host}/api2/json/nodes/{node_name}/{r_type}",
+                        headers=headers
+                    )
+                    res.raise_for_status()
+                    items = res.json().get("data", [])
+                    
+                    if r_type == "qemu":
+                        running_vms = [item for item in items if item.get("status") == "running"]
+                        async def fetch_qemu_disk_io(vm_item):
+                            try:
+                                vmid = vm_item.get("vmid")
+                                status_res = await client.get(
+                                    f"{host}/api2/json/nodes/{node_name}/qemu/{vmid}/status/current",
+                                    headers=headers
+                                )
+                                status_res.raise_for_status()
+                                status_data = status_res.json().get("data", {})
+                                vm_item["diskread"] = status_data.get("diskread", 0)
+                                vm_item["diskwrite"] = status_data.get("diskwrite", 0)
+                            except Exception as e:
+                                print(f"[ERROR] [{cluster_name}] Dettagli I/O per VM {vmid}: {e}")
+
+                        if running_vms:
+                            await asyncio.gather(*(fetch_qemu_disk_io(vm) for vm in running_vms))
+                            
+                    return {"node_name": node_name, "r_type": r_type, "items": items, "error": None}
+                except Exception as e:
+                    return {"node_name": node_name, "r_type": r_type, "items": [], "error": str(e)}
+
+            tasks = []
             for node in nodes:
                 node_name = node["name"]
-                node_failed = False
-
                 for r_type in resource_types:
-                    try:
-                        res = await client.get(
-                            f"{host}/api2/json/nodes/{node_name}/{r_type}",
-                            headers=headers
-                        )
-                        res.raise_for_status()
-                        items = res.json().get("data", [])
-                        
-                        if r_type == "qemu":
-                            running_vms = [item for item in items if item.get("status") == "running"]
-                            
-                            async def fetch_qemu_disk_io(vm_item):
-                                try:
-                                    vmid = vm_item.get("vmid")
-                                    status_res = await client.get(
-                                        f"{host}/api2/json/nodes/{node_name}/qemu/{vmid}/status/current",
-                                        headers=headers
-                                    )
-                                    status_res.raise_for_status()
-                                    status_data = status_res.json().get("data", {})
-                                    vm_item["diskread"] = status_data.get("diskread", 0)
-                                    vm_item["diskwrite"] = status_data.get("diskwrite", 0)
-                                except Exception as e:
-                                    print(f"[ERROR] [{cluster_name}] Dettagli I/O per VM {vmid}: {e}")
-
-                            if running_vms:
-                                await asyncio.gather(*(fetch_qemu_disk_io(vm) for vm in running_vms))
-
-                        for item in items:
-                            all_resources.append({
-                                "vmid": item.get("vmid"),
-                                "name": item.get("name"),
-                                "node": node_name,
-                                "cluster": cluster_name,
-                                "type": "VM" if r_type == "qemu" else "LXC",
-                                "status": item.get("status"),
-                                "uptime": item.get("uptime"),
-                                "cpu": float(item.get("cpu") or 0.0),
-                                "maxcpu": float(item.get("maxcpu") or 1.0),
-                                "mem": float(item.get("mem") or 0.0),
-                                "maxmem": float(item.get("maxmem") or 0.0),
-                                "netin": float(item.get("netin") or 0.0),
-                                "netout": float(item.get("netout") or 0.0),
-                                "diskread": float(item.get("diskread") or 0.0),
-                                "diskwrite": float(item.get("diskwrite") or 0.0),
-                                "pressure_cpu": float(item.get("pressurecpusome") or 0.0),
-                                "pressure_ram": float(item.get("pressurememorysome") or 0.0),
-                                "pressure_io": float(item.get("pressureiosome") or 0.0)
-                            })
-                    except Exception as e:
-                        print(f"[ERROR] [{cluster_name}] Nodo {node_name} ({r_type}): {e}")
-                        node_failed = True
-
-                if node_failed and node_name not in failed_nodes:
-                    failed_nodes.append(node_name)
+                    tasks.append(fetch_node_resources(node_name, r_type))
+            
+            results = await asyncio.gather(*tasks)
+            
+            for r in results:
+                node_name = r["node_name"]
+                if r["error"]:
+                    print(f"[ERROR] [{cluster_name}] Nodo {node_name} ({r['r_type']}): {r['error']}")
+                    if node_name not in failed_nodes:
+                        failed_nodes.append(node_name)
+                else:
+                    for item in r["items"]:
+                        all_resources.append({
+                            "vmid": item.get("vmid"),
+                            "name": item.get("name"),
+                            "node": node_name,
+                            "cluster": cluster_name,
+                            "type": "VM" if r["r_type"] == "qemu" else "LXC",
+                            "status": item.get("status"),
+                            "uptime": item.get("uptime"),
+                            "cpu": float(item.get("cpu") or 0.0),
+                            "maxcpu": float(item.get("maxcpu") or 1.0),
+                            "mem": float(item.get("mem") or 0.0),
+                            "maxmem": float(item.get("maxmem") or 0.0),
+                            "netin": float(item.get("netin") or 0.0),
+                            "netout": float(item.get("netout") or 0.0),
+                            "diskread": float(item.get("diskread") or 0.0),
+                            "diskwrite": float(item.get("diskwrite") or 0.0),
+                            "pressure_cpu": float(item.get("pressurecpusome") or 0.0),
+                            "pressure_ram": float(item.get("pressurememorysome") or 0.0),
+                            "pressure_io": float(item.get("pressureiosome") or 0.0)
+                        })
 
         cache[cluster_name]["resources"] = all_resources
         cache[cluster_name]["failed_nodes"] = failed_nodes
