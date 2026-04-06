@@ -7,6 +7,7 @@ import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
 import { TimeMachineModal } from "./components/TimeMachineModal";
 import { CommandPalette } from "./components/CommandPalette";
+import { TopologyTab } from "./components/TopologyTab";
 import "./App.css";
 
 function App() {
@@ -135,6 +136,14 @@ function App() {
             <span className="nav-text">Dashboard</span>
           </button>
           <button
+            className={`nav-item ${activeTab === "topology" ? "active" : ""}`}
+            onClick={() => handleNavClick("topology")}
+            title={!isExpanded ? "Topology" : ""}
+          >
+            <span className="nav-icon">🌍</span>
+            <span className="nav-text">Topology</span>
+          </button>
+          <button
             className={`nav-item ${activeTab === "network" ? "active" : ""}`}
             onClick={() => handleNavClick("network")}
             title={!isExpanded ? "Network IP" : ""}
@@ -187,6 +196,7 @@ function App() {
           <div>
             <h2 className="page-title">
               {activeTab === 'dashboard' && 'Dashboard Overview'}
+              {activeTab === 'topology' && 'Cluster Topology'}
               {activeTab === 'network' && 'Network Intelligence'}
               {activeTab === 'alerts' && 'Notification Center'}
               {activeTab === 'settings' && 'Global Configurations'}
@@ -228,6 +238,13 @@ function App() {
               />
             ))}
           </>
+        )}
+
+        {activeTab === "topology" && (
+           <TopologyTab 
+             clusters={clusters} 
+             onOpenTimeMachine={setTimeMachineTarget} 
+           />
         )}
 
         {activeTab === "network" && <NetworkTab />}
