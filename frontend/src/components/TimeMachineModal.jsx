@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { UptimeHeatmap } from "./UptimeHeatmap";
 import "./TimeMachineModal.css";
 
 export function TimeMachineModal({ target, onClose }) {
@@ -77,6 +78,13 @@ export function TimeMachineModal({ target, onClose }) {
         {!loading && !error && data.length > 0 && (
           <div className="tm-charts">
             
+            <details style={{ marginBottom: "2rem", width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", padding: "1rem" }}>
+              <summary style={{ cursor: "pointer", fontWeight: "bold", fontSize: "1.1rem" }}>
+                 Storico Affidabilità (Uptime 30 Giorni)
+              </summary>
+              <UptimeHeatmap target={target} />
+            </details>
+
             <div className="tm-chart-box">
               <h3>CPU Usage (%)</h3>
               <ResponsiveContainer width="100%" height={200}>

@@ -5,6 +5,52 @@ from typing import Optional
 router = APIRouter()
 PROMETHEUS_URL = "http://proxmox-prometheus:9090"
 
+@router.get("/time-machine/uptime")
+async def get_uptime_history(
+    target_id: str,
+    target_type: str = Query(..., description="VM o NODE"),
+    days: int = Query(30, description="Numero di giorni di storico"),
+):
+    import time
+    end = time.time()
+    start = end - (days * 24 * 3600)
+    step = 3600  # 1 hour
+    
+    if target_type.upper() == "NODE":
+        expr = f'max_over_time(proxmox_node_uptime_seconds{{node="{target_id}"}}[1h])'
+    else:
+        expr = f'max_over_time(proxmox_vm_uptime_seconds{{vmid="{target_id}"}}[1h])'
+        
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.get(
+                f"{PROMETHEUS_URL}/api/v1/query_range",
+                params={
+                    "query": expr,
+                    "start": start,
+                    "end": end,
+                    "step": step
+                },
+                timeout=15.0
+            )
+            res.raise_for_status()
+            data = res.json()
+            
+            results = data.get("data", {}).get("result", [])
+            # expected format: values: [[timestamp, "value"]]
+            
+            heatmap = []
+            if results and len(results) > 0:
+                values = results[0].get("values", [])
+                for pt in values:
+                    t, val = pt[0], float(pt[1])
+                    is_up = val > 0
+                    heatmap.append({"time": t, "up": is_up})
+            
+            return {"results": heatmap}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore query Prometheus uptime: {e}")
+
 @router.get("/time-machine/{target_id}")
 async def get_time_machine_data(
     target_id: str,
@@ -71,3 +117,4 @@ async def get_time_machine_data(
                 
     chart_data = [timeline[t] for t in sorted(timeline.keys())]
     return {"results": chart_data}
+
