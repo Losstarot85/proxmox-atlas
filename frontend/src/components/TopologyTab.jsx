@@ -259,13 +259,7 @@ export function TopologyTab({ clusters, onOpenTimeMachine }) {
   }, [scale]);
 
   return (
-    <div className="topology-viewport" 
-         onWheel={handleWheel}
-         onPointerDown={handlePointerDown}
-         onPointerMove={handlePointerMove}
-         onPointerUp={handlePointerUp}
-         onPointerLeave={handlePointerUp}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem' }}>
       <div className="topology-controls glass-card">
          <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Topology Board</span>
          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -279,24 +273,32 @@ export function TopologyTab({ clusters, onOpenTimeMachine }) {
          </div>
       </div>
 
-      <div 
-        className="topology-canvas"
-        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}
+      <div className="topology-viewport" 
+           onWheel={handleWheel}
+           onPointerDown={handlePointerDown}
+           onPointerMove={handlePointerMove}
+           onPointerUp={handlePointerUp}
+           onPointerLeave={handlePointerUp}
       >
-        {clusterBlocks.map(cb => {
-           const rawCluster = clusters.find(c => c.name === cb.id);
-           if (!rawCluster) return null;
-           
-           return (
-             <TopologyCluster 
-               key={cb.id} 
-               clusterBlock={cb} 
-               rawCluster={rawCluster} 
-               onOpenTimeMachine={onOpenTimeMachine}
-               updateNodePosition={updateNodePos}
-             />
-           );
-        })}
+        <div 
+          className="topology-canvas"
+          style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}
+        >
+          {clusterBlocks.map(cb => {
+             const rawCluster = clusters.find(c => c.name === cb.id);
+             if (!rawCluster) return null;
+             
+             return (
+               <TopologyCluster 
+                 key={cb.id} 
+                 clusterBlock={cb} 
+                 rawCluster={rawCluster} 
+                 onOpenTimeMachine={onOpenTimeMachine}
+                 updateNodePosition={updateNodePos}
+               />
+             );
+          })}
+        </div>
       </div>
     </div>
   );
