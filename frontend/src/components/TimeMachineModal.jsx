@@ -103,6 +103,23 @@ export function TimeMachineModal({ target, onClose }) {
               </ResponsiveContainer>
             </div>
 
+            {target.type === "NODE" && data[data.length - 1]?.storage_used !== undefined && (
+                <div className="tm-chart-box">
+                <h3>Global Storage Usage (Bytes)</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="time" tickFormatter={formatTime} stroke="#888" minTickGap={50}/>
+                    <YAxis stroke="#888" tickFormatter={(v) => (v / 1e9).toFixed(1) + "GB"} />
+                    <Tooltip labelFormatter={formatTime} contentStyle={{backgroundColor: '#1e1e1e', borderColor: '#333'}} />
+                    <Legend />
+                    <Area type="monotone" dataKey="storage_total" name="Total Capacity" stroke="#64748b" fill="#64748b" fillOpacity={0.2} />
+                    <Area type="monotone" dataKey="storage_used" name="Used Space" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} />
+                    </AreaChart>
+                </ResponsiveContainer>
+                </div>
+            )}
+
             {target.type === "VM" && (
                 <div className="tm-chart-box">
                 <h3>Disk I/O (Bytes/s)</h3>

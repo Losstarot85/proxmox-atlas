@@ -34,7 +34,8 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                     "pressure_cpu": 0.0,
                     "pressure_ram": 0.0,
                     "pressure_io": 0.0,
-                    "uptime": n.get("uptime")
+                    "uptime": n.get("uptime"),
+                    "storage_pools": []
                 }
 
                 if node_item["status"] == "online":
@@ -57,6 +58,24 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                             node_item["pressure_io"] = float(last_tick.get("pressureiosome") or 0.0)
                     except Exception as e:
                         print(f"[WARN] [{cluster_name}] RRD data non disponibile per nodo {node_item['name']}: {e}")
+                        
+                    try:
+                        storage_url = f"{host}/api2/json/nodes/{node_item['name']}/storage"
+                        storage_res = await client.get(storage_url, headers=headers)
+                        storage_res.raise_for_status()
+                        storage_data = storage_res.json().get("data", [])
+                        
+                        for st in storage_data:
+                            node_item["storage_pools"].append({
+                                "storage": st.get("storage"),
+                                "type": st.get("type"),
+                                "active": st.get("active", 0),
+                                "total": float(st.get("total") or 0.0),
+                                "used": float(st.get("used") or 0.0),
+                                "avail": float(st.get("avail") or 0.0)
+                            })
+                    except Exception as e:
+                        print(f"[WARN] [{cluster_name}] Storage data non disponibile per nodo {node_item['name']}: {e}")
 
                 nodes.append(node_item)
 
@@ -64,12 +83,15 @@ async def fetch_nodes_from_proxmox(cluster: dict):
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cache[cluster_name]["error"] = None
 
-        from metrics import NODE_CPU, NODE_MEM_TOTAL, NODE_MEM_USED, NODE_UPTIME
+        from metrics import NODE_CPU, NODE_MEM_TOTAL, NODE_MEM_USED, NODE_UPTIME, NODE_STORAGE_TOTAL, NODE_STORAGE_USED, NODE_STORAGE_AVAIL
         
         if "active_node_labels" not in cache[cluster_name]:
             cache[cluster_name]["active_node_labels"] = set()
+        if "active_storage_labels" not in cache[cluster_name]:
+            cache[cluster_name]["active_storage_labels"] = set()
             
         current_node_labels = set()
+        current_storage_labels = set()
 
         for n in nodes:
             lbls = {"cluster": cluster_name, "node": n["name"]}
@@ -80,6 +102,14 @@ async def fetch_nodes_from_proxmox(cluster: dict):
             NODE_MEM_USED.labels(**lbls).set(n["mem"])
             if "uptime" in n:
                 NODE_UPTIME.labels(**lbls).set(n["uptime"])
+                
+            for sp in n.get("storage_pools", []):
+                if sp.get("active", 0) == 1:
+                    slbls = {"cluster": cluster_name, "node": n["name"], "storage": sp["storage"]}
+                    current_storage_labels.add(tuple(slbls.items()))
+                    NODE_STORAGE_TOTAL.labels(**slbls).set(sp["total"])
+                    NODE_STORAGE_USED.labels(**slbls).set(sp["used"])
+                    NODE_STORAGE_AVAIL.labels(**slbls).set(sp["avail"])
 
         # Pulizia Ghost Metrics
         for labels_tuple in cache[cluster_name]["active_node_labels"] - current_node_labels:
@@ -93,7 +123,18 @@ async def fetch_nodes_from_proxmox(cluster: dict):
             except KeyError:
                 pass
                 
+        for labels_tuple in cache[cluster_name]["active_storage_labels"] - current_storage_labels:
+            old_lbls = dict(labels_tuple)
+            lv = (old_lbls["cluster"], old_lbls["node"], old_lbls["storage"])
+            try:
+                NODE_STORAGE_TOTAL.remove(*lv)
+                NODE_STORAGE_USED.remove(*lv)
+                NODE_STORAGE_AVAIL.remove(*lv)
+            except KeyError:
+                pass
+                
         cache[cluster_name]["active_node_labels"] = current_node_labels
+        cache[cluster_name]["active_storage_labels"] = current_storage_labels
         print(f"[INFO] [{cluster_name}] Nodes aggiornati: {len(nodes)} nodi")
 
     except httpx.RequestError:

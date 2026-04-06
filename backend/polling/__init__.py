@@ -3,6 +3,8 @@ import time
 from config import CLUSTERS, SETTINGS
 from polling.nodes import fetch_nodes_from_proxmox
 from polling.resources import fetch_resources_from_proxmox
+from sse import broker
+from alerts.engine import evaluate_alerts
 
 
 async def poll_proxmox():
@@ -13,6 +15,12 @@ async def poll_proxmox():
         await asyncio.gather(*[
             poll_cluster(cluster) for cluster in CLUSTERS
         ])
+        
+        # Valuta eventuali alert in base ai task eseguiti
+        await evaluate_alerts()
+        
+        # Inoltra in tempo reale ai client connessi via SSE
+        await broker.broadcast_cache()
         
         # Reactive sleep chunking per adattarsi on-the-fly alle impostazioni utente
         while True:

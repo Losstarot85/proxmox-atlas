@@ -23,7 +23,8 @@ async def get_time_machine_data(
         queries = [
             ("cpu", f'proxmox_node_cpu_usage_ratio{{node="{target_id}"}} * 100'),
             ("mem_used", f'proxmox_node_mem_used_bytes{{node="{target_id}"}}'),
-            # ("netin", f'proxmox_node_net_in_bytes{{node="{target_id}"}}') 
+            ("storage_used", f'sum(proxmox_node_storage_used_bytes{{node="{target_id}"}})'),
+            ("storage_total", f'sum(proxmox_node_storage_total_bytes{{node="{target_id}"}})')
         ]
     else:
         # Assumiamo vmid per la validazione prometheus

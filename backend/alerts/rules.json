@@ -1,0 +1,6 @@
+{
+  "cpu_threshold_percent": 85,
+  "ram_threshold_percent": 90,
+  "disk_usage_threshold_percent": 85,
+  "io_stall_threshold_percent": 15
+}

@@ -17,7 +17,8 @@ except json.JSONDecodeError as e:
 
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "settings.json")
 DEFAULT_SETTINGS = {
-    "polling_interval": 15
+    "polling_interval": 15,
+    "webhook_url": ""
 }
 
 SETTINGS = DEFAULT_SETTINGS.copy()

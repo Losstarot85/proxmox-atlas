@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 
-export function SettingsTab({ globalInterval, onSaveSettings }) {
+export function SettingsTab({ globalInterval, globalWebhook, onSaveSettings }) {
   const [intervalVal, setIntervalVal] = useState(globalInterval);
+  const [webhookVal, setWebhookVal] = useState(globalWebhook);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     setIntervalVal(globalInterval);
-  }, [globalInterval]);
+    setWebhookVal(globalWebhook);
+  }, [globalInterval, globalWebhook]);
 
   const handleSave = async () => {
     if (intervalVal < 5) {
@@ -24,7 +26,10 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ polling_interval: intervalVal })
+        body: JSON.stringify({ 
+          polling_interval: intervalVal,
+          webhook_url: webhookVal
+        })
       });
       
       if (!res.ok) {
@@ -34,7 +39,7 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
       
       const data = await res.json();
       setSuccess(true);
-      onSaveSettings(data.settings.polling_interval);
+      onSaveSettings(data.settings);
       
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -46,12 +51,14 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
 
   const handleCancel = () => {
     setIntervalVal(globalInterval);
+    setWebhookVal(globalWebhook);
     setError(null);
     setSuccess(false);
   };
 
   const handleDefault = () => {
     setIntervalVal(15);
+    setWebhookVal("");
     setError(null);
   };
 
@@ -74,6 +81,25 @@ export function SettingsTab({ globalInterval, onSaveSettings }) {
               onChange={e => setIntervalVal(parseInt(e.target.value, 10) || 5)} 
             />
             <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>sec</span>
+          </div>
+        </div>
+
+        <div className="setting-group">
+          <div className="setting-info">
+            <h3>Webhook Alerts Export</h3>
+            <p>
+              Send automatically a JSON POST payload to this URL when a cluster resource generates an Alert. Example: Slack, Discord, Gotify.
+            </p>
+          </div>
+          <div className="setting-control" style={{ flex: 1, marginLeft: "2rem" }}>
+            <input 
+              type="url" 
+              className="search-input"
+              style={{ width: "100%" }}
+              placeholder="https://hooks.slack.com/services/..."
+              value={webhookVal} 
+              onChange={e => setWebhookVal(e.target.value)} 
+            />
           </div>
         </div>
 

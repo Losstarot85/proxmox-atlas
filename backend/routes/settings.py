@@ -6,6 +6,7 @@ router = APIRouter()
 
 class SettingsUpdate(BaseModel):
     polling_interval: int
+    webhook_url: str = ""
 
 @router.get("/settings")
 def get_settings():
@@ -19,7 +20,8 @@ async def update_settings(data: SettingsUpdate):
         raise HTTPException(status_code=400, detail="Il polling interval minimo consentito è 5 secondi per non sovraccaricare Proxmox.")
     
     new_settings = {
-        "polling_interval": data.polling_interval
+        "polling_interval": data.polling_interval,
+        "webhook_url": data.webhook_url
     }
     
     save_settings(new_settings)

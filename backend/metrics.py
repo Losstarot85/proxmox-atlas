@@ -5,7 +5,9 @@ NODE_CPU = Gauge("proxmox_node_cpu_usage_ratio", "Utilizzo CPU dei nodi (0.0-1.0
 NODE_MEM_TOTAL = Gauge("proxmox_node_mem_total_bytes", "Memoria totale nodi", ["cluster", "node"])
 NODE_MEM_USED = Gauge("proxmox_node_mem_used_bytes", "Memoria utilizzata nodi", ["cluster", "node"])
 NODE_UPTIME = Gauge("proxmox_node_uptime_seconds", "Uptime dei nodi in sec", ["cluster", "node"])
-
+NODE_STORAGE_TOTAL = Gauge("proxmox_node_storage_total_bytes", "Capacità totale storage nodo", ["cluster", "node", "storage"])
+NODE_STORAGE_USED = Gauge("proxmox_node_storage_used_bytes", "Spazio utilizzato storage nodo", ["cluster", "node", "storage"])
+NODE_STORAGE_AVAIL = Gauge("proxmox_node_storage_avail_bytes", "Spazio disponibile storage nodo", ["cluster", "node", "storage"])
 # Metriche per le VM/LXC
 VM_CPU = Gauge("proxmox_vm_cpu_usage_ratio", "Utilizzo CPU delle macchine (0.0-1.0)", ["cluster", "node", "vmid", "type", "name"])
 VM_MEM_TOTAL = Gauge("proxmox_vm_mem_total_bytes", "Memoria totale macchine", ["cluster", "node", "vmid", "type", "name"])

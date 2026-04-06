@@ -2,6 +2,7 @@ import React from "react";
 import { ResourceSection } from "./ResourceSection";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
+import { UptimePulse } from "./UptimePulse";
 
 export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
   return (
@@ -39,6 +40,7 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                 <th>Load Avg</th>
                 <th>CPU Usage</th>
                 <th>RAM Usage</th>
+                <th>Storage</th>
                 <th>Network (In/Out)</th>
                 <th>IO Wait</th>
                 <th>CPU Stall</th>
@@ -48,7 +50,7 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
             </thead>
             <tbody>
               {!cluster.nodes || cluster.nodes.length === 0 ? (
-                <tr><td colSpan="10" className="empty-state">No nodes found</td></tr>
+                <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
               ) : (
                 cluster.nodes.map(n => {
                   const isOnline = n.status === "online";
@@ -65,6 +67,14 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                      };
                   }) || [];
 
+                  const nodeHistoryBlocks = history?.map(h => {
+                    const clusterMatch = h.clusters?.find(c => c.name === cluster.name);
+                    const nodeMatch = clusterMatch?.nodes?.find(nd => nd.name === n.name);
+                    return {
+                      status: nodeMatch ? nodeMatch.status : "unknown"
+                    };
+                  }) || [];
+
                   return (
                     <tr 
                       key={n.name} 
@@ -72,7 +82,10 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                       style={{ cursor: 'pointer' }}
                       className="hoverable-row"
                     >
-                      <td style={{ fontWeight: 500 }}>{n.name}</td>
+                      <td style={{ fontWeight: 500 }}>
+                        {n.name}
+                        <UptimePulse historyBlocks={nodeHistoryBlocks} />
+                      </td>
                       <td>
                         {isOnline 
                           ? <span className="badge badge-online">🟢 Online</span> 
@@ -100,6 +113,27 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                             </div>
                           </div>
                         ) : "-"}
+                      </td>
+                      <td>
+                        {isOnline && n.storage_pools && n.storage_pools.length > 0 ? (
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                             {[...n.storage_pools]
+                               .filter(sp => sp.active === 1)
+                               .sort((a, b) => a.storage.localeCompare(b.storage))
+                               .map(sp => {
+                               const poolPercent = sp.total > 0 ? ((sp.used / sp.total) * 100).toFixed(1) : 0;
+                               return (
+                                 <div key={sp.storage} className="progress-bar-inline" style={{fontSize: '0.8rem'}}>
+                                   <span style={{width: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={sp.storage}>{sp.storage}</span>
+                                   <div className="progress-bar-container" style={{flex: 1, minWidth: '50px'}}>
+                                     <div className="progress-bar-fill" style={{width: `${poolPercent}%`, background: poolPercent > 85 ? 'var(--danger)' : poolPercent > 70 ? 'var(--warning)' : 'var(--accent)'}}></div>
+                                   </div>
+                                   <span className="mono-cell">{poolPercent}%</span>
+                                 </div>
+                               );
+                             })}
+                           </div>
+                         ) : "-"}
                       </td>
                       <td className="mono-cell">{isOnline ? `⬇ ${formatNetwork(n.netin)} / ⬆ ${formatNetwork(n.netout)}` : "-"}</td>
                       <td className="mono-cell">{isOnline ? formatPressure(n.iowait) : "-"}</td>
