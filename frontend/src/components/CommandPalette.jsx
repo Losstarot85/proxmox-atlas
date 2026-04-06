@@ -44,7 +44,11 @@ export function CommandPalette({ clusters, onSelectResult }) {
           name: n.name,
           cluster: c.name,
           status: n.status,
-          searchString: `${n.name} node physical ${c.name}`.toLowerCase()
+          cpu: n.cpu,
+          mem: n.mem,
+          maxmem: n.maxmem,
+          ip: n.ip || "",
+          searchString: `${n.name} node physical ${c.name} ${n.ip || ""}`.toLowerCase()
         });
       });
     }
@@ -60,7 +64,11 @@ export function CommandPalette({ clusters, onSelectResult }) {
           node: r.node,
           cluster: c.name,
           status: r.status,
-          searchString: `${r.vmid} ${r.name} ${r.type} ${r.node} ${c.name}`.toLowerCase()
+          cpu: r.cpu,
+          mem: r.mem,
+          maxmem: r.maxmem,
+          ip: r.ip || "",
+          searchString: `${r.vmid} ${r.name} ${r.type} ${r.node} ${c.name} ${r.ip || ""}`.toLowerCase()
         });
       });
     }
@@ -87,6 +95,16 @@ export function CommandPalette({ clusters, onSelectResult }) {
   const handleSelect = (item) => {
     setIsOpen(false);
     onSelectResult(item);
+    // Attempt scroll
+    setTimeout(() => {
+      const rowId = `row-${item.type}-${item.vmid || item.name}`;
+      const el = document.getElementById(rowId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.backgroundColor = 'var(--accent-glow)';
+        setTimeout(() => el.style.backgroundColor = '', 2000);
+      }
+    }, 100);
   };
 
   return (
@@ -128,8 +146,12 @@ export function CommandPalette({ clusters, onSelectResult }) {
                   <span className="palette-item-sub">
                     {item.type} in {item.cluster} {item.node ? `(${item.node})` : ''} 
                     {item.status === "online" || item.status === "running" ? 
-                      <span style={{color: 'var(--success)', marginLeft: '6px'}}>●</span> : 
-                      <span style={{color: 'var(--danger)', marginLeft: '6px'}}>●</span>}
+                      <span style={{color: 'var(--success)', marginLeft: '6px', marginRight: '6px'}}>●</span> : 
+                      <span style={{color: 'var(--danger)', marginLeft: '6px', marginRight: '6px'}}>●</span>}
+                    {item.cpu !== undefined && (
+                      <span className="mono-cell" style={{opacity: 0.8}}>CPU: {(item.cpu * 100).toFixed(0)}% | RAM: {item.maxmem ? ((item.mem / item.maxmem) * 100).toFixed(0) : 0}%</span>
+                    )}
+                    {item.ip && <span className="mono-cell" style={{marginLeft: '6px', opacity: 0.6}}>{item.ip}</span>}
                   </span>
                 </div>
                 <div className="palette-item-action">Jump ↵</div>

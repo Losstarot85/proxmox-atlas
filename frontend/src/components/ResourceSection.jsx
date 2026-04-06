@@ -47,6 +47,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
 
                   return (
                     <tr 
+                      id={`row-${r.type}-${r.vmid}`}
                       key={`${r.type}-${r.vmid}`}
                       onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: 'VM', name: r.name })}
                       style={{ cursor: 'pointer' }}

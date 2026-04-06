@@ -77,6 +77,7 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
 
                   return (
                     <tr 
+                      id={`row-NODE-${n.name}`}
                       key={n.name} 
                       onClick={() => onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
                       style={{ cursor: 'pointer' }}
