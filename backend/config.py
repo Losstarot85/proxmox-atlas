@@ -18,7 +18,7 @@ except json.JSONDecodeError as e:
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "settings.json")
 DEFAULT_SETTINGS = {
     "polling_interval": 15,
-    "webhook_url": ""
+    "webhooks": []
 }
 
 SETTINGS = DEFAULT_SETTINGS.copy()
@@ -29,6 +29,28 @@ def load_settings():
         if os.path.exists(SETTINGS_PATH):
             with open(SETTINGS_PATH) as f:
                 loaded = json.load(f)
+                
+                # Migrate vecchi setting "webhook_url" in un element dell'array
+                if "webhook_url" in loaded and loaded["webhook_url"]:
+                    if "webhooks" not in loaded:
+                        loaded["webhooks"] = []
+                    import uuid
+                    loaded["webhooks"].append({
+                        "id": str(uuid.uuid4()),
+                        "name": "Legacy Webhook",
+                        "url": loaded["webhook_url"],
+                        "severity_filter": "all",
+                        "json_template": "{\"text\": \"[{{severity}}] {{message}}\"}"
+                    })
+                    
+                if "webhook_url" in loaded:
+                    del loaded["webhook_url"]
+                    
+                # Aggiusta i default su quelli mancanti
+                for k, v in DEFAULT_SETTINGS.items():
+                    if k not in loaded:
+                        loaded[k] = v
+
                 SETTINGS.update(loaded)
         else:
             save_settings(DEFAULT_SETTINGS)

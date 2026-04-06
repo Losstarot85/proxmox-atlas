@@ -10,15 +10,7 @@ MAX_ALERTS = 200
 alerts_store = []
 silenced_resources = {}
 
-async def send_webhook(alert):
-    url = SETTINGS.get("webhook_url")
-    if not url:
-        return
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            await client.post(url, json=alert)
-    except Exception as e:
-        print(f"[WARN] Impossibile inviare webhook a {url}: {e}")
+from alerts.notifier import queue_alert
 
 def add_alert(alert):
     alert["id"] = str(uuid.uuid4())
@@ -28,11 +20,7 @@ def add_alert(alert):
     if len(alerts_store) > MAX_ALERTS:
         alerts_store.pop()
         
-    try:
-        loop = asyncio.get_running_loop()
-        loop.create_task(send_webhook(alert))
-    except RuntimeError:
-        pass
+    queue_alert(alert)
 
 def get_alerts():
     return alerts_store

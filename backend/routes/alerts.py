@@ -26,3 +26,9 @@ def remove_alert(alert_id: str):
 def clear_all_alerts():
     clear_alerts()
     return {"status": "ok"}
+
+from alerts.notifier import get_webhook_logs
+
+@router.get("/alerts/webhook_logs")
+def fetch_webhook_logs():
+    return {"logs": get_webhook_logs()}

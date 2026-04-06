@@ -12,7 +12,7 @@ import "./App.css";
 function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhooks, setWebhooks] = useState([]);
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
@@ -40,7 +40,7 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           setPollingIntervalSeconds(data.polling_interval || 15);
-          setWebhookUrl(data.webhook_url || "");
+          setWebhooks(data.webhooks || []);
         }
       } catch (err) {
         console.error("Fetch settings error:", err);
@@ -237,10 +237,10 @@ function App() {
         {activeTab === "settings" && (
           <SettingsTab
             globalInterval={pollingIntervalSeconds}
-            globalWebhook={webhookUrl}
+            globalWebhooks={webhooks}
             onSaveSettings={(settings) => {
               if (settings.polling_interval) setPollingIntervalSeconds(settings.polling_interval);
-              if (settings.webhook_url !== undefined) setWebhookUrl(settings.webhook_url);
+              if (settings.webhooks !== undefined) setWebhooks(settings.webhooks);
             }}
           />
         )}

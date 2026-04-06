@@ -4,9 +4,18 @@ from config import SETTINGS, save_settings
 
 router = APIRouter()
 
+from typing import List, Optional
+
+class Webhook(BaseModel):
+    id: str
+    name: str
+    url: str
+    severity_filter: str = "all"
+    json_template: str = "{ \"text\": \"Alert: {{message}}\" }"
+
 class SettingsUpdate(BaseModel):
     polling_interval: int
-    webhook_url: str = ""
+    webhooks: List[Webhook] = []
 
 @router.get("/settings")
 def get_settings():
@@ -21,7 +30,7 @@ async def update_settings(data: SettingsUpdate):
     
     new_settings = {
         "polling_interval": data.polling_interval,
-        "webhook_url": data.webhook_url
+        "webhooks": [w.dict() for w in data.webhooks]
     }
     
     save_settings(new_settings)
