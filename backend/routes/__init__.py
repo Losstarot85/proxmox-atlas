@@ -6,6 +6,7 @@ from .settings import router as settings_router
 from .time_machine import router as time_machine_router
 from .stream import router as stream_router
 from .alerts import router as alerts_router
+from .whatif import router as whatif_router
 
 router = APIRouter()
 router.include_router(nodes_router)
@@ -15,3 +16,4 @@ router.include_router(settings_router)
 router.include_router(time_machine_router)
 router.include_router(stream_router)
 router.include_router(alerts_router)
+router.include_router(whatif_router)

@@ -979,3 +979,66 @@ tbody tr:last-child td {
   min-width: 350px;
   min-height: 200px;
 }
+
+/* ==================================================================
+   What-If Engine Modal (F4)
+================================================================== */
+
+.whatif-modal {
+  max-width: 900px;
+  width: 95vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.whatif-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.whatif-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.whatif-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.whatif-card.success { border-color: #22c55e; background: rgba(34, 197, 94, 0.08); }
+.whatif-card.danger  { border-color: var(--danger); background: rgba(239, 68, 68, 0.08); }
+.whatif-card.warning { border-color: var(--warning); background: rgba(245, 158, 11, 0.08); }
+
+.whatif-card-value {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: var(--mono);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.whatif-card.success .whatif-card-value { color: #22c55e; }
+.whatif-card.danger  .whatif-card-value { color: var(--danger); }
+.whatif-card.warning .whatif-card-value { color: var(--warning); }
+
+.whatif-card-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.whatif-section h4 {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}

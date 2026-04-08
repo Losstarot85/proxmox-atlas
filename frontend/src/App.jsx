@@ -8,6 +8,7 @@ import { SummaryCards } from "./components/SummaryCards";
 import { TimeMachineModal } from "./components/TimeMachineModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { TopologyTab } from "./components/TopologyTab";
+import { WhatIfModal } from "./components/WhatIfModal";
 import "./App.css";
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
   const [forceCollapse, setForceCollapse] = useState(false);
   const [timeMachineTarget, setTimeMachineTarget] = useState(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const [whatIfTarget, setWhatIfTarget] = useState(null);
 
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("atlas-theme");
@@ -243,7 +245,8 @@ function App() {
         {activeTab === "topology" && (
            <TopologyTab 
              clusters={clusters} 
-             onOpenTimeMachine={setTimeMachineTarget} 
+             onOpenTimeMachine={setTimeMachineTarget}
+             onOpenWhatIf={(clusterName, nodeName) => setWhatIfTarget({ cluster: clusterName, node: nodeName })}
            />
         )}
 
@@ -272,6 +275,14 @@ function App() {
         clusters={clusters} 
         onSelectResult={handleCommandPaletteSelect} 
       />
+
+      {whatIfTarget && (
+        <WhatIfModal
+          cluster={whatIfTarget.cluster}
+          node={whatIfTarget.node}
+          onClose={() => setWhatIfTarget(null)}
+        />
+      )}
     </div>
   );
 }

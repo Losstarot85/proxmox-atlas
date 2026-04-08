@@ -6,7 +6,7 @@ function getCpuColor(cpuRatio) {
   return `hsl(${hue}, 80%, 45%)`;
 }
 
-function TopologyNode({ nodeData, initialPosition, onOpenTimeMachine, onDragMove }) {
+function TopologyNode({ nodeData, clusterName, initialPosition, onOpenTimeMachine, onOpenWhatIf, onDragMove }) {
   const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
@@ -14,7 +14,7 @@ function TopologyNode({ nodeData, initialPosition, onOpenTimeMachine, onDragMove
   const handlePointerDown = (e) => {
     if (e.button !== 0) return;
     e.stopPropagation();
-    if (e.target.closest('.topo-vm-chip')) return;
+    if (e.target.closest('.topo-vm-chip') || e.target.closest('.btn')) return;
     setIsDragging(true);
     e.target.setPointerCapture(e.pointerId);
     dragRef.current = { startX: e.clientX, startY: e.clientY, initialX: position.x, initialY: position.y };
@@ -57,13 +57,23 @@ function TopologyNode({ nodeData, initialPosition, onOpenTimeMachine, onDragMove
            <span className={`status-indicator ${isOnline ? 'status-online' : 'status-offline'}`}></span>
            <strong>{nodeData.name}</strong>
         </div>
-        <button 
-          className="btn btn-sm" 
-          onClick={(e) => { e.stopPropagation(); onOpenTimeMachine({ id: nodeData.name, type: "NODE", name: nodeData.name }); }}
-          style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem' }}
-        >
-          CPU: {nodeData.cpu != null ? (nodeData.cpu * 100).toFixed(1) : "? "}%
-        </button>
+        <div style={{ display: 'flex', gap: '0.3rem' }}>
+          <button 
+            className="btn btn-sm" 
+            onClick={(e) => { e.stopPropagation(); onOpenTimeMachine({ id: nodeData.name, type: "NODE", name: nodeData.name }); }}
+            style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem' }}
+          >
+            CPU: {nodeData.cpu != null ? (nodeData.cpu * 100).toFixed(1) : "? "}%
+          </button>
+          <button 
+            className="btn btn-sm"
+            onClick={(e) => { e.stopPropagation(); onOpenWhatIf(clusterName, nodeData.name); }}
+            style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.15)', borderColor: 'var(--warning)' }}
+            title="Simula rimozione nodo"
+          >
+            ⚡ What-If
+          </button>
+        </div>
       </div>
       <div className="topo-vms-container">
         {nodeData.vms?.length > 0 ? (
@@ -86,7 +96,7 @@ function TopologyNode({ nodeData, initialPosition, onOpenTimeMachine, onDragMove
   );
 }
 
-function TopologyCluster({ clusterBlock, rawCluster, onOpenTimeMachine, updateNodePosition }) {
+function TopologyCluster({ clusterBlock, rawCluster, onOpenTimeMachine, onOpenWhatIf, updateNodePosition }) {
   const [position, setPosition] = useState(clusterBlock.pos);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
@@ -156,9 +166,11 @@ function TopologyCluster({ clusterBlock, rawCluster, onOpenTimeMachine, updateNo
           return (
             <TopologyNode 
               key={nb.id} 
-              nodeData={nodeDataWithVms} 
+              nodeData={nodeDataWithVms}
+              clusterName={clusterBlock.id}
               initialPosition={nb.pos} 
               onOpenTimeMachine={onOpenTimeMachine}
+              onOpenWhatIf={onOpenWhatIf}
               onDragMove={(nodeId, newPos) => updateNodePosition(clusterBlock.id, nodeId, newPos)}
             />
           );
@@ -168,7 +180,7 @@ function TopologyCluster({ clusterBlock, rawCluster, onOpenTimeMachine, updateNo
   );
 }
 
-export function TopologyTab({ clusters, onOpenTimeMachine }) {
+export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const isPanningRef = useRef(false);
@@ -294,6 +306,7 @@ export function TopologyTab({ clusters, onOpenTimeMachine }) {
                  clusterBlock={cb} 
                  rawCluster={rawCluster} 
                  onOpenTimeMachine={onOpenTimeMachine}
+                 onOpenWhatIf={onOpenWhatIf}
                  updateNodePosition={updateNodePos}
                />
              );
