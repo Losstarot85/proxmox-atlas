@@ -30,7 +30,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
               {filtered.length === 0 ? (
                 <tr><td colSpan="10" className="empty-state">No {typeFilter}s found</td></tr>
               ) : (
-                filtered.map(r => {
+                [...filtered].sort((a,b) => a.vmid - b.vmid).map(r => {
                   const isRunning = r.status === "running";
                   const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                   const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;

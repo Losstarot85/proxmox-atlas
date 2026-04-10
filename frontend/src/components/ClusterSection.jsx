@@ -52,7 +52,7 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
               {!cluster.nodes || cluster.nodes.length === 0 ? (
                 <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
               ) : (
-                cluster.nodes.map(n => {
+                [...cluster.nodes].sort((a,b) => (a.name || "").localeCompare(b.name || "")).map(n => {
                   const isOnline = n.status === "online";
                   const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
