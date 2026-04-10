@@ -35,7 +35,11 @@ class SSEBroker:
             try:
                 # Usiamo put_nowait per non bloccare il loop
                 if q.full():
-                    continue
+                    try:
+                        # Rimuoviamo il messaggio più vecchio se la coda è piena (no silent drop)
+                        q.get_nowait()
+                    except asyncio.QueueEmpty:
+                        pass
                 q.put_nowait(payload)
             except Exception:
                 self.remove_client(q)
