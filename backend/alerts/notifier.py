@@ -7,7 +7,13 @@ from config import SETTINGS
 
 LOG_SIZE = 100
 webhook_logs = []
-dispatch_queue = asyncio.Queue()
+dispatch_queue = None
+
+def _get_queue():
+    global dispatch_queue
+    if dispatch_queue is None:
+        dispatch_queue = asyncio.Queue()
+    return dispatch_queue
 
 # Struttura del Webhook Log
 # { "timestamp": float, "webhook_name": str, "url": str, "status_code": int, "success": bool, "error": str, "payload": str }
@@ -31,14 +37,15 @@ def get_webhook_logs():
 def queue_alert(alert):
     # L'alert arriva da engine.py
     try:
-        dispatch_queue.put_nowait(alert)
+        _get_queue().put_nowait(alert)
     except Exception as e:
         logging.error(f"Cannot enqueue alert for webhook dispatch: {e}")
 
 async def dispatch_worker():
+    q = _get_queue()
     while True:
         try:
-            alert = await dispatch_queue.get()
+            alert = await q.get()
             webhooks = SETTINGS.get("webhooks", [])
             
             for index, wh in enumerate(webhooks):
@@ -75,7 +82,7 @@ async def dispatch_worker():
                         else:
                             await asyncio.sleep(2 ** attempt) # backoff
             
-            dispatch_queue.task_done()
+            q.task_done()
         except Exception as e:
             logging.error(f"Webhook dispatcher worker error: {e}")
             await asyncio.sleep(5)
