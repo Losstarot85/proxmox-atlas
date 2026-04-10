@@ -1042,3 +1042,28 @@ tbody tr:last-child td {
   font-size: 1rem;
   font-weight: 600;
 }
+
+/* ==================================================================
+   Export Buttons (F11)
+================================================================== */
+
+.export-group {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border);
+}
+
+.export-btn {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.6rem !important;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+.export-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

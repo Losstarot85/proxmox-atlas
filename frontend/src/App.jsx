@@ -9,6 +9,7 @@ import { TimeMachineModal } from "./components/TimeMachineModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { TopologyTab } from "./components/TopologyTab";
 import { WhatIfModal } from "./components/WhatIfModal";
+import { exportJSON, exportCSV } from "./utils/exportData";
 import "./App.css";
 
 function App() {
@@ -210,6 +211,22 @@ function App() {
             </div>
             <div className="status-chip">
               Nodes <strong>{activeNodes}/{totalNodes}</strong>
+            </div>
+            <div className="export-group">
+              <button 
+                className="btn btn-sm export-btn"
+                onClick={() => exportJSON(clusters)}
+                title="Export full snapshot as JSON"
+              >
+                📄 JSON
+              </button>
+              <button 
+                className="btn btn-sm export-btn"
+                onClick={() => exportCSV(clusters)}
+                title="Export inventory as CSV"
+              >
+                📊 CSV
+              </button>
             </div>
             <button 
               className="theme-toggle" 
