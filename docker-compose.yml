@@ -5,6 +5,8 @@ services:
     volumes:
       - ./backend:/app
       - prometheus_config:/etc/prometheus
+    environment:
+      - PROMETHEUS_URL=http://proxmox-prometheus:9090
     ports:
       - "8000:8000"
     healthcheck:

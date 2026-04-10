@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query
 import httpx
 from typing import Optional
+import os
 
 router = APIRouter()
-PROMETHEUS_URL = "http://proxmox-prometheus:9090"
+PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
 @router.get("/time-machine/uptime")
 async def get_uptime_history(
