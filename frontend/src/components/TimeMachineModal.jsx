@@ -128,7 +128,7 @@ export function TimeMachineModal({ target, onClose }) {
                 </div>
             )}
 
-            {target.type === "VM" && (
+            {(target.type === "VM" || target.type === "LXC") && (
                 <div className="tm-chart-box">
                 <h3>Disk I/O (Bytes/s)</h3>
                 <ResponsiveContainer width="100%" height={200}>
@@ -145,7 +145,7 @@ export function TimeMachineModal({ target, onClose }) {
                 </div>
             )}
 
-            {target.type === "VM" && (
+            {(target.type === "VM" || target.type === "LXC") && (
                 <div className="tm-chart-box">
                 <h3>Network I/O (Bytes/s)</h3>
                 <ResponsiveContainer width="100%" height={200}>
