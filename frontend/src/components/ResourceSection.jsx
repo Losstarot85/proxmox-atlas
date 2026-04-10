@@ -49,7 +49,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                     <tr 
                       id={`row-${r.type}-${r.vmid}`}
                       key={`${r.type}-${r.vmid}`}
-                      onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: 'VM', name: r.name })}
+                      onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
                       style={{ cursor: 'pointer' }}
                       className="hoverable-row"
                     >
