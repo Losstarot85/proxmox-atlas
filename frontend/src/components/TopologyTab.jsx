@@ -82,7 +82,7 @@ function TopologyNode({ nodeData, clusterName, initialPosition, onOpenTimeMachin
               key={vm.vmid} 
               className={`topo-vm-chip ${vm.status !== 'running' ? 'stopped' : ''}`}
               title={`${vm.name} (VMID: ${vm.vmid}) - CPU: ${vm.cpu ? (vm.cpu*100).toFixed(1) : 0}%`}
-              onClick={(e) => { e.stopPropagation(); onOpenTimeMachine({ id: vm.vmid, type: "VM", name: vm.name }); }}
+              onClick={(e) => { e.stopPropagation(); onOpenTimeMachine({ id: vm.vmid, type: vm.type, name: vm.name }); }}
             >
                <div className="topo-vm-color" style={{ backgroundColor: vm.status === 'running' ? getCpuColor(vm.cpu) : "gray" }} />
                <span className="topo-vm-label">{vm.name}</span>
