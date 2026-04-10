@@ -3,7 +3,7 @@ import httpx
 from config import SETTINGS
 
 PROMETHEUS_CONFIG_PATH = os.environ.get("PROMETHEUS_CONFIG_PATH", "/etc/prometheus/prometheus.yml")
-PROMETHEUS_URL = "http://proxmox-prometheus:9090"
+PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
 def generate_prometheus_config():
     """Genera il file prometheus.yml con l'intervallo di scrape dinamico allineato al polling."""

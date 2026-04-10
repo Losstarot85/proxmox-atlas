@@ -1,7 +1,8 @@
 import httpx
 import logging
+import os
 
-PROMETHEUS_URL = "http://proxmox-prometheus:9090"
+PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
 async def check_anomalies():
     anomalous_alerts = []
