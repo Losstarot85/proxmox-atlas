@@ -35,7 +35,8 @@ async def sse_stream():
                 yield f"data: {data}\n\n"
         except asyncio.CancelledError:
             # Utente disconnesso (chiuso browser o disattivato tab)
-            broker.remove_client(q)
             raise
+        finally:
+            broker.remove_client(q)
             
     return StreamingResponse(event_generator(), media_type="text/event-stream")
