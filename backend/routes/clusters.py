@@ -4,10 +4,9 @@ from typing import Optional
 import httpx
 import json
 import os
+from config import CONFIG_PATH
 
 router = APIRouter()
-
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "clusters.json")
 
 
 class ClusterCreate(BaseModel):

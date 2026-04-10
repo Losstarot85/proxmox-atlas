@@ -3,6 +3,7 @@ services:
     build: ./backend
     container_name: proxmox-backend
     volumes:
+      # Il bind mount di ./backend persiste le modifiche a clusters.json e settings.json fatte via UI
       - ./backend:/app
       - prometheus_config:/etc/prometheus
     environment:
