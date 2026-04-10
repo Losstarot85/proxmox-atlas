@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function TimeSeriesChart({ data, dataKey, color = "#3b82f6", title, valueFormatter }) {
+  const chartId = useId();
   if (!data || data.length === 0) return <div className="loading-view" style={{height: 120}}>No data</div>;
 
   return (
@@ -16,7 +17,7 @@ export function TimeSeriesChart({ data, dataKey, color = "#3b82f6", title, value
         <ResponsiveContainer>
           <AreaChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id={`color${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`gradient-${chartId}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.5}/>
                 <stop offset="95%" stopColor={color} stopOpacity={0}/>
               </linearGradient>
@@ -37,7 +38,7 @@ export function TimeSeriesChart({ data, dataKey, color = "#3b82f6", title, value
               formatter={(val) => valueFormatter ? valueFormatter(val) : `${val}%`}
               labelStyle={{ color: '#a0a0a0', fontSize: '0.85rem', marginBottom: '4px' }}
             />
-            <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#color${dataKey})`} isAnimationActive={false} />
+            <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#gradient-${chartId})`} isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
