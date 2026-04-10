@@ -6,10 +6,10 @@ PROMETHEUS_CONFIG_PATH = os.environ.get("PROMETHEUS_CONFIG_PATH", "/etc/promethe
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
 def generate_prometheus_config():
-    """Genera il file prometheus.yml con l'intervallo di scrape dinamico allineato al polling."""
+    """Generates the prometheus.yml file with a dynamic scrape interval aligned to polling."""
     interval = SETTINGS.get("polling_interval", 15)
     
-    # Assicuriamoci che l'intervallo non sia troppo basso per non sovraccaricare (min 5s)
+    # Ensure the interval is not too low to avoid overloading (min 5s)
     scrape_interval = max(5, interval)
     
     config_content = f"""global:
@@ -25,16 +25,16 @@ scrape_configs:
         os.makedirs(os.path.dirname(PROMETHEUS_CONFIG_PATH), exist_ok=True)
         with open(PROMETHEUS_CONFIG_PATH, "w") as f:
             f.write(config_content)
-        print(f"[INFO] prometheus.yml generato con scrape_interval={scrape_interval}s in {PROMETHEUS_CONFIG_PATH}")
+        print(f"[INFO] prometheus.yml generated with scrape_interval={scrape_interval}s in {PROMETHEUS_CONFIG_PATH}")
     except Exception as e:
-        print(f"[ERROR] Impossibile scrivere prometheus.yml: {e}")
+        print(f"[ERROR] Unable to write prometheus.yml: {e}")
 
 async def reload_prometheus_config():
-    """Invia il segnale di reload a Prometheus per applicare i nuovi intervalli."""
+    """Sends a reload signal to Prometheus to apply the new intervals."""
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(f"{PROMETHEUS_URL}/-/reload", timeout=5.0)
             response.raise_for_status()
-            print("[INFO] Configurazione Prometheus ricaricata con successo.")
+            print("[INFO] Prometheus configuration reloaded successfully.")
     except Exception as e:
-        print(f"[ERROR] Impossibile ricaricare la configurazione di Prometheus: {e}")
+        print(f"[ERROR] Unable to reload Prometheus configuration: {e}")

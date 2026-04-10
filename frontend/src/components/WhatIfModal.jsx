@@ -32,21 +32,21 @@ export function WhatIfModal({ cluster, node, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content whatif-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>⚡ What-If: Rimozione di <span style={{ color: 'var(--danger)' }}>{node}</span></h3>
+          <h3>⚡ What-If: Removing <span style={{ color: 'var(--danger)' }}>{node}</span></h3>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
         {loading && (
           <div style={{ padding: '3rem', textAlign: 'center' }}>
             <div className="spinner"></div>
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Simulazione in corso...</p>
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Running simulation...</p>
           </div>
         )}
 
         {error && (
           <div className="global-error" style={{ margin: '1rem' }}>
             <span>⚠️</span>
-            <span>Errore simulazione: {error}</span>
+            <span>Simulation error: {error}</span>
           </div>
         )}
 
@@ -56,26 +56,26 @@ export function WhatIfModal({ cluster, node, onClose }) {
             <div className="whatif-summary">
               <div className={`whatif-card ${data.summary.orphaned > 0 ? 'danger' : 'success'}`}>
                 <div className="whatif-card-value">{data.summary.total_displaced_vms}</div>
-                <div className="whatif-card-label">VM/LXC Dislocate</div>
+                <div className="whatif-card-label">Displaced</div>
               </div>
               <div className={`whatif-card ${data.summary.migratable > 0 ? 'success' : ''}`}>
                 <div className="whatif-card-value">{data.summary.migratable}</div>
-                <div className="whatif-card-label">Migrabili</div>
+                <div className="whatif-card-label">Migratable</div>
               </div>
               <div className={`whatif-card ${data.summary.orphaned > 0 ? 'danger' : 'success'}`}>
                 <div className="whatif-card-value">{data.summary.orphaned}</div>
-                <div className="whatif-card-label">Orfane</div>
+                <div className="whatif-card-label">Orphaned</div>
               </div>
               <div className={`whatif-card ${data.summary.congested_count > 0 ? 'warning' : 'success'}`}>
                 <div className="whatif-card-value">{data.summary.congested_count}</div>
-                <div className="whatif-card-label">Nodi Congestionati</div>
+                <div className="whatif-card-label">Congested Nodes</div>
               </div>
             </div>
 
             {/* Migration Plan */}
             {data.migration_plan.length > 0 && (
               <div className="whatif-section">
-                <h4>📋 Piano di Migrazione</h4>
+                <h4>📋 Migration Plan</h4>
                 <div className="table-wrapper">
                   <div className="responsive-table">
                     <table>
@@ -120,7 +120,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
             {/* Orphaned VMs */}
             {data.orphaned_vms.length > 0 && (
               <div className="whatif-section">
-                <h4 style={{ color: 'var(--danger)' }}>🚫 VM/LXC Orfane (nessun nodo può accoglierle)</h4>
+                <h4 style={{ color: 'var(--danger)' }}>🚫 Orphaned VM/LXC (no node can host them)</h4>
                 <div className="table-wrapper">
                   <div className="responsive-table">
                     <table>
@@ -153,7 +153,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
             {/* Surviving Nodes State After Migration */}
             {data.surviving_nodes.length > 0 && (
               <div className="whatif-section">
-                <h4>🖥️ Stato Nodi Post-Migrazione</h4>
+                <h4>🖥️ Post-Migration Node Status</h4>
                 <div className="table-wrapper">
                   <div className="responsive-table">
                     <table>
@@ -210,8 +210,8 @@ export function WhatIfModal({ cluster, node, onClose }) {
 
             {data.summary.total_displaced_vms === 0 && (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <p style={{ fontSize: '1.2rem' }}>✅ Nessuna VM o LXC in esecuzione su questo nodo.</p>
-                <p>La rimozione non avrebbe impatto sulle risorse virtualizzate.</p>
+                <p style={{ fontSize: '1.2rem' }}>✅ No running VM or LXC on this node.</p>
+                <p>Removing it would have no impact on virtualized resources.</p>
               </div>
             )}
           </div>

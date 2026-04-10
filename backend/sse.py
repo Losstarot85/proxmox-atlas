@@ -15,7 +15,7 @@ class SSEBroker:
         if q in self.queues:
             self.queues.remove(q)
 
-    # Inviaamo a tutti i client collegati il dump della cache
+    # Broadcast the cache dump to all connected clients
     async def broadcast_cache(self):
         results_by_cluster = []
         for cluster_name, data in cache.items():
@@ -30,13 +30,13 @@ class SSEBroker:
             
         payload = json.dumps({"clusters": results_by_cluster})
         
-        # Iteriamo su una copia per permettere rimozioni sicure
+        # Iterate over a copy to allow safe removal
         for q in list(self.queues):
             try:
-                # Usiamo put_nowait per non bloccare il loop
+                # Use put_nowait to avoid blocking the loop
                 if q.full():
                     try:
-                        # Rimuoviamo il messaggio più vecchio se la coda è piena (no silent drop)
+                        # Remove the oldest message if the queue is full (no silent drop)
                         q.get_nowait()
                     except asyncio.QueueEmpty:
                         pass

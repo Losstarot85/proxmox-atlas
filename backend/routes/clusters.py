@@ -31,23 +31,23 @@ def _save_clusters_file(clusters_list):
 
 
 def _hot_reload_clusters(clusters_list):
-    """Ricarica CLUSTERS, cache e riconfigura Prometheus senza restart."""
+    """Hot-reload CLUSTERS, cache, and reconfigure Prometheus without restart."""
     import config
     from cache import cache
 
-    # Aggiorna la lista globale in-place
+    # Update the global list in-place
     config.CLUSTERS.clear()
     config.CLUSTERS.extend(clusters_list)
 
-    # Sincronizza la cache: aggiungi nuovi, rimuovi vecchi
+    # Sync the cache: add new entries, remove old ones
     current_names = {c["name"] for c in clusters_list}
     
-    # Rimuovi cluster non più presenti
+    # Remove clusters no longer present
     for name in list(cache.keys()):
         if name not in current_names:
             del cache[name]
     
-    # Aggiungi nuovi cluster
+    # Add new clusters
     for c in clusters_list:
         if c["name"] not in cache:
             cache[c["name"]] = {
@@ -59,12 +59,12 @@ def _hot_reload_clusters(clusters_list):
                 "failed_nodes": []
             }
 
-    # Rigenera la config di Prometheus per includere/escludere i nuovi target
+    # Regenerate Prometheus config to include/exclude new targets
     try:
         from prometheus_config import generate_prometheus_config
         generate_prometheus_config()
     except Exception as e:
-        print(f"[WARN] Prometheus config non rigenerata: {e}")
+        print(f"[WARN] Prometheus config not regenerated: {e}")
 
 
 @router.get("/clusters")
@@ -87,9 +87,9 @@ def list_clusters():
 def add_cluster(cluster: ClusterCreate):
     clusters = _load_clusters_file()
 
-    # Verifica unicità nome
+    # Check name uniqueness
     if any(c["name"] == cluster.name for c in clusters):
-        raise HTTPException(status_code=409, detail=f"Il cluster '{cluster.name}' esiste già")
+        raise HTTPException(status_code=409, detail=f"Cluster '{cluster.name}' already exists")
 
     new_entry = {
         "name": cluster.name,
@@ -111,7 +111,7 @@ def delete_cluster(name: str):
     
     new_list = [c for c in clusters if c["name"] != name]
     if len(new_list) == len(clusters):
-        raise HTTPException(status_code=404, detail=f"Cluster '{name}' non trovato")
+        raise HTTPException(status_code=404, detail=f"Cluster '{name}' not found")
 
     _save_clusters_file(new_list)
     _hot_reload_clusters(new_list)
@@ -121,7 +121,7 @@ def delete_cluster(name: str):
 
 @router.post("/clusters/test")
 async def test_cluster_connection(cluster: ClusterCreate):
-    """Testa la connessione a un cluster Proxmox verificando la raggiungibilità dell'API."""
+    """Tests the connection to a Proxmox cluster by verifying API reachability."""
     host = cluster.host.rstrip("/")
     headers = {"Authorization": f"PVEAPIToken={cluster.token_id}={cluster.token_secret}"}
 
@@ -138,11 +138,11 @@ async def test_cluster_connection(cluster: ClusterCreate):
                 "repoid": version_data.get("repoid", "unknown")
             }
     except httpx.ConnectError:
-        raise HTTPException(status_code=502, detail="Host non raggiungibile. Verifica l'indirizzo e la porta.")
+        raise HTTPException(status_code=502, detail="Host unreachable. Check the address and port.")
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code,
-                            detail=f"Autenticazione fallita (HTTP {e.response.status_code}). Verifica token_id e token_secret.")
+                            detail=f"Authentication failed (HTTP {e.response.status_code}). Check token_id and token_secret.")
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Timeout di connessione (8s). Host troppo lento o firewall attivo.")
+        raise HTTPException(status_code=504, detail="Connection timeout (8s). Host too slow or firewall active.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore imprevisto: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

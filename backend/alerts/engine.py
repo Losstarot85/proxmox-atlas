@@ -7,9 +7,9 @@ from alerts.anomaly import check_anomalies
 
 RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.json")
 
-# Memoria degli alert correnti per evitare spam continui ad ogni poll
+# In-memory record of current alerts to prevent repeated spam on every poll
 active_alerts = {}
-ALERT_COOLDOWN = 3600 # Non generare lo stesso alert per un'ora, salvo peggioramenti o variazioni 
+ALERT_COOLDOWN = 3600 # Do not regenerate the same alert for one hour, unless changes occur
 
 def load_rules():
     try:
@@ -27,7 +27,7 @@ async def evaluate_alerts():
     rules = load_rules()
     current_time = time.time()
     
-    # Pulizia vecchi attivi
+    # Clean up expired active alerts
     keys_to_remove = []
     for k, v in active_alerts.items():
         if current_time - v > ALERT_COOLDOWN:
@@ -36,7 +36,7 @@ async def evaluate_alerts():
         del active_alerts[k]
 
     for cluster_name, data in cache.items():
-        # Controlla nodi
+        # Check nodes
         for node in data.get("nodes", []):
             if node.get("status") != "online":
                 continue
@@ -98,7 +98,7 @@ async def evaluate_alerts():
                     })
                     active_alerts[ak] = current_time
 
-        # Controlla VM/LXC
+        # Check VM/LXC
         for res in data.get("resources", []):
             if res.get("status") != "running":
                 continue
@@ -143,7 +143,7 @@ async def evaluate_alerts():
             continue
             
         if ak not in active_alerts:
-            # Rimuovi key_suffix prima di inserire
+            # Remove key_suffix before inserting
             an.pop("key_suffix", None)
             add_alert(an)
             active_alerts[ak] = current_time

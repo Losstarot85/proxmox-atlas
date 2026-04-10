@@ -2,7 +2,7 @@ import httpx
 
 
 async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host: str, headers: dict) -> dict:
-    """Recupera gli indirizzi IP di una singola VM o container LXC."""
+    """Retrieves the IP addresses of a single VM or LXC container."""
     node = resource["node"]
     vmid = resource["vmid"]
     r_type = resource["type"]

@@ -9,10 +9,10 @@ router = APIRouter()
 
 @router.get("/stream")
 async def sse_stream():
-    """Endpoint Server-Sent Events per trasmettere in tempo reale gli aggiornamenti della cache"""
+    """Server-Sent Events endpoint for real-time cache update streaming"""
     
     async def event_generator():
-        # Appena collegati, mandiamo subito lo stato corrente della cache per boot veloce!
+        # On first connect, immediately send the current cache state for fast boot!
         results_by_cluster = []
         for cluster_name, data in cache.items():
             results_by_cluster.append({
@@ -30,11 +30,11 @@ async def sse_stream():
         q = broker.add_client()
         try:
             while True:
-                # Aspettiamo il prossimo broadcast
+                # Wait for the next broadcast
                 data = await q.get()
                 yield f"data: {data}\n\n"
         except asyncio.CancelledError:
-            # Utente disconnesso (chiuso browser o disattivato tab)
+            # Client disconnected (closed browser or deactivated tab)
             raise
         finally:
             broker.remove_client(q)

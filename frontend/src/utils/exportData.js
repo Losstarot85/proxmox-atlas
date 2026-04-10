@@ -21,7 +21,7 @@ function triggerDownload(content, filename, mimeType) {
 }
 
 /**
- * Esporta l'intero stato dei cluster come JSON strutturato.
+ * Exports the full cluster state as structured JSON.
  */
 export function exportJSON(clusters) {
   const snapshot = {
@@ -69,7 +69,7 @@ export function exportJSON(clusters) {
 }
 
 /**
- * Esporta un inventario flat dei nodi e risorse in formato CSV.
+ * Exports a flat inventory of nodes and resources in CSV format.
  */
 export function exportCSV(clusters) {
   const rows = [];

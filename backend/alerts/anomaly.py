@@ -6,8 +6,8 @@ PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
 async def check_anomalies():
     anomalous_alerts = []
-    # CPU Nodes (se scostamento > 3 sigma)
-    # Ignora quando lo stddev è praticamente 0 o cpu è bassissima (< 10%)
+    # CPU Nodes (if deviation > 3 sigma)
+    # Skip when stddev is practically 0 or CPU is very low (< 10%)
     queries = {
         "NODE_CPU_ANOMALY": 'proxmox_node_cpu_usage_ratio > (avg_over_time(proxmox_node_cpu_usage_ratio[6h]) + 3 * stddev_over_time(proxmox_node_cpu_usage_ratio[6h])) and proxmox_node_cpu_usage_ratio > 0.1',
         "VM_CPU_ANOMALY": 'proxmox_vm_cpu_usage_ratio > (avg_over_time(proxmox_vm_cpu_usage_ratio[6h]) + 3 * stddev_over_time(proxmox_vm_cpu_usage_ratio[6h])) and proxmox_vm_cpu_usage_ratio > 0.2'

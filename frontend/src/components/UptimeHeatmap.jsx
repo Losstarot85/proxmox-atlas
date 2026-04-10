@@ -13,7 +13,7 @@ export function UptimeHeatmap({ target }) {
         setLoading(true);
         const res = await fetch(`/api/time-machine/uptime?target_id=${encodeURIComponent(target.id)}&target_type=${encodeURIComponent(target.type)}&days=30`);
         if (!res.ok) {
-          throw new Error("Impossibile recuperare i dati storici: " + res.statusText);
+          throw new Error("Unable to retrieve historical data: " + res.statusText);
         }
         const json = await res.json();
         if (active) {
@@ -36,17 +36,17 @@ export function UptimeHeatmap({ target }) {
     };
   }, [target]);
 
-  // Prepara una griglia di celle 30 colonne x 24 righe per gli ultimi 30 giorni misurati ad ore.
-  // Poiché i dati da start a end potrebbero non allinearsi a mezzanotte esatta, li allineiamo indietro dalle ore attuali.
+  // Build a 30-column x 24-row grid for the last 30 days, measured hourly.
+  // Since data from start to end may not align to exact midnight, we align backwards from the current hour.
   const grid = useMemo(() => {
     const cols = 30;
     const rows = 24;
     const now = Math.floor(Date.now() / 1000);
-    // Tronco all'ora spaccata attuale
+    // Truncate to the current full hour
     const currentHour = now - (now % 3600);
     const cells = [];
     
-    // Convertiamo l'array map time -> is_up
+    // Convert the data array into a time -> is_up map
     const map = new Map();
     data.forEach(d => {
       map.set(Math.floor(d.time), d.up);
@@ -55,21 +55,21 @@ export function UptimeHeatmap({ target }) {
     for (let c = cols - 1; c >= 0; c--) {
       const colCells = [];
       for (let r = 0; r < rows; r++) {
-        // Calcola il timestamp per quella colonna/riga.
-        // Colonna 0 (ultimo indice loop) è giorno 30 giorni fa.
-        // Riga 0 è l'ora 00 di quel giorno rlativo.
-        // Andando a ritroso è più preciso: (giorni_mancanti * 24 + ore_mancanti)
+        // Calculate the timestamp for this column/row.
+        // Column 0 (last loop index) = 30 days ago.
+        // Row 0 = hour 00 of that relative day.
+        // Counting backwards is more precise: (days_ago * 24 + hours_offset)
         
         const hoursAgo = c * 24 + (23 - r);
         const cellTime = currentHour - (hoursAgo * 3600);
         
         let status = "nodata";
         
-        // Trova il punto più vicino in un margine di 1 ora
+        // Find the closest data point within a 1-hour margin
         if (map.has(cellTime)) {
              status = map.get(cellTime) ? "up" : "down";
         } else {
-             // fallback fuzzy search: cerchiamo la chiave più vicina entro 30 min (1800 sec)
+             // Fallback fuzzy search: find the nearest key within 30 min (1800 sec)
              let closest = null;
              let minDiff = 1801;
              for (let key of map.keys()) {
@@ -92,16 +92,16 @@ export function UptimeHeatmap({ target }) {
   }, [data]);
 
   if (loading) {
-     return <div style={{ fontSize: '0.85rem', color: "var(--text-secondary)", padding: "1rem" }}>Caricamento Availability Heatmap...</div>;
+     return <div style={{ fontSize: '0.85rem', color: "var(--text-secondary)", padding: "1rem" }}>Loading Availability Heatmap...</div>;
   }
 
   if (error) {
      return <div style={{ fontSize: '0.85rem', color: "var(--danger)", padding: "1rem" }}>{error}</div>;
   }
 
-  // Se map vuota prometheus non ha ritornato nulla
+  // If the map is empty, Prometheus returned no data
   if (data.length === 0) {
-    return <div style={{ fontSize: '0.85rem', color: "var(--text-secondary)", padding: "1rem" }}>Nessun dato di uptime storico da Prometheus per questo target negli ultimi 30 giorni.</div>;
+    return <div style={{ fontSize: '0.85rem', color: "var(--text-secondary)", padding: "1rem" }}>No historical uptime data from Prometheus for this target in the last 30 days.</div>;
   }
 
   return (
@@ -122,7 +122,7 @@ export function UptimeHeatmap({ target }) {
                 if (cell.status === "down") bg = "var(--danger)";
                 
                 const d = new Date(cell.time * 1000);
-                const title = `${d.toLocaleString()} \nStatus: ${cell.status.toUpperCase()}`;
+                const title = `${d.toLocaleString("sv-SE")} \nStatus: ${cell.status.toUpperCase()}`;
                 
                 return (
                   <div 
@@ -143,14 +143,14 @@ export function UptimeHeatmap({ target }) {
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-        <span>30 giorni fa</span>
+        <span>30 days ago</span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-           <span>Legenda:</span>
+           <span>Legend:</span>
            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--success)', borderRadius: '2px'}}></span> Online
            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--danger)', borderRadius: '2px'}}></span> Offline
            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--surface-hover)', borderRadius: '2px'}}></span> No data
         </div>
-        <span>Oggi</span>
+        <span>Today</span>
       </div>
     </div>
   );

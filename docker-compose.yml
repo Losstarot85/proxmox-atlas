@@ -3,9 +3,10 @@ services:
     build: ./backend
     container_name: proxmox-backend
     volumes:
-      # Il bind mount di ./backend persiste le modifiche a clusters.json e settings.json fatte via UI
+      # Bind mount persists clusters.json and settings.json edits made via UI
       - ./backend:/app
       - prometheus_config:/etc/prometheus
+      - /etc/localtime:/etc/localtime:ro
     environment:
       - PROMETHEUS_URL=http://proxmox-prometheus:9090
     ports:
@@ -23,6 +24,7 @@ services:
     working_dir: /app
     volumes:
       - ./frontend:/app
+      - /etc/localtime:/etc/localtime:ro
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     ports:
       - "5173:5173"
@@ -39,6 +41,7 @@ services:
     volumes:
       - prometheus_config:/etc/prometheus
       - prometheus_data:/prometheus
+      - /etc/localtime:/etc/localtime:ro
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'

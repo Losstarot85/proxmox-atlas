@@ -2,7 +2,7 @@ import time
 import uuid
 from config import SETTINGS
 
-# Store in-memory buffer, list of di dict
+# In-memory buffer, list of dicts
 # Alert format: { "id": str, "timestamp": float, "cluster": str, "node": str, "resource": str, "severity": "warning"|"critical", "message": str, "read": bool }
 MAX_ALERTS = 200
 alerts_store = []
@@ -40,12 +40,12 @@ def clear_alerts():
 def silence_resource(alert_id: str, minutes: int = 60):
     for a in alerts_store:
         if a["id"] == alert_id:
-            # Crea un resource unique key in base al contenuto
-            # Se è node: cluster:node:node
-            # Se è vm: cluster:vmid:vm
-            # Per semplicità formiamo una stringa generica
+            # Build a unique resource key based on content
+            # For nodes: cluster:node:node
+            # For VMs: cluster:vmid:vm
+            # We build a generic key string for simplicity
             if "VM" in a["resource"] or "LXC" in a["resource"]:
-                # extract vmid dal nome "VM/LXC vmid (name)"
+                # Extract vmid from resource name "VM/LXC vmid (name)"
                 try:
                     vmid = a["resource"].split(" ")[1]
                 except IndexError:
@@ -59,7 +59,7 @@ def silence_resource(alert_id: str, minutes: int = 60):
             break
             
 def get_silenced():
-    # Pulisce i vecchi
+    # Clean up expired entries
     curr = time.time()
     for k in list(silenced_resources.keys()):
         if curr > silenced_resources[k]:

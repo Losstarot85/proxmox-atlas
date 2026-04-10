@@ -7,15 +7,15 @@ try:
     with open(CONFIG_PATH) as f:
         CLUSTERS = json.load(f)
 except FileNotFoundError:
-    print(f"[INFO] {CONFIG_PATH} non trovato. Inizializzato un database vuoto.")
+    print(f"[INFO] {CONFIG_PATH} not found. Initialized an empty cluster database.")
     CLUSTERS = []
     try:
         with open(CONFIG_PATH, "w") as f:
             json.dump(CLUSTERS, f, indent=2)
     except Exception as e:
-        print(f"[ERROR] Impossibile creare il file {CONFIG_PATH}: {e}")
+        print(f"[ERROR] Unable to create {CONFIG_PATH}: {e}")
 except json.JSONDecodeError as e:
-    print(f"[FATAL] clusters.json contiene JSON non valido: {e}")
+    print(f"[FATAL] clusters.json contains invalid JSON: {e}")
     raise SystemExit(1)
 
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "settings.json")
@@ -33,7 +33,7 @@ def load_settings():
             with open(SETTINGS_PATH) as f:
                 loaded = json.load(f)
                 
-                # Migrate vecchi setting "webhook_url" in un element dell'array
+                # Migrate legacy "webhook_url" setting into the webhooks array
                 if "webhook_url" in loaded and loaded["webhook_url"]:
                     if "webhooks" not in loaded:
                         loaded["webhooks"] = []
@@ -49,7 +49,7 @@ def load_settings():
                 if "webhook_url" in loaded:
                     del loaded["webhook_url"]
                     
-                # Aggiusta i default su quelli mancanti
+                # Fill in missing defaults
                 for k, v in DEFAULT_SETTINGS.items():
                     if k not in loaded:
                         loaded[k] = v
@@ -58,7 +58,7 @@ def load_settings():
         else:
             save_settings(DEFAULT_SETTINGS)
     except Exception as e:
-        print(f"[WARN] Impossibile caricare settings.json: {e}")
+        print(f"[WARN] Unable to load settings.json: {e}")
 
 def save_settings(new_settings):
     global SETTINGS
@@ -67,7 +67,7 @@ def save_settings(new_settings):
             json.dump(new_settings, f, indent=2)
         SETTINGS.update(new_settings)
     except Exception as e:
-        print(f"[ERROR] Impossibile salvare settings.json: {e}")
+        print(f"[ERROR] Unable to save settings.json: {e}")
 
 load_settings()
 

@@ -15,7 +15,7 @@ def _get_queue():
         dispatch_queue = asyncio.Queue()
     return dispatch_queue
 
-# Struttura del Webhook Log
+# Webhook Log structure
 # { "timestamp": float, "webhook_name": str, "url": str, "status_code": int, "success": bool, "error": str, "payload": str }
 
 def add_log(name, url, status_code, success, error, payload):
@@ -35,7 +35,7 @@ def get_webhook_logs():
     return webhook_logs
 
 def queue_alert(alert):
-    # L'alert arriva da engine.py
+    # Alert comes from engine.py
     try:
         _get_queue().put_nowait(alert)
     except Exception as e:
@@ -49,12 +49,12 @@ async def dispatch_worker():
             webhooks = SETTINGS.get("webhooks", [])
             
             for index, wh in enumerate(webhooks):
-                # Filtra per severity
+                # Filter by severity
                 filter_sev = wh.get("severity_filter", "all")
                 if filter_sev != "all" and alert.get("severity") != filter_sev:
                     continue
                 
-                # Sostituzione Template base
+                # Basic template substitution
                 template = wh.get("json_template", "{\"text\": \"[{{severity}}] {{message}}\"}")
                 payload_str = template.replace("{{message}}", alert.get("message", ""))
                 payload_str = payload_str.replace("{{severity}}", alert.get("severity", ""))
@@ -67,7 +67,7 @@ async def dispatch_worker():
                     # Fallback if invalid JSON
                     payload = {"text": f"Error parsing template JSON: {payload_str}"}
 
-                # Invio con retry (max 3)
+                # Send with retry (max 3)
                 max_retries = 3
                 for attempt in range(1, max_retries + 1):
                     try:

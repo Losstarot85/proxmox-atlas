@@ -8,7 +8,7 @@ export function TimeMachineModal({ target, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Default range: ultime 24 ore
+  // Default range: last 24 hours
   const [timeRange, setTimeRange] = useState("24h");
 
   useEffect(() => {
@@ -20,18 +20,18 @@ export function TimeMachineModal({ target, onClose }) {
       try {
         const end = Math.floor(Date.now() / 1000);
         let start = end - (24 * 3600);
-        let step = 60; // 1 min per 24h
+        let step = 60; // 1 min resolution for 24h
         
         if (timeRange === "7d") {
             start = end - (7 * 24 * 3600);
-            step = 60 * 60; // 1 ora
+            step = 60 * 60; // 1 hour resolution
         } else if (timeRange === "30d") {
             start = end - (30 * 24 * 3600);
-            step = 60 * 60 * 6; // 6 ore
+            step = 60 * 60 * 6; // 6 hour resolution
         }
 
         const res = await fetch(`/api/time-machine/${target.id}?target_type=${target.type}&start=${start}&end=${end}&step=${step}`);
-        if (!res.ok) throw new Error("Errore nel caricamento dei dati storici");
+        if (!res.ok) throw new Error("Failed to load historical data");
         
         const json = await res.json();
         setData(json.results || []);
@@ -50,7 +50,7 @@ export function TimeMachineModal({ target, onClose }) {
   const formatTime = (unixTime) => {
     if (!unixTime) return "";
     const date = new Date(unixTime * 1000);
-    return date.toLocaleString();
+    return date.toLocaleString("sv-SE");
   };
 
   return (
@@ -68,11 +68,11 @@ export function TimeMachineModal({ target, onClose }) {
             <button className={`tm-btn ${timeRange === "30d" ? "active" : ""}`} onClick={() => setTimeRange("30d")}>30 Days</button>
         </div>
 
-        {loading && <div className="tm-status">Caricamento storico da Prometheus...</div>}
-        {error && <div className="tm-status tm-error">Errore: {error}</div>}
+        {loading && <div className="tm-status">Loading historical data from Prometheus...</div>}
+        {error && <div className="tm-status tm-error">Error: {error}</div>}
 
         {!loading && !error && data.length === 0 && (
-            <div className="tm-status">Nessun dato storico disponibile.</div>
+            <div className="tm-status">No historical data available.</div>
         )}
 
         {!loading && !error && data.length > 0 && (
@@ -80,7 +80,7 @@ export function TimeMachineModal({ target, onClose }) {
             
             <details style={{ marginBottom: "2rem", width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", padding: "1rem" }}>
               <summary style={{ cursor: "pointer", fontWeight: "bold", fontSize: "1.1rem" }}>
-                 Storico Affidabilità (Uptime 30 Giorni)
+                 Reliability History (30-Day Uptime)
               </summary>
               <UptimeHeatmap target={target} />
             </details>

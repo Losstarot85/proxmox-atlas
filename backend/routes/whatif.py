@@ -6,34 +6,34 @@ router = APIRouter()
 
 @router.get("/what-if")
 def what_if_simulation(
-    cluster: str = Query(..., description="Nome del cluster"),
-    remove_node: str = Query(..., description="Nodo fisico da simulare come rimosso")
+    cluster: str = Query(..., description="Cluster name"),
+    remove_node: str = Query(..., description="Physical node to simulate as removed")
 ):
     """
-    Simula la rimozione di un nodo fisico dal cluster e calcola:
-    - Quali VM/LXC diventerebbero orfane (non ospitabili altrove)
-    - Dove potrebbero migrare le VM superstiti
-    - Quali nodi sarebbero congestionati dopo la migrazione
-    Nessuna modifica reale al cluster. Calcolo puro sulla cache in-memory.
+    Simulates the removal of a physical node from the cluster and calculates:
+    - Which VM/LXC would become orphaned (cannot be hosted elsewhere)
+    - Where surviving VMs could migrate to
+    - Which nodes would become congested after migration
+    No actual changes to the cluster. Pure in-memory calculation on cached data.
     """
 
     if cluster not in cache:
-        raise HTTPException(status_code=404, detail=f"Cluster '{cluster}' non trovato")
+        raise HTTPException(status_code=404, detail=f"Cluster '{cluster}' not found")
 
     cluster_data = cache[cluster]
     nodes = cluster_data.get("nodes", [])
     resources = cluster_data.get("resources", [])
 
-    # Verifica che il nodo da rimuovere esista
+    # Verify that the node to remove exists
     removed_node = next((n for n in nodes if n["name"] == remove_node), None)
     if not removed_node:
-        raise HTTPException(status_code=404, detail=f"Nodo '{remove_node}' non trovato nel cluster '{cluster}'")
+        raise HTTPException(status_code=404, detail=f"Node '{remove_node}' not found in cluster '{cluster}'")
 
-    # Nodi sopravvissuti (online e != nodo rimosso)
+    # Surviving nodes (online and != removed node)
     surviving_nodes = [n for n in nodes if n["name"] != remove_node and n["status"] == "online"]
 
     if not surviving_nodes:
-        # Tutti i nodi sono offline o rimossi: tutte le VM sono orfane
+        # All nodes are offline or removed: all VMs are orphaned
         orphaned_vms = [r for r in resources if r["node"] == remove_node and r["status"] == "running"]
         return {
             "removed_node": remove_node,
@@ -51,15 +51,15 @@ def what_if_simulation(
             }
         }
 
-    # VM/LXC attualmente in esecuzione sul nodo rimosso
+    # VM/LXC currently running on the removed node
     displaced_vms = [r for r in resources if r["node"] == remove_node and r["status"] == "running"]
 
-    # Calcola capacità residua di ogni nodo sopravvissuto
-    # Per ogni nodo: free_cpu = maxcpu - (cpu_ratio * maxcpu), free_mem = maxmem - mem_used
-    # Dove mem_used lo calcoliamo dalle VM attualmente allocate su quel nodo
+    # Calculate remaining capacity for each surviving node
+    # For each node: free_cpu = maxcpu - (cpu_ratio * maxcpu), free_mem = maxmem - mem_used
+    # Where mem_used is calculated from VMs currently allocated on that node
     node_capacity = {}
     for sn in surviving_nodes:
-        # Le VM già allocate su questo nodo
+        # VMs already allocated on this node
         current_vms = [r for r in resources if r["node"] == sn["name"] and r["status"] == "running"]
         used_vcpus = sum(r["maxcpu"] for r in current_vms)
         used_mem = sum(r["mem"] for r in current_vms)
@@ -75,18 +75,18 @@ def what_if_simulation(
             "vm_count": len(current_vms)
         }
 
-    # Greedy migration: assegna ogni VM displaced al nodo con più risorse libere
+    # Greedy migration: assign each displaced VM to the node with the most free resources
     migration_plan = []
     orphaned_vms = []
 
-    # Ordina le VM per richiesta di risorse decrescente (le più grosse prima = best-fit)
+    # Sort VMs by resource requirements descending (largest first = best-fit)
     displaced_sorted = sorted(displaced_vms, key=lambda v: v["maxmem"], reverse=True)
 
     for vm in displaced_sorted:
         vm_needed_vcpus = vm["maxcpu"]
-        vm_needed_mem = vm["mem"]  # RAM attualmente usata come proxy realistico
+        vm_needed_mem = vm["mem"]  # Currently used RAM as a realistic proxy
 
-        # Trova il miglior nodo candidato: memoria libera sufficiente e vCPU
+        # Find the best candidate node: sufficient free memory and vCPU
         best_node = None
         best_free_mem = -1
 
@@ -102,7 +102,7 @@ def what_if_simulation(
                 "target_node": best_node,
                 "fit_score": round(best_free_mem / node_capacity[best_node]["total_mem"] * 100, 1)
             })
-            # Aggiorna capacità
+            # Update capacity
             node_capacity[best_node]["free_mem"] -= vm_needed_mem
             node_capacity[best_node]["used_mem"] += vm_needed_mem
             node_capacity[best_node]["free_vcpus"] -= vm_needed_vcpus
@@ -111,7 +111,7 @@ def what_if_simulation(
         else:
             orphaned_vms.append(_vm_summary(vm))
 
-    # Identifica nodi congestionati dopo la migrazione (CPU > 80% o MEM > 85%)
+    # Identify congested nodes after migration (CPU > 80% or MEM > 85%)
     CONGESTION_CPU_THRESHOLD = 0.80
     CONGESTION_MEM_THRESHOLD = 0.85
 

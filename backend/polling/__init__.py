@@ -8,7 +8,7 @@ from alerts.engine import evaluate_alerts
 
 
 async def poll_proxmox():
-    """Loop di polling continuo per tutti i cluster con interval reattivo."""
+    """Continuous polling loop for all clusters with reactive interval."""
     while True:
         start_time = time.time()
         
@@ -16,20 +16,20 @@ async def poll_proxmox():
             poll_cluster(cluster) for cluster in CLUSTERS
         ])
         
-        # Valuta eventuali alert in base ai task eseguiti
+        # Evaluate alerts based on the completed tasks
         await evaluate_alerts()
         
-        # Inoltra in tempo reale ai client connessi via SSE
+        # Forward in real-time to connected SSE clients
         await broker.broadcast_cache()
         
-        # Reactive sleep chunking per adattarsi on-the-fly alle impostazioni utente
+        # Reactive sleep chunking to adapt on-the-fly to user settings
         while True:
             elapsed = time.time() - start_time
             current_interval = SETTINGS.get("polling_interval", 15)
             if elapsed >= current_interval:
                 break
             
-            # Dorme al massimo un secondo alla volta
+            # Sleep at most one second at a time
             sleep_time = min(1.0, current_interval - elapsed)
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
@@ -38,7 +38,7 @@ async def poll_proxmox():
 
 
 async def poll_cluster(cluster: dict):
-    """Polling sequenziale di un singolo cluster: prima nodi, poi risorse."""
+    """Sequential polling for a single cluster: nodes first, then resources."""
     await fetch_nodes_from_proxmox(cluster)
     await fetch_resources_from_proxmox(cluster)
     

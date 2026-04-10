@@ -5,7 +5,7 @@ from cache import cache
 
 
 async def fetch_resources_from_proxmox(cluster: dict):
-    """Recupera VM e container LXC da tutti i nodi di un cluster."""
+    """Retrieves VMs and LXC containers from all nodes of a cluster."""
     cluster_name = cluster["name"]
     host = cluster["host"]
     headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
@@ -135,13 +135,13 @@ async def fetch_resources_from_proxmox(cluster: dict):
         else:
             cache[cluster_name]["error"] = None
 
-        print(f"[INFO] [{cluster_name}] Risorse aggiornate: {len(all_resources)} elementi, nodi falliti: {failed_nodes}")
+        print(f"[INFO] [{cluster_name}] Resources updated: {len(all_resources)} items, failed nodes: {failed_nodes}")
 
     except httpx.RequestError:
         cache[cluster_name]["error"] = "Proxmox host unreachable"
         cache[cluster_name]["resources"] = []
         cache[cluster_name]["failed_nodes"] = []
-        print(f"[ERROR] [{cluster_name}] Host non raggiungibile")
+        print(f"[ERROR] [{cluster_name}] Host unreachable")
 
     except Exception as e:
         cache[cluster_name]["error"] = str(e)

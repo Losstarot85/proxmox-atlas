@@ -46,7 +46,7 @@ export function AlertsTab() {
   };
 
   const formatTime = (ts) => {
-    return new Date(ts * 1000).toLocaleString();
+    return new Date(ts * 1000).toLocaleString("sv-SE");
   };
 
   return (

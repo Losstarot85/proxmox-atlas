@@ -94,8 +94,8 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
         body: JSON.stringify(newCluster)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Errore");
-      setClusterSuccess(`Cluster '${newCluster.name}' aggiunto. Il polling partirà automaticamente.`);
+      if (!res.ok) throw new Error(data.detail || "Error");
+      setClusterSuccess(`Cluster '${newCluster.name}' added. Polling will start automatically.`);
       setNewCluster({ name: "", host: "", token_id: "", token_secret: "", verify_ssl: false });
       setTestResult(null);
       setShowAddForm(false);
@@ -109,13 +109,13 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
   };
 
   const handleDeleteCluster = async (name) => {
-    if (!confirm(`Eliminare il cluster '${name}'? Verrà rimosso dal monitoraggio.`)) return;
+    if (!confirm(`Delete cluster '${name}'? It will be removed from monitoring.`)) return;
     setClusterError(null);
     try {
       const res = await fetch(`/api/clusters/${encodeURIComponent(name)}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Errore");
-      setClusterSuccess(`Cluster '${name}' rimosso.`);
+      if (!res.ok) throw new Error(data.detail || "Error");
+      setClusterSuccess(`Cluster '${name}' removed.`);
       fetchClusters();
       setTimeout(() => setClusterSuccess(null), 5000);
     } catch (err) {
@@ -184,7 +184,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
     setWebhooks(webhooks.filter(w => w.id !== id));
   };
 
-  const formatTime = (ts) => new Date(ts * 1000).toLocaleString();
+  const formatTime = (ts) => new Date(ts * 1000).toLocaleString("sv-SE");
 
   return (
     <div className="settings-content" style={{ maxWidth: '1000px' }}>
@@ -255,7 +255,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
               <button className="btn" onClick={handleTestConnection} disabled={isTesting || !newCluster.host || !newCluster.token_id || !newCluster.token_secret} style={{ borderColor: 'var(--accent)' }}>
                 {isTesting ? "Testing..." : "🔌 Test Connection"}
               </button>
-              <button className="btn btn-primary" onClick={handleAddCluster} disabled={isAdding || !testResult?.ok} title={!testResult?.ok ? "Testa la connessione prima di aggiungere" : ""}>
+              <button className="btn btn-primary" onClick={handleAddCluster} disabled={isAdding || !testResult?.ok} title={!testResult?.ok ? "Test connection before adding" : ""}>
                 {isAdding ? "Adding..." : "Add Cluster"}
               </button>
             </div>

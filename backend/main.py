@@ -10,7 +10,7 @@ from routes import router
 async def lifespan(app: FastAPI):
     from prometheus_config import generate_prometheus_config
     from alerts.notifier import dispatch_worker
-    # Genera la configurazione Prometheus all'avvio assicurandosi sia in sync col polling
+    # Generate the Prometheus config at startup, ensuring it's in sync with polling
     generate_prometheus_config()
     
     task = asyncio.create_task(poll_proxmox())

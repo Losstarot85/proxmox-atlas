@@ -9,8 +9,8 @@ PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 @router.get("/time-machine/uptime")
 async def get_uptime_history(
     target_id: str,
-    target_type: str = Query(..., description="VM o NODE"),
-    days: int = Query(30, description="Numero di giorni di storico"),
+    target_type: str = Query(..., description="VM or NODE"),
+    days: int = Query(30, description="Number of days of history"),
 ):
     import time
     end = time.time()
@@ -50,17 +50,17 @@ async def get_uptime_history(
             
             return {"results": heatmap}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore query Prometheus uptime: {e}")
+        raise HTTPException(status_code=500, detail=f"Prometheus uptime query error: {e}")
 
 @router.get("/time-machine/{target_id}")
 async def get_time_machine_data(
     target_id: str,
-    target_type: str = Query(..., description="VM o NODE"),
-    start: float = Query(..., description="Timestamp inizio in sec"),
-    end: float = Query(..., description="Timestamp fine in sec"),
-    step: int = Query(60, description="Step in secondi per aggregazione")
+    target_type: str = Query(..., description="VM or NODE"),
+    start: float = Query(..., description="Start timestamp in seconds"),
+    end: float = Query(..., description="End timestamp in seconds"),
+    step: int = Query(60, description="Step in seconds for aggregation")
 ):
-    """Interroga Prometheus per ricavare lo storico."""
+    """Queries Prometheus for historical data."""
     window = max(300, step * 2)
     window_str = f"{window}s"
 
@@ -102,10 +102,10 @@ async def get_time_machine_data(
                 data = res.json()
                 results.append({"name": name, "data": data.get("data", {}).get("result", [])})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore query Prometheus: {e}")
+        raise HTTPException(status_code=500, detail=f"Prometheus query error: {e}")
 
-    # Riorganizziamo i dati in un formato compatibile con Recharts
-    # Recharts vuole un array di oggetti con i timestamp allineati
+    # Reorganize data into a Recharts-compatible format
+    # Recharts expects an array of objects with aligned timestamps
     timeline = {}
     for metric in results:
         metric_name = metric["name"]

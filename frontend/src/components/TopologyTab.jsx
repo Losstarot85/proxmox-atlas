@@ -69,7 +69,7 @@ function TopologyNode({ nodeData, clusterName, initialPosition, onOpenTimeMachin
             className="btn btn-sm"
             onClick={(e) => { e.stopPropagation(); onOpenWhatIf(clusterName, nodeData.name); }}
             style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.15)', borderColor: 'var(--warning)' }}
-            title="Simula rimozione nodo"
+            title="Simulate node removal"
           >
             ⚡ What-If
           </button>
@@ -125,7 +125,7 @@ function TopologyCluster({ clusterBlock, rawCluster, onOpenTimeMachine, onOpenWh
     e.target.releasePointerCapture(e.pointerId);
   };
 
-  // Calcola le dimensioni del body per far quadrare i nodi inseriti (una stima bounding box)
+  // Calculate the body dimensions to fit the nodes (bounding box estimate)
   let maxX = 350;
   let maxY = 200;
   clusterBlock.nodes.forEach(n => {
@@ -188,7 +188,7 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
 
   const [clusterBlocks, setClusterBlocks] = useState([]);
 
-  // Setup layout alla prima apertura
+  // Setup layout on first open
   useEffect(() => {
     if (clusterBlocks.length === 0 && clusters.length > 0) {
       const blocks = [];
@@ -204,7 +204,7 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
           c.nodes.forEach(n => {
              clusterBlock.nodes.push({ id: n.name, pos: { x: nStartX, y: nStartY } });
              nStartX += 340; 
-             // andiamo a capo nel recinto del cluster ogni 3 nodi per rack (1000px)
+             // Wrap to next row every 3 nodes (1000px)
              if (nStartX > 1000) {
                 nStartX = 20;
                 nStartY += 350;
@@ -213,8 +213,8 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
         }
         blocks.push(clusterBlock);
         
-        // Offset verticale per i cluster successivi (Datacenter diversi impilati o affiancati)
-        // Per semplicità li impiliamo verso il basso con offset massiccio calcolato.
+        // Vertical offset for subsequent clusters (different datacenters stacked or side-by-side)
+        // For simplicity, we stack them vertically with a calculated offset.
         const clusterHeight = (Math.ceil((c.nodes ? c.nodes.length : 1) / 3)) * 350 + 100;
         cStartY += clusterHeight + 100;
       });
@@ -224,8 +224,8 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
   }, [clusters, clusterBlocks.length]);
 
   const updateNodePos = (clusterId, nodeId, newPos) => {
-    // Non forza un re-render React continuo del macro canvas per non impallare le performance a 60fps.
-    // TopologyNode aggiorna se stesso in React (local state), noi aggiorniamo l'array logico sotto traccia per persistenza locale.
+    // Avoid continuous React re-renders of the macro canvas to maintain 60fps performance.
+    // TopologyNode updates itself via React local state; we update the logical array for local persistence tracking.
     setClusterBlocks(prev => {
        const next = [...prev];
        const c = next.find(x => x.id === clusterId);

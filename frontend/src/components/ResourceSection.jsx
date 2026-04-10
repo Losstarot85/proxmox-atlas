@@ -2,7 +2,7 @@ import React from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 
-// Sotto-componente per le risorse (VM, LXC) con metriche
+// Sub-component for resources (VM, LXC) with metrics
 export function ResourceSection({ title, typeFilter, resources, clusterName, history, onOpenTimeMachine }) {
   const filtered = resources.filter(r => r.type === typeFilter);
 
