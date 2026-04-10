@@ -11,19 +11,19 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
       <h3 className="section-title">{title}</h3>
       <div className="table-wrapper">
         <div className="responsive-table">
-          <table>
+          <table style={{ tableLayout: "fixed", width: "100%" }}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>CPU Usage</th>
-                <th>RAM Usage</th>
-                <th>Network (In/Out)</th>
-                <th>Disk IO</th>
-                <th>CPU Stall</th>
-                <th>RAM Stall</th>
-                <th>IO Stall</th>
+                <th style={{ width: "5%" }}>ID</th>
+                <th style={{ width: "10%" }}>Name</th>
+                <th style={{ width: "10%" }}>Status</th>
+                <th style={{ width: "16%" }}>CPU Usage</th>
+                <th style={{ width: "16%" }}>RAM Usage</th>
+                <th style={{ width: "17%" }}>Network (In/Out)</th>
+                <th style={{ width: "11%" }}>Disk IO</th>
+                <th style={{ width: "5%" }}>CPU Stall</th>
+                <th style={{ width: "5%" }}>RAM Stall</th>
+                <th style={{ width: "5%" }}>IO Stall</th>
               </tr>
             </thead>
             <tbody>

@@ -32,20 +32,20 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
       
       <div className="table-wrapper">
         <div className="responsive-table">
-          <table>
+          <table style={{ tableLayout: "fixed", width: "100%" }}>
             <thead>
               <tr>
-                <th>Node</th>
-                <th>Status</th>
-                <th>Load Avg</th>
-                <th>CPU Usage</th>
-                <th>RAM Usage</th>
-                <th>Storage</th>
-                <th>Network (In/Out)</th>
-                <th>IO Wait</th>
-                <th>CPU Stall</th>
-                <th>RAM Stall</th>
-                <th>IO Stall</th>
+                <th style={{ width: "20%" }}>Node</th>
+                <th style={{ width: "10%" }}>Status</th>
+                <th style={{ width: "5%" }}>Load</th>
+                <th style={{ width: "10%" }}>CPU</th>
+                <th style={{ width: "10%" }}>RAM</th>
+                <th style={{ width: "10%" }}>Storage</th>
+                <th style={{ width: "15%" }}>Network</th>
+                <th style={{ width: "5%" }}>IO Wait</th>
+                <th style={{ width: "5%" }}>CPU Stall</th>
+                <th style={{ width: "5%" }}>RAM Stall</th>
+                <th style={{ width: "5%" }}>IO Stall</th>
               </tr>
             </thead>
             <tbody>
