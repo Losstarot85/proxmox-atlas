@@ -21,7 +21,7 @@ export const formatNetwork = (bytes) => {
 // Format Disk IO (R / W)
 export const formatIO = (readBytes, writeBytes) => {
   if (readBytes == null || writeBytes == null) return "-";
-  return `R: ${formatNetwork(readBytes)}/s / W: ${formatNetwork(writeBytes)}/s`;
+  return `R: ${formatNetwork(readBytes)} / W: ${formatNetwork(writeBytes)}`;
 };
 
 // Format Pressure Stall (e.g. 1.2 -> 1.2%)
