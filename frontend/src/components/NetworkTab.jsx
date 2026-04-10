@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
 export function NetworkTab() {
   const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [search, setSearch] = useState("");
-  const hasFetched = useRef(false);
 
   const fetchNetwork = async () => {
     setLoading(true);
@@ -22,10 +21,7 @@ export function NetworkTab() {
   };
 
   useEffect(() => {
-    if (!hasFetched.current) {
-      hasFetched.current = true;
-      fetchNetwork();
-    }
+    fetchNetwork();
   }, []);
 
   const filteredClusters = clusters.map(cluster => ({
