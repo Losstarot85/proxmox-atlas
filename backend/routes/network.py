@@ -4,7 +4,6 @@ from datetime import datetime
 from fastapi import APIRouter
 from config import CLUSTERS
 from cache import cache
-from polling.network import fetch_ips_for_resource
 
 router = APIRouter()
 

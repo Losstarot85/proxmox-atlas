@@ -30,7 +30,7 @@ async def update_settings(data: SettingsUpdate):
     
     new_settings = {
         "polling_interval": data.polling_interval,
-        "webhooks": [w.dict() for w in data.webhooks]
+        "webhooks": [w.model_dump() for w in data.webhooks]
     }
     
     save_settings(new_settings)

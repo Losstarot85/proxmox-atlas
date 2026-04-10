@@ -56,7 +56,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
             <div className="whatif-summary">
               <div className={`whatif-card ${data.summary.orphaned > 0 ? 'danger' : 'success'}`}>
                 <div className="whatif-card-value">{data.summary.total_displaced_vms}</div>
-                <div className="whatif-card-label">VM Dislocate</div>
+                <div className="whatif-card-label">VM/LXC Dislocate</div>
               </div>
               <div className={`whatif-card ${data.summary.migratable > 0 ? 'success' : ''}`}>
                 <div className="whatif-card-value">{data.summary.migratable}</div>
@@ -120,7 +120,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
             {/* Orphaned VMs */}
             {data.orphaned_vms.length > 0 && (
               <div className="whatif-section">
-                <h4 style={{ color: 'var(--danger)' }}>🚫 VM Orfane (nessun nodo può accoglierle)</h4>
+                <h4 style={{ color: 'var(--danger)' }}>🚫 VM/LXC Orfane (nessun nodo può accoglierle)</h4>
                 <div className="table-wrapper">
                   <div className="responsive-table">
                     <table>
@@ -162,7 +162,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
                           <th>Nodo</th>
                           <th>vCPU After</th>
                           <th>RAM After</th>
-                          <th>VM Count</th>
+                          <th>VM/LXC Count</th>
                           <th>Stato</th>
                         </tr>
                       </thead>
@@ -210,7 +210,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
 
             {data.summary.total_displaced_vms === 0 && (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <p style={{ fontSize: '1.2rem' }}>✅ Nessuna VM in esecuzione su questo nodo.</p>
+                <p style={{ fontSize: '1.2rem' }}>✅ Nessuna VM o LXC in esecuzione su questo nodo.</p>
                 <p>La rimozione non avrebbe impatto sulle risorse virtualizzate.</p>
               </div>
             )}

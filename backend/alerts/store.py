@@ -1,7 +1,5 @@
 import time
 import uuid
-import asyncio
-import httpx
 from config import SETTINGS
 
 # Store in-memory buffer, list of di dict
@@ -46,9 +44,12 @@ def silence_resource(alert_id: str, minutes: int = 60):
             # Se è node: cluster:node:node
             # Se è vm: cluster:vmid:vm
             # Per semplicità formiamo una stringa generica
-            if "VM" in a["resource"]:
-                # extract vmid dal nome "VM vmid (name)"
-                vmid = a["resource"].split(" ")[1]
+            if "VM" in a["resource"] or "LXC" in a["resource"]:
+                # extract vmid dal nome "VM/LXC vmid (name)"
+                try:
+                    vmid = a["resource"].split(" ")[1]
+                except IndexError:
+                    vmid = "unknown"
                 key = f"{a['cluster']}:{vmid}:vm"
             else:
                 key = f"{a['cluster']}:{a['node']}:node"
