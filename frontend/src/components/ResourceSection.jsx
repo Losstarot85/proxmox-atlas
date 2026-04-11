@@ -46,10 +46,10 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                   }) || [];
 
                   return (
-                    <tr
-                      id={`row-${r.type}-${r.vmid}`}
-                      key={`${r.type}-${r.vmid}`}
-                      onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
+                    <React.Fragment key={`${r.type}-${r.vmid}`}>
+                      <tr
+                        id={`row-${r.type}-${r.vmid}`}
+                        onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
                       style={{ cursor: 'pointer' }}
                       className="hoverable-row"
                     >
@@ -89,7 +89,20 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                       <td className="mono-cell" style={{ color: r.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_ram) : "-"}</td>
                       <td className="mono-cell" style={{ color: r.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_io) : "-"}</td>
                     </tr>
-                  );
+                    {(r.pool || r.tags) && (
+                      <tr style={{ backgroundColor: 'transparent' }}>
+                        <td colSpan="10" style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem' }}>
+                          <div className="tags-container" style={{ margin: 0 }}>
+                            {r.pool && <span className="resource-tag pool-tag">pool: {r.pool}</span>}
+                            {r.tags && r.tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
+                              <span key={tag} className="resource-tag generic-tag">tag: {tag}</span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
                 })
               )}
             </tbody>

@@ -1067,3 +1067,34 @@ tbody tr:last-child td {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
+
+/* Resource Tags (VM/LXC) */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.resource-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.resource-tag.pool-tag {
+  background-color: rgba(99, 102, 241, 0.15); /* Indigo tint */
+  color: #818cf8;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+.resource-tag.generic-tag {
+  background-color: rgba(16, 185, 129, 0.15); /* Emerald tint */
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}

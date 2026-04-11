@@ -18,6 +18,20 @@ async def fetch_resources_from_proxmox(cluster: dict):
         async with httpx.AsyncClient(verify=verify_ssl, timeout=10.0) as client:
             nodes = cache[cluster_name]["nodes"]
 
+            pool_by_vmid = {}
+            try:
+                cluster_res = await client.get(
+                    f"{host}/api2/json/cluster/resources",
+                    headers=headers
+                )
+                if cluster_res.status_code == 200:
+                    cdata = cluster_res.json().get("data", [])
+                    for i in cdata:
+                        if i.get("type") in ["qemu", "lxc"] and "vmid" in i:
+                            pool_by_vmid[i["vmid"]] = i.get("pool", "")
+            except Exception as e:
+                print(f"[WARN] [{cluster_name}] Missing pool fetch: {e}")
+
             async def fetch_node_resources(node_name, r_type):
                 try:
                     res = await client.get(
@@ -72,6 +86,8 @@ async def fetch_resources_from_proxmox(cluster: dict):
                             "node": node_name,
                             "cluster": cluster_name,
                             "type": "VM" if r["r_type"] == "qemu" else "LXC",
+                            "tags": item.get("tags", ""),
+                            "pool": pool_by_vmid.get(item.get("vmid"), ""),
                             "status": item.get("status"),
                             "uptime": item.get("uptime"),
                             "cpu": float(item.get("cpu") or 0.0),
