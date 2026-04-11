@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from sse import broker
+from sse import broker, _enrich_resources_with_ips
 import json
 from cache import cache
 
@@ -18,7 +18,7 @@ async def sse_stream():
             results_by_cluster.append({
                 "name": cluster_name,
                 "nodes": data.get("nodes", []),
-                "resources": data.get("resources", []),
+                "resources": _enrich_resources_with_ips(cluster_name, data.get("resources", [])),
                 "last_update": data.get("last_update"),
                 "error": data.get("error"),
                 "failed_nodes": data.get("failed_nodes", [])

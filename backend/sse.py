@@ -2,6 +2,31 @@ import asyncio
 import json
 from cache import cache
 
+# Interfaces to exclude (Docker, container bridges, loopback, veth pairs)
+EXCLUDED_IFACE_PREFIXES = ("docker", "br-", "veth", "cni", "flannel", "cali", "tunl", "virbr")
+
+def _enrich_resources_with_ips(cluster_name, resources):
+    """Merge filtered IP addresses from network cache into each resource."""
+    network_data = cache.get(cluster_name, {}).get("network", [])
+    ip_by_vmid = {}
+    for entry in network_data:
+        vmid = entry.get("vmid")
+        if vmid and entry.get("ips"):
+            filtered = [
+                ip_entry["ip"] for ip_entry in entry["ips"]
+                if not ip_entry.get("interface", "").startswith(EXCLUDED_IFACE_PREFIXES)
+                and not ip_entry.get("ip", "").startswith("127.")
+            ]
+            if filtered:
+                ip_by_vmid[vmid] = filtered
+    
+    enriched = []
+    for r in resources:
+        r_copy = dict(r)
+        r_copy["ips"] = ip_by_vmid.get(r.get("vmid"), [])
+        enriched.append(r_copy)
+    return enriched
+
 class SSEBroker:
     def __init__(self):
         self.queues = []
@@ -22,7 +47,7 @@ class SSEBroker:
             results_by_cluster.append({
                 "name": cluster_name,
                 "nodes": data.get("nodes", []),
-                "resources": data.get("resources", []),
+                "resources": _enrich_resources_with_ips(cluster_name, data.get("resources", [])),
                 "last_update": data.get("last_update"),
                 "error": data.get("error"),
                 "failed_nodes": data.get("failed_nodes", [])

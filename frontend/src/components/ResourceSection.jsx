@@ -18,7 +18,8 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
       (r.pool || "").toLowerCase().includes(term) ||
       (r.tags || "").toLowerCase().includes(term) ||
       cpuStr.includes(term) ||
-      ramStr.includes(term)
+      ramStr.includes(term) ||
+      (r.ips || []).some(ip => ip.includes(term))
     );
   });
 
@@ -106,13 +107,16 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                       <td className="mono-cell" style={{ color: r.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_ram) : "-"}</td>
                       <td className="mono-cell" style={{ color: r.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_io) : "-"}</td>
                     </tr>
-                    {(r.pool || r.tags) && (
+                    {(r.pool || r.tags || (r.ips && r.ips.length > 0)) && (
                       <tr style={{ backgroundColor: 'transparent' }}>
                         <td colSpan="10" style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem' }}>
                           <div className="tags-container" style={{ margin: 0 }}>
                             {r.pool && <span className="resource-tag pool-tag">pool: {r.pool}</span>}
                             {r.tags && r.tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
                               <span key={tag} className="resource-tag generic-tag">tag: {tag}</span>
+                            ))}
+                            {r.ips && r.ips.map(ip => (
+                              <span key={ip} className="resource-tag ip-tag">{ip}</span>
                             ))}
                           </div>
                         </td>

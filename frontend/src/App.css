@@ -1098,3 +1098,10 @@ tbody tr:last-child td {
   color: #34d399;
   border: 1px solid rgba(52, 211, 153, 0.3);
 }
+
+.resource-tag.ip-tag {
+  background-color: rgba(245, 158, 11, 0.15); /* Amber tint */
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 35, 0.3);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}

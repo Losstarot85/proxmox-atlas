@@ -31,7 +31,8 @@ export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeM
            (r.pool || "").toLowerCase().includes(term) ||
            (r.tags || "").toLowerCase().includes(term) ||
            cpuStr.includes(term) ||
-           ramStr.includes(term);
+           ramStr.includes(term) ||
+           (r.ips || []).some(ip => ip.includes(term));
   });
 
   if (visibleNodes.length === 0 && visibleResources.length === 0) {
