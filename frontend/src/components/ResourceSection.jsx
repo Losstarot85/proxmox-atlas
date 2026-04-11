@@ -3,8 +3,28 @@ import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } f
 import { Sparkline } from "./Sparkline";
 
 // Sub-component for resources (VM, LXC) with metrics
-export function ResourceSection({ title, typeFilter, resources, clusterName, history, onOpenTimeMachine }) {
-  const filtered = resources.filter(r => r.type === typeFilter);
+export function ResourceSection({ title, typeFilter, resources, clusterName, history, searchQuery = "", onOpenTimeMachine }) {
+  const term = searchQuery.toLowerCase();
+  const filtered = resources.filter(r => {
+    if (r.type !== typeFilter) return false;
+    if (!term) return true;
+    const cpuStr = r.maxcpu ? `${r.maxcpu}c` : "";
+    const ramStr = r.maxmem ? formatBytesToGB(r.maxmem).toLowerCase() : "";
+
+    return (
+      (r.name || "").toLowerCase().includes(term) ||
+      String(r.vmid).includes(term) ||
+      (r.status || "").toLowerCase().includes(term) ||
+      (r.pool || "").toLowerCase().includes(term) ||
+      (r.tags || "").toLowerCase().includes(term) ||
+      cpuStr.includes(term) ||
+      ramStr.includes(term)
+    );
+  });
+
+  if (filtered.length === 0) {
+    return null;
+  }
 
   return (
     <>
@@ -27,25 +47,22 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan="10" className="empty-state">No {typeFilter}s found</td></tr>
-              ) : (
-                [...filtered].sort((a, b) => a.vmid - b.vmid).map(r => {
-                  const isRunning = r.status === "running";
-                  const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
-                  const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
+              {[...filtered].sort((a, b) => a.vmid - b.vmid).map(r => {
+                const isRunning = r.status === "running";
+                const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
+                const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
 
-                  const resourceHistory = history?.map(h => {
-                    const clusterMatch = h.clusters?.find(c => c.name === clusterName);
-                    const resMatch = clusterMatch?.resources?.find(res => res.vmid === r.vmid);
-                    return {
-                      timestamp: h.timestamp,
-                      cpuPercent: resMatch && resMatch.maxcpu > 0 ? Number((resMatch.cpu * 100).toFixed(1)) : 0,
-                      ramPercent: resMatch && resMatch.maxmem > 0 ? Number((resMatch.mem / resMatch.maxmem * 100).toFixed(1)) : 0
-                    };
-                  }) || [];
+                const resourceHistory = history?.map(h => {
+                  const clusterMatch = h.clusters?.find(c => c.name === clusterName);
+                  const resMatch = clusterMatch?.resources?.find(res => res.vmid === r.vmid);
+                  return {
+                    timestamp: h.timestamp,
+                    cpuPercent: resMatch && resMatch.maxcpu > 0 ? Number((resMatch.cpu * 100).toFixed(1)) : 0,
+                    ramPercent: resMatch && resMatch.maxmem > 0 ? Number((resMatch.mem / resMatch.maxmem * 100).toFixed(1)) : 0
+                  };
+                }) || [];
 
-                  return (
+                return (
                     <React.Fragment key={`${r.type}-${r.vmid}`}>
                       <tr
                         id={`row-${r.type}-${r.vmid}`}
@@ -103,8 +120,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                     )}
                   </React.Fragment>
                 );
-                })
-              )}
+              })}
             </tbody>
           </table>
         </div>

@@ -4,7 +4,40 @@ import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad }
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
 
-export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
+export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeMachine }) {
+  const term = searchQuery.toLowerCase();
+  
+  const visibleNodes = (cluster.nodes || []).filter(n => {
+    if (!term) return true;
+    const cpuStr = n.maxcpu ? `${n.maxcpu}c` : "";
+    const ramStr = n.maxmem ? formatBytesToGB(n.maxmem).toLowerCase() : "";
+    const storageMatches = n.storage_pools?.some(sp => sp.storage.toLowerCase().includes(term)) || false;
+
+    return (n.name || "").toLowerCase().includes(term) ||
+           (n.status || "").toLowerCase().includes(term) ||
+           cpuStr.includes(term) ||
+           ramStr.includes(term) ||
+           storageMatches;
+  });
+
+  const visibleResources = (cluster.resources || []).filter(r => {
+    if (!term) return true;
+    const cpuStr = r.maxcpu ? `${r.maxcpu}c` : "";
+    const ramStr = r.maxmem ? formatBytesToGB(r.maxmem).toLowerCase() : "";
+
+    return (r.name || "").toLowerCase().includes(term) ||
+           String(r.vmid).includes(term) ||
+           (r.status || "").toLowerCase().includes(term) ||
+           (r.pool || "").toLowerCase().includes(term) ||
+           (r.tags || "").toLowerCase().includes(term) ||
+           cpuStr.includes(term) ||
+           ramStr.includes(term);
+  });
+
+  if (visibleNodes.length === 0 && visibleResources.length === 0) {
+    return null;
+  }
+
   return (
     <section className="cluster-section">
       <div className="cluster-header">
@@ -28,7 +61,9 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
         </div>
       )}
 
-      <h3 className="section-title">Physical Nodes</h3>
+      {visibleNodes.length > 0 && (
+        <>
+          <h3 className="section-title">Physical Nodes</h3>
       
       <div className="table-wrapper">
         <div className="responsive-table">
@@ -49,10 +84,10 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
               </tr>
             </thead>
             <tbody>
-              {!cluster.nodes || cluster.nodes.length === 0 ? (
+              {visibleNodes.length === 0 ? (
                 <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
               ) : (
-                [...cluster.nodes].sort((a,b) => (a.name || "").localeCompare(b.name || "")).map(n => {
+                [...visibleNodes].sort((a,b) => (a.name || "").localeCompare(b.name || "")).map(n => {
                   const isOnline = n.status === "online";
                   const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
@@ -149,9 +184,11 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
           </table>
         </div>
       </div>
+      </>
+      )}
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} history={history} onOpenTimeMachine={onOpenTimeMachine} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} history={history} onOpenTimeMachine={onOpenTimeMachine} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} history={history} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} history={history} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
     </section>
   );
 }

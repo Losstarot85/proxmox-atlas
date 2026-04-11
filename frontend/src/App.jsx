@@ -19,6 +19,7 @@ function App() {
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
+  const [dashboardSearch, setDashboardSearch] = useState("");
   const [timeMachineTarget, setTimeMachineTarget] = useState(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [whatIfTarget, setWhatIfTarget] = useState(null);
@@ -248,11 +249,22 @@ function App() {
         {activeTab === "dashboard" && (
           <>
             <SummaryCards clusters={clusters} history={history} />
+            <div style={{ marginBottom: '1.5rem', display: 'flex' }}>
+              <input
+                type="text"
+                className="search-input"
+                style={{ width: '100%', maxWidth: '400px' }}
+                placeholder="Search nodes, virtual machines, tags, pools..."
+                value={dashboardSearch}
+                onChange={e => setDashboardSearch(e.target.value)}
+              />
+            </div>
             {clusters.map((cluster) => (
               <ClusterSection 
                 key={cluster.name} 
                 cluster={cluster} 
                 history={history} 
+                searchQuery={dashboardSearch}
                 onOpenTimeMachine={setTimeMachineTarget} 
               />
             ))}
