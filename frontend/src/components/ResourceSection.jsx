@@ -15,12 +15,12 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
             <thead>
               <tr>
                 <th style={{ width: "5%" }}>ID</th>
-                <th style={{ width: "10%" }}>Name</th>
-                <th style={{ width: "10%" }}>Status</th>
-                <th style={{ width: "16%" }}>CPU Usage</th>
-                <th style={{ width: "16%" }}>RAM Usage</th>
-                <th style={{ width: "17%" }}>Network (In/Out)</th>
-                <th style={{ width: "11%" }}>Disk IO</th>
+                <th style={{ width: "8%" }}>Name</th>
+                <th style={{ width: "6%" }}>Status</th>
+                <th style={{ width: "10%" }}>CPU Usage</th>
+                <th style={{ width: "10%" }}>RAM Usage</th>
+                <th style={{ width: "10%" }}>Network (In/Out)</th>
+                <th style={{ width: "10%" }}>Disk IO</th>
                 <th style={{ width: "5%" }}>CPU Stall</th>
                 <th style={{ width: "5%" }}>RAM Stall</th>
                 <th style={{ width: "5%" }}>IO Stall</th>
@@ -30,23 +30,23 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
               {filtered.length === 0 ? (
                 <tr><td colSpan="10" className="empty-state">No {typeFilter}s found</td></tr>
               ) : (
-                [...filtered].sort((a,b) => a.vmid - b.vmid).map(r => {
+                [...filtered].sort((a, b) => a.vmid - b.vmid).map(r => {
                   const isRunning = r.status === "running";
                   const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                   const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
 
                   const resourceHistory = history?.map(h => {
-                     const clusterMatch = h.clusters?.find(c => c.name === clusterName);
-                     const resMatch = clusterMatch?.resources?.find(res => res.vmid === r.vmid);
-                     return {
-                       timestamp: h.timestamp,
-                       cpuPercent: resMatch && resMatch.maxcpu > 0 ? Number((resMatch.cpu * 100).toFixed(1)) : 0,
-                       ramPercent: resMatch && resMatch.maxmem > 0 ? Number((resMatch.mem / resMatch.maxmem * 100).toFixed(1)) : 0
-                     };
+                    const clusterMatch = h.clusters?.find(c => c.name === clusterName);
+                    const resMatch = clusterMatch?.resources?.find(res => res.vmid === r.vmid);
+                    return {
+                      timestamp: h.timestamp,
+                      cpuPercent: resMatch && resMatch.maxcpu > 0 ? Number((resMatch.cpu * 100).toFixed(1)) : 0,
+                      ramPercent: resMatch && resMatch.maxmem > 0 ? Number((resMatch.mem / resMatch.maxmem * 100).toFixed(1)) : 0
+                    };
                   }) || [];
 
                   return (
-                    <tr 
+                    <tr
                       id={`row-${r.type}-${r.vmid}`}
                       key={`${r.type}-${r.vmid}`}
                       onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
@@ -56,7 +56,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                       <td className="mono-cell">{r.vmid}</td>
                       <td style={{ fontWeight: 500 }}>{r.name}</td>
                       <td>
-                        {isRunning 
+                        {isRunning
                           ? <span className="badge badge-online">🟢 Running</span>
                           : <span className="badge badge-offline">🔴 Stopped</span>
                         }

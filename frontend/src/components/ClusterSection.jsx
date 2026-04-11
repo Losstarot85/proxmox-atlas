@@ -35,13 +35,13 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
           <table style={{ tableLayout: "fixed", width: "100%" }}>
             <thead>
               <tr>
-                <th style={{ width: "20%" }}>Node</th>
-                <th style={{ width: "10%" }}>Status</th>
+                <th style={{ width: "15%" }}>Node</th>
+                <th style={{ width: "6%" }}>Status</th>
+                <th style={{ width: "15%" }}>CPU USAGE</th>
+                <th style={{ width: "15%" }}>RAM USAGE</th>
+                <th style={{ width: "15%" }}>Network (In/Out)</th>
+                <th style={{ width: "15%" }}>Storage</th>
                 <th style={{ width: "5%" }}>Load</th>
-                <th style={{ width: "10%" }}>CPU</th>
-                <th style={{ width: "10%" }}>RAM</th>
-                <th style={{ width: "10%" }}>Storage</th>
-                <th style={{ width: "15%" }}>Network</th>
                 <th style={{ width: "5%" }}>IO Wait</th>
                 <th style={{ width: "5%" }}>CPU Stall</th>
                 <th style={{ width: "5%" }}>RAM Stall</th>
@@ -92,7 +92,6 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                           ? <span className="badge badge-online">🟢 Online</span> 
                           : <span className="badge badge-offline">🔴 Offline</span>}
                       </td>
-                      <td className="mono-cell">{isOnline ? formatLoad(n.loadavg) : "-"}</td>
                       <td>
                         {isOnline ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -115,6 +114,7 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                           </div>
                         ) : "-"}
                       </td>
+                      <td className="mono-cell">{isOnline ? `⬇ ${formatNetwork(n.netin)} / ⬆ ${formatNetwork(n.netout)}` : "-"}</td>
                       <td>
                         {isOnline && n.storage_pools && n.storage_pools.length > 0 ? (
                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -136,7 +136,7 @@ export function ClusterSection({ cluster, history, onOpenTimeMachine }) {
                            </div>
                          ) : "-"}
                       </td>
-                      <td className="mono-cell">{isOnline ? `⬇ ${formatNetwork(n.netin)} / ⬆ ${formatNetwork(n.netout)}` : "-"}</td>
+                      <td className="mono-cell">{isOnline ? formatLoad(n.loadavg) : "-"}</td>
                       <td className="mono-cell">{isOnline ? formatPressure(n.iowait) : "-"}</td>
                       <td className="mono-cell" style={{ color: n.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_cpu) : "-"}</td>
                       <td className="mono-cell" style={{ color: n.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_ram) : "-"}</td>
