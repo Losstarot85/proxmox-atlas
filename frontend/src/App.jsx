@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useClusterData } from "./hooks/useClusterData";
 import { ClusterSection } from "./components/ClusterSection";
-import { NetworkTab } from "./components/NetworkTab";
 import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
@@ -148,14 +147,6 @@ function App() {
             <span className="nav-text">Topology</span>
           </button>
           <button
-            className={`nav-item ${activeTab === "network" ? "active" : ""}`}
-            onClick={() => handleNavClick("network")}
-            title={!isExpanded ? "Network IP" : ""}
-          >
-            <span className="nav-icon">🌐</span>
-            <span className="nav-text">Network IP</span>
-          </button>
-          <button
             className={`nav-item ${activeTab === "alerts" ? "active" : ""}`}
             onClick={() => handleNavClick("alerts")}
             title={!isExpanded ? `Alerts ${unreadAlerts > 0 ? `(${unreadAlerts})` : ''}` : ""}
@@ -201,7 +192,6 @@ function App() {
             <h2 className="page-title">
               {activeTab === 'dashboard' && 'Dashboard Overview'}
               {activeTab === 'topology' && 'Cluster Topology'}
-              {activeTab === 'network' && 'Network Intelligence'}
               {activeTab === 'alerts' && 'Notification Center'}
               {activeTab === 'settings' && 'Global Configurations'}
             </h2>
@@ -278,9 +268,6 @@ function App() {
              onOpenWhatIf={(clusterName, nodeName) => setWhatIfTarget({ cluster: clusterName, node: nodeName })}
            />
         )}
-
-        {activeTab === "network" && <NetworkTab />}
-        
         {activeTab === "alerts" && <AlertsTab />}
 
         {activeTab === "settings" && (
