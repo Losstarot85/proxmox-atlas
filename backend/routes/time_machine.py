@@ -56,6 +56,7 @@ async def get_uptime_history(
 async def get_time_machine_data(
     target_id: str,
     target_type: str = Query(..., description="VM or NODE"),
+    target_name: Optional[str] = Query(None, description="Explicit VM Name to avoid cluster VS label vmid collisions"),
     start: float = Query(..., description="Start timestamp in seconds"),
     end: float = Query(..., description="End timestamp in seconds"),
     step: int = Query(60, description="Step in seconds for aggregation")
@@ -74,14 +75,15 @@ async def get_time_machine_data(
             ("storage_total", f'sum(proxmox_node_storage_total_bytes{{node="{target_id}"}})')
         ]
     else:
+        name_filter = f',name="{target_name}"' if target_name else ""
         # Assumiamo vmid per la validazione prometheus
         queries = [
-            ("cpu", f'proxmox_vm_cpu_usage_ratio{{vmid="{target_id}"}} * 100'),
-            ("mem_used", f'proxmox_vm_mem_used_bytes{{vmid="{target_id}"}}'),
-            ("disk_read", f'rate(proxmox_vm_disk_read_bytes{{vmid="{target_id}"}}[{window_str}])'),
-            ("disk_write", f'rate(proxmox_vm_disk_write_bytes{{vmid="{target_id}"}}[{window_str}])'),
-            ("net_in", f'rate(proxmox_vm_net_in_bytes{{vmid="{target_id}"}}[{window_str}])'),
-            ("net_out", f'rate(proxmox_vm_net_out_bytes{{vmid="{target_id}"}}[{window_str}])'),
+            ("cpu", f'proxmox_vm_cpu_usage_ratio{{vmid="{target_id}"{name_filter}}} * 100'),
+            ("mem_used", f'proxmox_vm_mem_used_bytes{{vmid="{target_id}"{name_filter}}}'),
+            ("disk_read", f'rate(proxmox_vm_disk_read_bytes{{vmid="{target_id}"{name_filter}}}[{window_str}])'),
+            ("disk_write", f'rate(proxmox_vm_disk_write_bytes{{vmid="{target_id}"{name_filter}}}[{window_str}])'),
+            ("net_in", f'rate(proxmox_vm_net_in_bytes{{vmid="{target_id}"{name_filter}}}[{window_str}])'),
+            ("net_out", f'rate(proxmox_vm_net_out_bytes{{vmid="{target_id}"{name_filter}}}[{window_str}])'),
         ]
 
     results = []
