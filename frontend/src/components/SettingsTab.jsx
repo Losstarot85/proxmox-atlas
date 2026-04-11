@@ -313,6 +313,25 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
             <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>sec</span>
           </div>
         </div>
+
+        {error && (
+          <div className="alert-message global-error" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+            <span>❌</span><span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <p className="msg-success" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>✅ Global settings saved successfully.</p>
+        )}
+
+        <div className="settings-actions" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+          <button className="btn" onClick={handleDefault} disabled={isSaving}>Load Default (15s)</button>
+          <div className="actions-right">
+            <button className="btn" onClick={handleCancel} disabled={isSaving}>Cancel changes</button>
+            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
+               {isSaving ? "Saving..." : "Save Configuration"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ==================== WEBHOOKS ==================== */}
@@ -360,25 +379,6 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
             ))}
           </div>
         )}
-
-        {error && (
-          <div className="alert-message global-error" style={{ marginTop: '1.5rem' }}>
-            <span>❌</span><span>{error}</span>
-          </div>
-        )}
-        {success && (
-          <p className="msg-success" style={{ marginTop: '1.5rem' }}>✅ Global settings saved successfully.</p>
-        )}
-
-        <div className="settings-actions">
-          <button className="btn" onClick={handleDefault} disabled={isSaving}>Load Default (15s)</button>
-          <div className="actions-right">
-            <button className="btn" onClick={handleCancel} disabled={isSaving}>Cancel changes</button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-               {isSaving ? "Saving..." : "Save Configuration"}
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* ==================== DELIVERY HISTORY ==================== */}
