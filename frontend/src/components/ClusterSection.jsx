@@ -17,7 +17,8 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
            (n.status || "").toLowerCase().includes(term) ||
            cpuStr.includes(term) ||
            ramStr.includes(term) ||
-           storageMatches;
+           storageMatches ||
+           (n.ips || []).some(ip => ip.includes(term));
   });
 
   const visibleResources = (cluster.resources || []).filter(r => {
@@ -98,10 +99,18 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                   const ramHistory = cm.ram;
                   const nodeHistoryBlocks = (cm.status || []).map(s => ({ status: s }));
 
+                  const nodeVMs = (cluster.resources || []).filter(r => r.node === n.name && r.type === "VM");
+                  const activeVMs = nodeVMs.filter(r => r.status === "running").length;
+                  const totalVMs = nodeVMs.length;
+
+                  const nodeLXCs = (cluster.resources || []).filter(r => r.node === n.name && r.type === "LXC");
+                  const activeLXCs = nodeLXCs.filter(r => r.status === "running").length;
+                  const totalLXCs = nodeLXCs.length;
+
                   return (
+                    <React.Fragment key={n.name}>
                     <tr 
-                      id={`row-NODE-${n.name}`}
-                      key={n.name} 
+                      id={`row-NODE-${n.name}`} 
                       onClick={() => onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
                       style={{ cursor: 'pointer' }}
                       className="hoverable-row"
@@ -165,6 +174,18 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                       <td className="mono-cell" style={{ color: n.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_ram) : "-"}</td>
                       <td className="mono-cell" style={{ color: n.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_io) : "-"}</td>
                     </tr>
+                    <tr style={{ backgroundColor: 'transparent' }}>
+                      <td colSpan="11" style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                        <div className="tags-container" style={{ margin: 0 }}>
+                          {totalVMs > 0 && <span className="resource-tag pool-tag">active/total VMs: {activeVMs}/{totalVMs}</span>}
+                          {totalLXCs > 0 && <span className="resource-tag pool-tag">active/total LXCs: {activeLXCs}/{totalLXCs}</span>}
+                          {n.ips && n.ips.map(ip => (
+                            <span key={ip} className="resource-tag ip-tag">{ip}</span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                    </React.Fragment>
                   );
                 })
               )}

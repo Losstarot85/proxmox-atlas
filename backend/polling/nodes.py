@@ -35,6 +35,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                     "pressure_ram": 0.0,
                     "pressure_io": 0.0,
                     "uptime": n.get("uptime"),
+                    "ips": [],
                     "storage_pools": []
                 }
 
@@ -76,6 +77,19 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                             })
                     except Exception as e:
                         print(f"[WARN] [{cluster_name}] Storage data unavailable for node {node_item['name']}: {e}")
+
+                    try:
+                        net_url = f"{host}/api2/json/nodes/{node_item['name']}/network"
+                        net_res = await client.get(net_url, headers=headers)
+                        if net_res.status_code == 200:
+                            net_data = net_res.json().get("data", [])
+                            node_ips = []
+                            for iface in net_data:
+                                if iface.get("active") == 1 and iface.get("address"):
+                                    node_ips.append(iface.get("address"))
+                            node_item["ips"] = list(set(node_ips))
+                    except Exception as e:
+                        print(f"[WARN] [{cluster_name}] Network data unavailable for node {node_item['name']}: {e}")
 
                 nodes.append(node_item)
 
