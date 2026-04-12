@@ -39,8 +39,8 @@ export function UptimeHeatmap({ target }) {
   // Build a 30-column x 24-row grid for the last 30 days, measured hourly.
   // Since data from start to end may not align to exact midnight, we align backwards from the current hour.
   const grid = useMemo(() => {
-    const cols = 30;
-    const rows = 24;
+    const cols = 60;
+    const rows = 12;
     const now = Math.floor(Date.now() / 1000);
     // Truncate to the current full hour
     const currentHour = now - (now % 3600);
@@ -57,10 +57,10 @@ export function UptimeHeatmap({ target }) {
       for (let r = 0; r < rows; r++) {
         // Calculate the timestamp for this column/row.
         // Column 0 (last loop index) = 30 days ago.
-        // Row 0 = hour 00 of that relative day.
-        // Counting backwards is more precise: (days_ago * 24 + hours_offset)
+        // Row 0 = hour 0 of that relative block.
+        // Counting backwards: (blocks_ago * rows_per_block + hours_offset)
         
-        const hoursAgo = c * 24 + (23 - r);
+        const hoursAgo = c * rows + ((rows - 1) - r);
         const cellTime = currentHour - (hoursAgo * 3600);
         
         let status = "nodata";
@@ -112,10 +112,9 @@ export function UptimeHeatmap({ target }) {
     }}>
       <h4 style={{ marginBottom: "0.5rem", fontSize: "0.95rem", color: "var(--text-secondary)" }}>Reliability Status (30 Days)</h4>
       
-      <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-        <div style={{ display: 'flex', gap: '3px' }}>
+      <div style={{ display: 'flex', width: '100%', paddingBottom: '0.5rem', gap: '3px' }}>
           {grid.map((col, cIdx) => (
-            <div key={cIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div key={cIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
               {col.map((cell, rIdx) => {
                 let bg = "var(--surface-hover)";
                 if (cell.status === "up") bg = "var(--success)";
@@ -129,8 +128,8 @@ export function UptimeHeatmap({ target }) {
                     key={rIdx} 
                     title={title}
                     style={{
-                      width: "10px",
-                      height: "10px",
+                      width: "100%",
+                      aspectRatio: "1",
                       borderRadius: "2px",
                       backgroundColor: bg,
                       opacity: cell.status === "nodata" ? 0.3 : 1
@@ -140,7 +139,6 @@ export function UptimeHeatmap({ target }) {
               })}
             </div>
           ))}
-        </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
         <span>30 days ago</span>
