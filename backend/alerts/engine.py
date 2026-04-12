@@ -9,19 +9,26 @@ RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.json")
 
 # In-memory record of current alerts to prevent repeated spam on every poll
 active_alerts = {}
+previous_states = {}
 ALERT_COOLDOWN = 3600 # Do not regenerate the same alert for one hour, unless changes occur
 
 def load_rules():
+    defaults = {
+        "cpu_threshold_percent": 85,
+        "ram_threshold_percent": 90,
+        "disk_usage_threshold_percent": 85,
+        "io_stall_threshold_percent": 15,
+        "network_threshold_mbps": 800,
+        "ram_pressure_threshold_percent": 15
+    }
     try:
         with open(RULES_PATH) as f:
-            return json.load(f)
+            user_rules = json.load(f)
+            # Merge defaults for any missing new keys
+            defaults.update(user_rules)
+            return defaults
     except FileNotFoundError:
-        return {
-            "cpu_threshold_percent": 85,
-            "ram_threshold_percent": 90,
-            "disk_usage_threshold_percent": 85,
-            "io_stall_threshold_percent": 15
-        }
+        return defaults
 
 async def evaluate_alerts():
     rules = load_rules()
@@ -38,16 +45,29 @@ async def evaluate_alerts():
     for cluster_name, data in cache.items():
         # Check nodes
         for node in data.get("nodes", []):
+            n_name = node.get("name", "Unknown")
+            silenced = get_silenced()
+            base_key = f"{cluster_name}:{n_name}:node"
+
+            # 1. Host Availability (Crash Detector)
+            prev_status = previous_states.get(base_key, node.get("status"))
+            previous_states[base_key] = node.get("status")
+
             if node.get("status") != "online":
+                if prev_status == "online":
+                    ak = f"{base_key}:offline"
+                    if ak not in active_alerts and base_key not in silenced:
+                        add_alert({
+                            "cluster": cluster_name, "node": n_name, "resource": "NODE",
+                            "severity": "critical",
+                            "message": f"CRITICAL: Node {n_name} is OFFLINE or unreachable!"
+                        })
+                        active_alerts[ak] = current_time
                 continue
                 
-            n_name = node["name"]
             
             # CPU Node
             cpu_p = (node.get("cpu", 0)) * 100
-            
-            silenced = get_silenced()
-            base_key = f"{cluster_name}:{n_name}:node"
 
             if cpu_p > rules["cpu_threshold_percent"]:
                 ak = f"{base_key}:cpu"
@@ -98,17 +118,68 @@ async def evaluate_alerts():
                     })
                     active_alerts[ak] = current_time
 
+            # RAM Pressure Stall (Thrashing)
+            if node.get("pressure_ram", 0) > rules["ram_pressure_threshold_percent"]:
+                ak = f"{base_key}:ramstall"
+                if ak not in active_alerts and base_key not in silenced:
+                    add_alert({
+                        "cluster": cluster_name, "node": n_name, "resource": "NODE",
+                        "severity": "warning",
+                        "message": f"RAM Thrashing (Memory Stalls) on {n_name}: {node['pressure_ram']:.1f}%"
+                    })
+                    active_alerts[ak] = current_time
+
+            # Load Average vs Capacity
+            if node.get("loadavg") is not None and node.get("maxcpu", 0) > 0:
+                if node["loadavg"] > node["maxcpu"] + 2:
+                    ak = f"{base_key}:loadavg"
+                    if ak not in active_alerts and base_key not in silenced:
+                        add_alert({
+                            "cluster": cluster_name, "node": n_name, "resource": "NODE",
+                            "severity": "warning",
+                            "message": f"Saturated Load Average on {n_name}: {node['loadavg']:.2f} (Max CPU Core: {node['maxcpu']})"
+                        })
+                        active_alerts[ak] = current_time
+
+            # Network Saturation
+            mbps = ((node.get("netin", 0) + node.get("netout", 0)) * 8) / 1000000
+            if mbps > rules["network_threshold_mbps"]:
+                ak = f"{base_key}:network"
+                if ak not in active_alerts and base_key not in silenced:
+                    add_alert({
+                        "cluster": cluster_name, "node": n_name, "resource": "NODE",
+                        "severity": "warning",
+                        "message": f"High Network Bandwidth on Node {n_name}: {mbps:.1f} Mbps"
+                    })
+                    active_alerts[ak] = current_time
+
         # Check VM/LXC
         for res in data.get("resources", []):
-            if res.get("status") != "running":
-                continue
-            
             vmid = res["vmid"]
             r_name = res["name"]
+            base_key = f"{cluster_name}:{vmid}:vm"
+            
+            # Crash / Shutdown Tracker
+            prev_status = previous_states.get(base_key, res.get("status"))
+            previous_states[base_key] = res.get("status")
+            
+            if res.get("status") != "running":
+                if prev_status == "running":
+                    ak = f"{base_key}:offline"
+                    silenced = get_silenced()
+                    if ak not in active_alerts and base_key not in silenced:
+                        add_alert({
+                            "cluster": cluster_name, "node": res.get("node", "unknown"), "resource": f"VM {vmid} ({r_name})",
+                            "severity": "warning",
+                            "message": f"WARNING: Unexpected {res.get('type','VM')} Stop ({r_name})!"
+                        })
+                        active_alerts[ak] = current_time
+                continue
+            
             
             # CPU VM
             cpu_p = (res.get("cpu", 0)) * 100
-            base_key = f"{cluster_name}:{vmid}:vm"
+            silenced = get_silenced()
             
             if cpu_p > rules["cpu_threshold_percent"]:
                 ak = f"{base_key}:cpu"
