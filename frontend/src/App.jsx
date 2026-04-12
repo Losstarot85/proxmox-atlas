@@ -5,7 +5,6 @@ import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
 import { TimeMachineModal } from "./components/TimeMachineModal";
-import { CommandPalette } from "./components/CommandPalette";
 import { TopologyTab } from "./components/TopologyTab";
 import { WhatIfModal } from "./components/WhatIfModal";
 import { exportJSON, exportCSV } from "./utils/exportData";
@@ -107,11 +106,6 @@ function App() {
   };
 
   const isExpanded = isSidebarHovered && !forceCollapse;
-
-  const handleCommandPaletteSelect = (item) => {
-    setActiveTab("dashboard");
-    setTimeMachineTarget({ id: item.vmid || item.name, type: item.type, name: item.name });
-  };
 
   return (
     <div className="app-container">
@@ -286,11 +280,6 @@ function App() {
       <TimeMachineModal 
         target={timeMachineTarget} 
         onClose={() => setTimeMachineTarget(null)} 
-      />
-      
-      <CommandPalette 
-        clusters={clusters} 
-        onSelectResult={handleCommandPaletteSelect} 
       />
 
       {whatIfTarget && (
