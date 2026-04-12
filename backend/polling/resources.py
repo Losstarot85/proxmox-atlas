@@ -146,10 +146,7 @@ async def fetch_resources_from_proxmox(cluster: dict):
                 
         cache[cluster_name]["active_vm_labels"] = current_vm_labels
         
-        if failed_nodes:
-            cache[cluster_name]["error"] = f"Nodi parzialmente irraggiungibili: {', '.join(failed_nodes)}"
-        else:
-            cache[cluster_name]["error"] = None
+        cache[cluster_name]["error"] = None
 
         print(f"[INFO] [{cluster_name}] Resources updated: {len(all_resources)} items, failed nodes: {failed_nodes}")
 
