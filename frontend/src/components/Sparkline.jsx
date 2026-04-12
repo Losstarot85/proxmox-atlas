@@ -1,7 +1,7 @@
-import React, { memo } from 'react';
+import React from 'react';
 
 // Pure raw SVG implementation to skip heavy Recharts/D3 node overhead
-export const Sparkline = memo(({ data, color = "#3b82f6" }) => {
+export const Sparkline = ({ data, color = "#3b82f6" }) => {
   if (!data || data.length === 0) return <span style={{opacity: 0.5}}>-</span>;
 
   const width = 100;
@@ -31,4 +31,4 @@ export const Sparkline = memo(({ data, color = "#3b82f6" }) => {
       </svg>
     </div>
   );
-});
+};

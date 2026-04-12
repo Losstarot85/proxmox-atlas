@@ -6,10 +6,14 @@ const MAX_RETRY_DELAY = 30000;      // 30 seconds cap
 
 export function useClusterData() {
   const [clusters, setClusters] = useState([]);
-  const [globalHistory, setGlobalHistory] = useState([]);
-  const [metricsMap, setMetricsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Simple tick counter to force re-renders when data changes
+  const [, setTick] = useState(0);
+
+  // Mutable refs — no cloning, no GC pressure
+  const metricsMapRef = useRef({});
+  const globalHistoryRef = useRef([]);
 
   const eventSourceRef = useRef(null);
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
@@ -46,7 +50,6 @@ export function useClusterData() {
           setClusters(data.clusters);
           
           let tCpu = 0, mCpu = 0, tMem = 0, mMem = 0;
-          const currentMetrics = {};
           
           data.clusters.forEach(c => {
             c.nodes?.forEach(n => {
@@ -58,43 +61,41 @@ export function useClusterData() {
               }
               const cpuP = n.status === "online" && n.maxcpu > 0 ? Number(((n.cpu || 0) * 100).toFixed(1)) : 0;
               const ramP = n.status === "online" && n.maxmem > 0 ? Number(((n.mem || 0) / n.maxmem * 100).toFixed(1)) : 0;
-              currentMetrics[`NODE-${n.name}`] = { cpu: cpuP, ram: ramP, status: n.status };
+              
+              // Mutate in-place — zero allocations
+              const key = `NODE-${n.name}`;
+              if (!metricsMapRef.current[key]) metricsMapRef.current[key] = { cpu: [], ram: [], status: [] };
+              const h = metricsMapRef.current[key];
+              h.cpu.push(cpuP);
+              h.ram.push(ramP);
+              h.status.push(n.status);
+              if (h.cpu.length > MAX_HISTORY_LENGTH) h.cpu.shift();
+              if (h.ram.length > MAX_HISTORY_LENGTH) h.ram.shift();
+              if (h.status.length > MAX_HISTORY_LENGTH) h.status.shift();
             });
             c.resources?.forEach(r => {
               const isRunning = r.status === 'running';
               const r_cpuP = isRunning ? Number(((r.cpu || 0) * 100).toFixed(1)) : 0;
               const r_ramP = isRunning && r.maxmem > 0 ? Number(((r.mem || 0) / r.maxmem * 100).toFixed(1)) : 0;
-              currentMetrics[`${c.name}-${r.type}-${r.vmid}`] = { cpu: r_cpuP, ram: r_ramP };
+              
+              const key = `${c.name}-${r.type}-${r.vmid}`;
+              if (!metricsMapRef.current[key]) metricsMapRef.current[key] = { cpu: [], ram: [] };
+              const h = metricsMapRef.current[key];
+              h.cpu.push(r_cpuP);
+              h.ram.push(r_ramP);
+              if (h.cpu.length > MAX_HISTORY_LENGTH) h.cpu.shift();
+              if (h.ram.length > MAX_HISTORY_LENGTH) h.ram.shift();
             });
           });
 
-          setGlobalHistory(prev => {
-            const cpuPercent = mCpu > 0 ? Number(((tCpu / mCpu) * 100).toFixed(1)) : 0;
-            const memPercent = mMem > 0 ? Number(((tMem / mMem) * 100).toFixed(1)) : 0;
-            const newHistory = [...prev, { timestamp, cpuPercent, memPercent }];
-            if (newHistory.length > MAX_HISTORY_LENGTH) newHistory.shift();
-            return newHistory;
-          });
+          // Mutate globalHistory in-place
+          const cpuPercent = mCpu > 0 ? Number(((tCpu / mCpu) * 100).toFixed(1)) : 0;
+          const memPercent = mMem > 0 ? Number(((tMem / mMem) * 100).toFixed(1)) : 0;
+          globalHistoryRef.current.push({ timestamp, cpuPercent, memPercent });
+          if (globalHistoryRef.current.length > MAX_HISTORY_LENGTH) globalHistoryRef.current.shift();
 
-          setMetricsMap(prevMap => {
-            const nextMap = { ...prevMap };
-            Object.keys(currentMetrics).forEach(id => {
-               if (!nextMap[id]) nextMap[id] = { cpu: [], ram: [], status: [] };
-               const h = nextMap[id];
-               const cm = currentMetrics[id];
-               
-               const newCpu = [...h.cpu, cm.cpu];
-               const newRam = [...h.ram, cm.ram];
-               const newStatus = cm.status ? [...h.status, cm.status] : h.status;
-               
-               if (newCpu.length > MAX_HISTORY_LENGTH) newCpu.shift();
-               if (newRam.length > MAX_HISTORY_LENGTH) newRam.shift();
-               if (newStatus && newStatus.length > MAX_HISTORY_LENGTH) newStatus.shift();
-               
-               nextMap[id] = { cpu: newCpu, ram: newRam, status: newStatus };
-            });
-            return nextMap;
-          });
+          // Bump tick to trigger re-render in consuming components
+          setTick(t => t + 1);
           
           setError(null);
         }
@@ -142,5 +143,5 @@ export function useClusterData() {
     };
   }, [connect]);
 
-  return { clusters, globalHistory, metricsMap, loading, error };
+  return { clusters, globalHistory: globalHistoryRef.current, metricsMap: metricsMapRef.current, loading, error };
 }

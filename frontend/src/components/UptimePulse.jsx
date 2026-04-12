@@ -1,35 +1,41 @@
 import React from 'react';
 
-export function UptimePulse({ historyBlocks }) {
-  // Pad with empty blocks if history is less than 40
+// Accepts an array of status strings (e.g. ["online", "online", "offline"])
+export const UptimePulse = ({ historyBlocks }) => {
   const maxBlocks = 40;
-  const blocks = [...historyBlocks];
-  while (blocks.length < maxBlocks) {
-    blocks.unshift({ status: "padding" });
-  }
+  // Pad with nulls if history is shorter
+  const padCount = Math.max(0, maxBlocks - (historyBlocks ? historyBlocks.length : 0));
   
   return (
     <div style={{ display: 'flex', gap: '2px', alignItems: 'center', height: '14px', marginTop: '6px' }}>
-      {blocks.map((b, i) => {
+      {Array.from({ length: padCount }, (_, i) => (
+        <div 
+          key={`pad-${i}`} 
+          style={{ 
+            flex: 1, height: '100%', 
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderRadius: '1px', minWidth: '2px', opacity: 0.3
+          }} 
+          title="No data"
+        />
+      ))}
+      {(historyBlocks || []).map((status, i) => {
         let bgColor = "rgba(255,255,255,0.05)";
-        if (b.status === "online") bgColor = "var(--success)";
-        else if (b.status === "offline") bgColor = "var(--danger)";
+        if (status === "online") bgColor = "var(--success)";
+        else if (status === "offline") bgColor = "var(--danger)";
 
         return (
           <div 
             key={i} 
             style={{ 
-              flex: 1, 
-              height: '100%', 
+              flex: 1, height: '100%', 
               backgroundColor: bgColor,
-              borderRadius: '1px',
-              minWidth: '2px',
-              opacity: b.status === "padding" ? 0.3 : 1
+              borderRadius: '1px', minWidth: '2px'
             }} 
-            title={b.status === "padding" ? "No data" : `Status: ${b.status}`}
+            title={`Status: ${status}`}
           />
         );
       })}
     </div>
   );
-}
+};

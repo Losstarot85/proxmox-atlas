@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ResourceSection } from "./ResourceSection";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
@@ -7,7 +7,7 @@ import { UptimePulse } from "./UptimePulse";
 export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
   const term = searchQuery.toLowerCase();
   
-  const visibleNodes = (cluster.nodes || []).filter(n => {
+  const visibleNodes = useMemo(() => (cluster.nodes || []).filter(n => {
     if (!term) return true;
     const cpuStr = n.maxcpu ? `${n.maxcpu}c` : "";
     const ramStr = n.maxmem ? formatBytesToGB(n.maxmem).toLowerCase() : "";
@@ -19,9 +19,9 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
            ramStr.includes(term) ||
            storageMatches ||
            (n.ips || []).some(ip => ip.includes(term));
-  });
+  }).sort((a, b) => (a.name || "").localeCompare(b.name || "")), [cluster.nodes, term]);
 
-  const visibleResources = (cluster.resources || []).filter(r => {
+  const visibleResources = useMemo(() => (cluster.resources || []).filter(r => {
     if (!term) return true;
     const cpuStr = r.maxcpu ? `${r.maxcpu}c` : "";
     const ramStr = r.maxmem ? formatBytesToGB(r.maxmem).toLowerCase() : "";
@@ -34,7 +34,24 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
            cpuStr.includes(term) ||
            ramStr.includes(term) ||
            (r.ips || []).some(ip => ip.includes(term));
-  });
+  }), [cluster.resources, term]);
+
+  // Pre-compute VM/LXC counts per node in a single pass (O(R) instead of O(N×R))
+  const countsByNode = useMemo(() => {
+    const map = {};
+    (cluster.resources || []).forEach(r => {
+      const n = r.node;
+      if (!map[n]) map[n] = { activeVMs: 0, totalVMs: 0, activeLXCs: 0, totalLXCs: 0 };
+      if (r.type === "VM") {
+        map[n].totalVMs++;
+        if (r.status === "running") map[n].activeVMs++;
+      } else if (r.type === "LXC") {
+        map[n].totalLXCs++;
+        if (r.status === "running") map[n].activeLXCs++;
+      }
+    });
+    return map;
+  }, [cluster.resources]);
 
   if (visibleNodes.length === 0 && visibleResources.length === 0) {
     return null;
@@ -89,7 +106,7 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
               {visibleNodes.length === 0 ? (
                 <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
               ) : (
-                [...visibleNodes].sort((a,b) => (a.name || "").localeCompare(b.name || "")).map(n => {
+                [...visibleNodes].map(n => {
                   const isOnline = n.status === "online";
                   const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
@@ -97,15 +114,10 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                   const cm = metricsMap[`NODE-${n.name}`] || { cpu: [], ram: [], status: [] };
                   const cpuHistory = cm.cpu;
                   const ramHistory = cm.ram;
-                  const nodeHistoryBlocks = (cm.status || []).map(s => ({ status: s }));
+                  const nodeHistoryBlocks = cm.status;
 
-                  const nodeVMs = (cluster.resources || []).filter(r => r.node === n.name && r.type === "VM");
-                  const activeVMs = nodeVMs.filter(r => r.status === "running").length;
-                  const totalVMs = nodeVMs.length;
-
-                  const nodeLXCs = (cluster.resources || []).filter(r => r.node === n.name && r.type === "LXC");
-                  const activeLXCs = nodeLXCs.filter(r => r.status === "running").length;
-                  const totalLXCs = nodeLXCs.length;
+                  const nc = countsByNode[n.name] || { activeVMs: 0, totalVMs: 0, activeLXCs: 0, totalLXCs: 0 };
+                  const { activeVMs, totalVMs, activeLXCs, totalLXCs } = nc;
 
                   return (
                     <React.Fragment key={n.name}>

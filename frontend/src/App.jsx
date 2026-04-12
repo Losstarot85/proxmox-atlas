@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useClusterData } from "./hooks/useClusterData";
 import { ClusterSection } from "./components/ClusterSection";
 import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
-import { TimeMachineModal } from "./components/TimeMachineModal";
-import { TopologyTab } from "./components/TopologyTab";
-import { WhatIfModal } from "./components/WhatIfModal";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import "./App.css";
+
+// Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
+const TimeMachineModal = lazy(() => import("./components/TimeMachineModal").then(m => ({ default: m.TimeMachineModal })));
+const TopologyTab = lazy(() => import("./components/TopologyTab").then(m => ({ default: m.TopologyTab })));
+const WhatIfModal = lazy(() => import("./components/WhatIfModal").then(m => ({ default: m.WhatIfModal })));
+
 
 function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -257,11 +260,13 @@ function App() {
         )}
 
         {activeTab === "topology" && (
-           <TopologyTab 
-             clusters={clusters} 
-             onOpenTimeMachine={setTimeMachineTarget}
-             onOpenWhatIf={(clusterName, nodeName) => setWhatIfTarget({ cluster: clusterName, node: nodeName })}
-           />
+          <Suspense fallback={<div className="loading-view"><div className="spinner"></div><p>Loading Topology...</p></div>}>
+            <TopologyTab 
+              clusters={clusters} 
+              onOpenTimeMachine={setTimeMachineTarget}
+              onOpenWhatIf={(clusterName, nodeName) => setWhatIfTarget({ cluster: clusterName, node: nodeName })}
+            />
+          </Suspense>
         )}
         {activeTab === "alerts" && <AlertsTab />}
 
@@ -277,18 +282,22 @@ function App() {
         )}
       </main>
 
-      <TimeMachineModal 
-        target={timeMachineTarget} 
-        onClose={() => setTimeMachineTarget(null)} 
-      />
+      <Suspense fallback={null}>
+        {timeMachineTarget && (
+          <TimeMachineModal 
+            target={timeMachineTarget} 
+            onClose={() => setTimeMachineTarget(null)} 
+          />
+        )}
 
-      {whatIfTarget && (
-        <WhatIfModal
-          cluster={whatIfTarget.cluster}
-          node={whatIfTarget.node}
-          onClose={() => setWhatIfTarget(null)}
-        />
-      )}
+        {whatIfTarget && (
+          <WhatIfModal
+            cluster={whatIfTarget.cluster}
+            node={whatIfTarget.node}
+            onClose={() => setWhatIfTarget(null)}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

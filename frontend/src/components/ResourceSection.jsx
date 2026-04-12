@@ -1,28 +1,32 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 
 // Sub-component for resources (VM, LXC) with metrics
 export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
   const term = searchQuery.toLowerCase();
-  const filtered = resources.filter(r => {
-    if (r.type !== typeFilter) return false;
-    if (!term) return true;
-    const cpuStr = r.maxcpu ? `${r.maxcpu}c` : "";
-    const ramStr = r.maxmem ? formatBytesToGB(r.maxmem).toLowerCase() : "";
+  const filtered = useMemo(() => {
+    const list = resources.filter(r => {
+      if (r.type !== typeFilter) return false;
+      if (!term) return true;
+      const cpuStr = r.maxcpu ? `${r.maxcpu}c` : "";
+      const ramStr = r.maxmem ? formatBytesToGB(r.maxmem).toLowerCase() : "";
 
-    return (
-      (r.name || "").toLowerCase().includes(term) ||
-      String(r.vmid).includes(term) ||
-      (r.status || "").toLowerCase().includes(term) ||
-      (r.node || "").toLowerCase().includes(term) ||
-      (r.pool || "").toLowerCase().includes(term) ||
-      (r.tags || "").toLowerCase().includes(term) ||
-      cpuStr.includes(term) ||
-      ramStr.includes(term) ||
-      (r.ips || []).some(ip => ip.includes(term))
-    );
-  });
+      return (
+        (r.name || "").toLowerCase().includes(term) ||
+        String(r.vmid).includes(term) ||
+        (r.status || "").toLowerCase().includes(term) ||
+        (r.node || "").toLowerCase().includes(term) ||
+        (r.pool || "").toLowerCase().includes(term) ||
+        (r.tags || "").toLowerCase().includes(term) ||
+        cpuStr.includes(term) ||
+        ramStr.includes(term) ||
+        (r.ips || []).some(ip => ip.includes(term))
+      );
+    });
+    list.sort((a, b) => a.vmid - b.vmid);
+    return list;
+  }, [resources, typeFilter, term]);
 
   if (filtered.length === 0) {
     return null;
@@ -49,7 +53,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
               </tr>
             </thead>
             <tbody>
-              {[...filtered].sort((a, b) => a.vmid - b.vmid).map(r => {
+              {filtered.map(r => {
                 const isRunning = r.status === "running";
                 const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                 const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
