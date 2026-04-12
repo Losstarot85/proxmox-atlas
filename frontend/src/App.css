@@ -1105,3 +1105,9 @@ tbody tr:last-child td {
   border: 1px solid rgba(251, 191, 35, 0.3);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
+
+.resource-tag.node-tag {
+  background-color: rgba(6, 182, 212, 0.15); /* Cyan tint */
+  color: #22d3ee;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
