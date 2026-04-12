@@ -1,7 +1,7 @@
 import React from 'react';
 import { TimeSeriesChart } from './TimeSeriesChart';
 
-export function SummaryCards({ clusters, history }) {
+export function SummaryCards({ clusters, globalHistory }) {
   // Calcolo aggregati live (per i contatori)
   let runningVMs = 0;
   let totalVMs = 0;
@@ -21,32 +21,11 @@ export function SummaryCards({ clusters, history }) {
     });
   });
 
-  // Costruiamo i dati aggregati per la history
-  const historyData = history?.map(h => {
-    let tCpu = 0, mCpu = 0, tMem = 0, mMem = 0;
-    h.clusters.forEach(c => {
-       c.nodes?.forEach(n => {
-         if (n.status === 'online') {
-            tCpu += (n.cpu || 0) * n.maxcpu;
-            mCpu += n.maxcpu;
-            tMem += (n.mem || 0);
-            mMem += (n.maxmem || 0);
-         }
-       });
-    });
-    
-    return {
-      timestamp: h.timestamp,
-      cpuPercent: mCpu > 0 ? Number(((tCpu / mCpu) * 100).toFixed(1)) : 0,
-      memPercent: mMem > 0 ? Number(((tMem / mMem) * 100).toFixed(1)) : 0
-    };
-  }) || [];
-
   return (
     <div className="summary-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
       <div className="glass-card stat-card" style={{ padding: '1rem', display: 'flex', gridColumn: 'span 2' }}>
         <TimeSeriesChart 
-          data={historyData} 
+          data={globalHistory || []} 
           dataKey="cpuPercent" 
           title="Total CPU Usage" 
           color="#3b82f6" 
@@ -55,7 +34,7 @@ export function SummaryCards({ clusters, history }) {
 
       <div className="glass-card stat-card" style={{ padding: '1rem', display: 'flex', gridColumn: 'span 2' }}>
         <TimeSeriesChart 
-          data={historyData} 
+          data={globalHistory || []} 
           dataKey="memPercent" 
           title="Total RAM Usage" 
           color="#8b5cf6" 

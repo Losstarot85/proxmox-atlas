@@ -77,7 +77,7 @@ function App() {
     };
   }, []);
 
-  const { clusters, history, loading, error } = useClusterData();
+  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData();
 
   if (!initialSettingsLoaded) {
     return (
@@ -238,7 +238,7 @@ function App() {
 
         {activeTab === "dashboard" && (
           <>
-            <SummaryCards clusters={clusters} history={history} />
+            <SummaryCards clusters={clusters} globalHistory={globalHistory} />
             <div style={{ marginBottom: '1.5rem', display: 'flex' }}>
               <input
                 type="text"
@@ -253,7 +253,8 @@ function App() {
               <ClusterSection 
                 key={cluster.name} 
                 cluster={cluster} 
-                history={history} 
+                globalHistory={globalHistory} 
+                metricsMap={metricsMap}
                 searchQuery={dashboardSearch}
                 onOpenTimeMachine={setTimeMachineTarget} 
               />

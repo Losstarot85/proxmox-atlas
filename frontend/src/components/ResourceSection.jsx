@@ -3,7 +3,7 @@ import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } f
 import { Sparkline } from "./Sparkline";
 
 // Sub-component for resources (VM, LXC) with metrics
-export function ResourceSection({ title, typeFilter, resources, clusterName, history, searchQuery = "", onOpenTimeMachine }) {
+export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
   const term = searchQuery.toLowerCase();
   const filtered = resources.filter(r => {
     if (r.type !== typeFilter) return false;
@@ -53,15 +53,9 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                 const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                 const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
 
-                const resourceHistory = history?.map(h => {
-                  const clusterMatch = h.clusters?.find(c => c.name === clusterName);
-                  const resMatch = clusterMatch?.resources?.find(res => res.vmid === r.vmid);
-                  return {
-                    timestamp: h.timestamp,
-                    cpuPercent: resMatch && resMatch.maxcpu > 0 ? Number((resMatch.cpu * 100).toFixed(1)) : 0,
-                    ramPercent: resMatch && resMatch.maxmem > 0 ? Number((resMatch.mem / resMatch.maxmem * 100).toFixed(1)) : 0
-                  };
-                }) || [];
+                const cm = metricsMap[`${clusterName}-${r.type}-${r.vmid}`] || { cpu: [], ram: [] };
+                const cpuHistory = cm.cpu;
+                const ramHistory = cm.ram;
 
                 return (
                     <React.Fragment key={`${r.type}-${r.vmid}`}>
@@ -82,7 +76,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                       <td>
                         {isRunning ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Sparkline data={resourceHistory} dataKey="cpuPercent" color="#3b82f6" />
+                            <Sparkline data={cpuHistory} color="#3b82f6" />
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                               <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
                               <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
@@ -93,7 +87,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, his
                       <td>
                         {isRunning ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Sparkline data={resourceHistory} dataKey="ramPercent" color="#8b5cf6" />
+                            <Sparkline data={ramHistory} color="#8b5cf6" />
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                               <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
                               <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>

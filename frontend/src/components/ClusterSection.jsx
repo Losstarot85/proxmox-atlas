@@ -4,7 +4,7 @@ import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad }
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
 
-export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeMachine }) {
+export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
   const term = searchQuery.toLowerCase();
   
   const visibleNodes = (cluster.nodes || []).filter(n => {
@@ -93,23 +93,10 @@ export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeM
                   const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
 
-                  const nodeHistory = history?.map(h => {
-                     const clusterMatch = h.clusters?.find(c => c.name === cluster.name);
-                     const nodeMatch = clusterMatch?.nodes?.find(nd => nd.name === n.name);
-                     return {
-                       timestamp: h.timestamp,
-                       cpuPercent: nodeMatch && nodeMatch.maxcpu > 0 ? Number(((nodeMatch.cpu || 0) * 100).toFixed(1)) : 0,
-                       ramPercent: nodeMatch && nodeMatch.maxmem > 0 ? Number(((nodeMatch.mem || 0) / nodeMatch.maxmem * 100).toFixed(1)) : 0
-                     };
-                  }) || [];
-
-                  const nodeHistoryBlocks = history?.map(h => {
-                    const clusterMatch = h.clusters?.find(c => c.name === cluster.name);
-                    const nodeMatch = clusterMatch?.nodes?.find(nd => nd.name === n.name);
-                    return {
-                      status: nodeMatch ? nodeMatch.status : "unknown"
-                    };
-                  }) || [];
+                  const cm = metricsMap[`NODE-${n.name}`] || { cpu: [], ram: [], status: [] };
+                  const cpuHistory = cm.cpu;
+                  const ramHistory = cm.ram;
+                  const nodeHistoryBlocks = (cm.status || []).map(s => ({ status: s }));
 
                   return (
                     <tr 
@@ -131,7 +118,7 @@ export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeM
                       <td>
                         {isOnline ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Sparkline data={nodeHistory} dataKey="cpuPercent" color="#3b82f6" />
+                            <Sparkline data={cpuHistory} color="#3b82f6" />
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                               <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
                               <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{n.maxcpu}C</span>
@@ -142,7 +129,7 @@ export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeM
                       <td>
                         {isOnline ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Sparkline data={nodeHistory} dataKey="ramPercent" color="#8b5cf6" />
+                            <Sparkline data={ramHistory} color="#8b5cf6" />
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                               <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
                               <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(n.maxmem)}</span>
@@ -188,8 +175,8 @@ export function ClusterSection({ cluster, history, searchQuery = "", onOpenTimeM
       </>
       )}
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} history={history} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} history={history} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
     </section>
   );
 }

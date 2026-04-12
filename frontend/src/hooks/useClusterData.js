@@ -6,7 +6,8 @@ const MAX_RETRY_DELAY = 30000;      // 30 seconds cap
 
 export function useClusterData() {
   const [clusters, setClusters] = useState([]);
-  const [history, setHistory] = useState([]);
+  const [globalHistory, setGlobalHistory] = useState([]);
+  const [metricsMap, setMetricsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -44,13 +45,57 @@ export function useClusterData() {
           
           setClusters(data.clusters);
           
-          setHistory(prev => {
-            const newHistory = [...prev, { timestamp, clusters: data.clusters }];
-            if (newHistory.length > MAX_HISTORY_LENGTH) {
-              newHistory.shift();
-            }
+          let tCpu = 0, mCpu = 0, tMem = 0, mMem = 0;
+          const currentMetrics = {};
+          
+          data.clusters.forEach(c => {
+            c.nodes?.forEach(n => {
+              if (n.status === 'online') {
+                  tCpu += (n.cpu || 0) * n.maxcpu;
+                  mCpu += n.maxcpu;
+                  tMem += (n.mem || 0);
+                  mMem += (n.maxmem || 0);
+              }
+              const cpuP = n.status === "online" && n.maxcpu > 0 ? Number(((n.cpu || 0) * 100).toFixed(1)) : 0;
+              const ramP = n.status === "online" && n.maxmem > 0 ? Number(((n.mem || 0) / n.maxmem * 100).toFixed(1)) : 0;
+              currentMetrics[`NODE-${n.name}`] = { cpu: cpuP, ram: ramP, status: n.status };
+            });
+            c.resources?.forEach(r => {
+              const isRunning = r.status === 'running';
+              const r_cpuP = isRunning ? Number(((r.cpu || 0) * 100).toFixed(1)) : 0;
+              const r_ramP = isRunning && r.maxmem > 0 ? Number(((r.mem || 0) / r.maxmem * 100).toFixed(1)) : 0;
+              currentMetrics[`${c.name}-${r.type}-${r.vmid}`] = { cpu: r_cpuP, ram: r_ramP };
+            });
+          });
+
+          setGlobalHistory(prev => {
+            const cpuPercent = mCpu > 0 ? Number(((tCpu / mCpu) * 100).toFixed(1)) : 0;
+            const memPercent = mMem > 0 ? Number(((tMem / mMem) * 100).toFixed(1)) : 0;
+            const newHistory = [...prev, { timestamp, cpuPercent, memPercent }];
+            if (newHistory.length > MAX_HISTORY_LENGTH) newHistory.shift();
             return newHistory;
           });
+
+          setMetricsMap(prevMap => {
+            const nextMap = { ...prevMap };
+            Object.keys(currentMetrics).forEach(id => {
+               if (!nextMap[id]) nextMap[id] = { cpu: [], ram: [], status: [] };
+               const h = nextMap[id];
+               const cm = currentMetrics[id];
+               
+               const newCpu = [...h.cpu, cm.cpu];
+               const newRam = [...h.ram, cm.ram];
+               const newStatus = cm.status ? [...h.status, cm.status] : h.status;
+               
+               if (newCpu.length > MAX_HISTORY_LENGTH) newCpu.shift();
+               if (newRam.length > MAX_HISTORY_LENGTH) newRam.shift();
+               if (newStatus && newStatus.length > MAX_HISTORY_LENGTH) newStatus.shift();
+               
+               nextMap[id] = { cpu: newCpu, ram: newRam, status: newStatus };
+            });
+            return nextMap;
+          });
+          
           setError(null);
         }
       } catch (err) {
@@ -97,5 +142,5 @@ export function useClusterData() {
     };
   }, [connect]);
 
-  return { clusters, history, loading, error };
+  return { clusters, globalHistory, metricsMap, loading, error };
 }
