@@ -4,7 +4,7 @@ const MAX_HISTORY_LENGTH = 40;
 const INITIAL_RETRY_DELAY = 1000;   // 1 second
 const MAX_RETRY_DELAY = 30000;      // 30 seconds cap
 
-export function useClusterData() {
+export function useClusterData(token) {
   const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,9 +27,9 @@ export function useClusterData() {
       eventSourceRef.current = null;
     }
 
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || !token) return;
 
-    const eventSource = new EventSource("/api/stream");
+    const eventSource = new EventSource(`/api/stream?token=${encodeURIComponent(token)}`);
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
@@ -126,7 +126,7 @@ export function useClusterData() {
       // Increase delay for next attempt (exponential backoff with cap)
       retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_DELAY);
     };
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -141,7 +141,7 @@ export function useClusterData() {
         eventSourceRef.current.close();
       }
     };
-  }, [connect]);
+  }, [connect, token]);
 
   return { clusters, globalHistory: globalHistoryRef.current, metricsMap: metricsMapRef.current, loading, error };
 }

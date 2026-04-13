@@ -1,5 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { useAuth } from "./hooks/useAuth";
 import { useClusterData } from "./hooks/useClusterData";
+import { LoginPage } from "./components/LoginPage";
 import { ClusterSection } from "./components/ClusterSection";
 import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
@@ -14,6 +16,7 @@ const WhatIfModal = lazy(() => import("./components/WhatIfModal").then(m => ({ d
 
 
 function App() {
+  const auth = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [webhooks, setWebhooks] = useState([]);
@@ -40,6 +43,7 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
+    if (!auth.isAuthenticated) return;
     const fetchSettings = async () => {
       try {
         const res = await fetch("/api/settings");
@@ -55,9 +59,10 @@ function App() {
       }
     };
     fetchSettings();
-  }, []);
+  }, [auth.isAuthenticated]);
 
   useEffect(() => {
+    if (!auth.isAuthenticated) return;
     let active = true;
     const fetchUnread = async () => {
       try {
@@ -77,9 +82,22 @@ function App() {
       active = false;
       clearInterval(inv);
     };
-  }, []);
+  }, [auth.isAuthenticated]);
 
-  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData();
+  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.token);
+
+  // Auth gate: show login page if not authenticated
+  if (!auth.isAuthenticated) {
+    return (
+      <LoginPage
+        onLogin={auth.login}
+        onChangePassword={auth.changePassword}
+        mustChangePassword={auth.mustChangePassword}
+        error={auth.loginError}
+        tempPassword={auth.mustChangePassword ? undefined : undefined}
+      />
+    );
+  }
 
   if (!initialSettingsLoaded) {
     return (
@@ -180,6 +198,18 @@ function App() {
             <span className="nav-text">Settings</span>
           </button>
         </nav>
+
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.5rem', marginTop: 'auto' }}>
+          <button
+            className="nav-item"
+            onClick={auth.logout}
+            title={!isExpanded ? "Logout" : ""}
+            style={{ color: 'var(--danger)', opacity: 0.8 }}
+          >
+            <span className="nav-icon">🚪</span>
+            <span className="nav-text">Logout</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content Area */}

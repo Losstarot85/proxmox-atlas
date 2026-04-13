@@ -1,15 +1,30 @@
 import asyncio
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse
 from sse import broker, _enrich_resources_with_ips
 import json
 from cache import cache
+from auth import decode_token
+import jwt
 
 router = APIRouter()
 
 @router.get("/stream")
-async def sse_stream():
-    """Server-Sent Events endpoint for real-time cache update streaming"""
+async def sse_stream(request: Request, token: str = ""):
+    """Server-Sent Events endpoint for real-time cache update streaming.
+    
+    Accepts JWT token via query parameter since EventSource API
+    does not support custom HTTP headers.
+    """
+    # Validate token from query param (EventSource can't send headers)
+    if not token:
+        raise HTTPException(status_code=401, detail="Token required")
+    try:
+        decode_token(token)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except (jwt.InvalidTokenError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid token")
     
     async def event_generator():
         # On first connect, immediately send the current cache state for fast boot!

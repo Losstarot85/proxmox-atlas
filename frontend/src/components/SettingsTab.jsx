@@ -8,6 +8,14 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  // Password change state
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwError, setPwError] = useState(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwSaving, setPwSaving] = useState(false);
+
   // Cluster Management State
   const [clusters, setClusters] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -186,9 +194,75 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
 
   const formatTime = (ts) => new Date(ts * 1000).toLocaleString("sv-SE");
 
-  return (
+    return (
     <div className="settings-content" style={{ maxWidth: '1000px' }}>
 
+      {/* ==================== ACCOUNT SECURITY ==================== */}
+      <div className="glass-card" style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+          <h3>🔐 Account Security</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
+            Change the admin password for accessing Proxmox Atlas.
+          </p>
+        </div>
+
+        {pwError && (
+          <div className="global-error" style={{ marginBottom: '1rem' }}>
+            <span>❌</span><span>{pwError}</span>
+          </div>
+        )}
+        {pwSuccess && (
+          <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ Password changed successfully.</p>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Current Password</label>
+            <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>New Password</label>
+            <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Confirm New Password</label>
+            <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Repeat password" autoComplete="new-password" />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-primary" disabled={pwSaving || !currentPw || !newPw || !confirmPw} onClick={async () => {
+            setPwError(null);
+            setPwSuccess(false);
+            if (newPw.length < 6) { setPwError("Password must be at least 6 characters"); return; }
+            if (newPw !== confirmPw) { setPwError("Passwords do not match"); return; }
+            setPwSaving(true);
+            try {
+              const res = await fetch("/api/auth/change-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ old_password: currentPw, new_password: newPw })
+              });
+              if (!res.ok) {
+                const d = await res.json().catch(() => ({}));
+                throw new Error(d.detail || "Error changing password");
+              }
+              const data = await res.json();
+              // Update token in localStorage with new one
+              if (data.token) localStorage.setItem("atlas-auth-token", data.token);
+              setPwSuccess(true);
+              setCurrentPw(""); setNewPw(""); setConfirmPw("");
+              setTimeout(() => setPwSuccess(false), 5000);
+            } catch (err) {
+              setPwError(err.message);
+            } finally {
+              setPwSaving(false);
+            }
+          }}>
+            {pwSaving ? "Changing..." : "🔒 Change Password"}
+          </button>
+        </div>
+      </div>
       {/* ==================== CLUSTER MANAGEMENT ==================== */}
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>

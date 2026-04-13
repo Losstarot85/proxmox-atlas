@@ -64,6 +64,7 @@ pnpm-debug.log*
 .env.*
 *.env
 backend/clusters.json
+backend/auth.json
 
 # =========================
 # DOCKER
