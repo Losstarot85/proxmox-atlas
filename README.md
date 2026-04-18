@@ -1,4 +1,4 @@
-# 🌐 Proxmox Atlas
+# <a href="frontend/public/logo.png"><img src="frontend/public/logo.png" width="35"></a> Proxmox Atlas
 
 **Real-time multi-cluster monitoring dashboard for Proxmox VE infrastructure.**
 
