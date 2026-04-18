@@ -7,7 +7,7 @@
 set -e
 
 REPO="Losstarot85/proxmox-atlas"
-INSTALL_DIR="/opt/proxmox-atlas"
+INSTALL_DIR="${HOME}/proxmox-atlas"
 
 # Colors
 RED='\033[0;31m'

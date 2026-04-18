@@ -33,7 +33,7 @@ curl -sSL https://raw.githubusercontent.com/Losstarot85/proxmox-atlas/main/insta
 ```
 
 This will:
-1. Clone the repository to `/opt/proxmox-atlas`
+1. Clone the repository to `~/proxmox-atlas`
 2. Generate a self-signed SSL certificate
 3. Build and start all containers
 4. Atlas will be available at `https://<your-ip>`
@@ -153,14 +153,14 @@ docker compose restart nginx
 ## 🔄 Updating
 
 ```bash
-cd /opt/proxmox-atlas
+cd ~/proxmox-atlas
 git pull
 docker compose up -d --build
 ```
 
 Or use the installer:
 ```bash
-cd /opt/proxmox-atlas && ./install.sh --update
+cd ~/proxmox-atlas && ./install.sh --update
 ```
 
 Your data (clusters, settings, credentials) is persisted in Docker volumes and will survive updates.
