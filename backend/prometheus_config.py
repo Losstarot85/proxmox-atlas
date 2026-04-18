@@ -19,7 +19,7 @@ def generate_prometheus_config():
 scrape_configs:
   - job_name: 'proxmox-atlas-backend'
     static_configs:
-      - targets: ['proxmox-backend:8000']
+      - targets: ['backend:8000']
 """
     try:
         os.makedirs(os.path.dirname(PROMETHEUS_CONFIG_PATH), exist_ok=True)

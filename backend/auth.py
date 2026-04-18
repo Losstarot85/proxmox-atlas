@@ -12,7 +12,8 @@ import time
 import bcrypt
 import jwt
 
-AUTH_FILE = os.path.join(os.path.dirname(__file__), "auth.json")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
+AUTH_FILE = os.path.join(DATA_DIR, "auth.json")
 TOKEN_EXPIRY_HOURS = 24
 
 # In-memory auth state (loaded from auth.json)

@@ -67,6 +67,16 @@ backend/clusters.json
 backend/auth.json
 
 # =========================
+# SSL CERTIFICATES
+# =========================
+certs/
+
+# =========================
+# PERSISTENT DATA (Docker volumes on host)
+# =========================
+data/
+
+# =========================
 # DOCKER
 # =========================
 *.pid

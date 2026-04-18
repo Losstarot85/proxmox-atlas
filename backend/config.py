@@ -1,7 +1,8 @@
 import os
 import json
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "clusters.json")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
+CONFIG_PATH = os.path.join(DATA_DIR, "clusters.json")
 
 try:
     with open(CONFIG_PATH) as f:
@@ -18,7 +19,7 @@ except json.JSONDecodeError as e:
     print(f"[FATAL] clusters.json contains invalid JSON: {e}")
     raise SystemExit(1)
 
-SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "settings.json")
+SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
 DEFAULT_SETTINGS = {
     "polling_interval": 15,
     "webhooks": []
