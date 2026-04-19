@@ -13,7 +13,8 @@ export function UptimeHeatmap({ target }) {
     const fetchUptime = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/time-machine/uptime?target_id=${encodeURIComponent(target.id)}&target_type=${encodeURIComponent(target.type)}&days=30`);
+        const nameParam = target.name ? `&target_name=${encodeURIComponent(target.name)}` : '';
+        const res = await fetch(`/api/time-machine/uptime?target_id=${encodeURIComponent(target.id)}&target_type=${encodeURIComponent(target.type)}&days=30${nameParam}`);
         if (!res.ok) {
           throw new Error("Unable to retrieve historical data: " + res.statusText);
         }
@@ -170,7 +171,12 @@ export function UptimeHeatmap({ target }) {
       const d = new Date(cell.time * 1000);
       tooltip.textContent = `${d.toLocaleString("sv-SE")} — ${cell.status.toUpperCase()}`;
       tooltip.style.opacity = "1";
-      tooltip.style.left = `${mx + 10}px`;
+      const tooltipWidth = tooltip.offsetWidth || 150;
+      if (mx + tooltipWidth + 20 > totalWidth) {
+        tooltip.style.left = `${mx - tooltipWidth - 10}px`;
+      } else {
+        tooltip.style.left = `${mx + 10}px`;
+      }
       tooltip.style.top = `${my - 20}px`;
     } else {
       tooltip.style.opacity = "0";

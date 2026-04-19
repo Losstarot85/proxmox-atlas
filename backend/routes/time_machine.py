@@ -11,6 +11,7 @@ async def get_uptime_history(
     target_id: str,
     target_type: str = Query(..., description="VM or NODE"),
     days: int = Query(30, description="Number of days of history"),
+    target_name: Optional[str] = Query(None, description="Explicit target name")
 ):
     import time
     end = time.time()
@@ -20,7 +21,8 @@ async def get_uptime_history(
     if target_type.upper() == "NODE":
         expr = f'max_over_time(proxmox_node_uptime_seconds{{node="{target_id}"}}[1h])'
     else:
-        expr = f'max_over_time(proxmox_vm_uptime_seconds{{vmid="{target_id}"}}[1h])'
+        name_filter = f',name="{target_name}"' if target_name else ""
+        expr = f'max_over_time(proxmox_vm_uptime_seconds{{vmid="{target_id}"{name_filter}}}[1h])'
         
     try:
         async with httpx.AsyncClient() as client:
