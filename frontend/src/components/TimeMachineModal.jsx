@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../config";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { UptimeHeatmap } from "./UptimeHeatmap";
 import "./TimeMachineModal.css";
@@ -30,7 +31,7 @@ export function TimeMachineModal({ target, onClose }) {
             step = 60 * 60 * 6; // 6 hour resolution
         }
 
-        const res = await fetch(`/api/time-machine/${target.id}?target_type=${target.type}&target_name=${encodeURIComponent(target.name || "")}&start=${start}&end=${end}&step=${step}`);
+        const res = await fetch(`${API_BASE}/time-machine/${target.id}?target_type=${target.type}&target_name=${encodeURIComponent(target.name || "")}&start=${start}&end=${end}&step=${step}`);
         if (!res.ok) throw new Error("Failed to load historical data");
         
         const json = await res.json();

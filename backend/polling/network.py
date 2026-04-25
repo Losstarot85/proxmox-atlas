@@ -66,8 +66,13 @@ async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host
 
 import asyncio
 from cache import cache
+from logger import get_logger
+
+log = get_logger("polling.network")
 
 async def update_network_ips_for_cluster(cluster: dict):
+    from config import resolve_cluster_secrets
+    cluster = resolve_cluster_secrets(cluster)
     cluster_name = cluster["name"]
     host = cluster["host"]
     headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
@@ -96,4 +101,4 @@ async def update_network_ips_for_cluster(cluster: dict):
             valid_results = [res for res in results if not isinstance(res, Exception)]
             cache[cluster_name]["network"] = valid_results
     except Exception as e:
-        print(f"[ERROR Network Polling] {cluster_name}: {e}")
+        log.error("network_polling_error", cluster=cluster_name, error=str(e))

@@ -11,6 +11,9 @@ import time
 
 import bcrypt
 import jwt
+from logger import get_logger
+
+log = get_logger("auth")
 
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
 AUTH_FILE = os.path.join(DATA_DIR, "auth.json")
@@ -28,10 +31,10 @@ def init_auth():
         try:
             with open(AUTH_FILE) as f:
                 _auth_data = json.load(f)
-            print("[AUTH] Loaded existing auth.json")
+            log.info("auth_loaded", file=AUTH_FILE)
             return
         except (json.JSONDecodeError, Exception) as e:
-            print(f"[AUTH] Error reading auth.json: {e}, re-creating...")
+            log.warning("auth_file_corrupted", error=str(e))
 
     # First deploy: create admin with default password
     _auth_data = {
@@ -41,7 +44,7 @@ def init_auth():
         "jwt_secret": str(uuid.uuid4())
     }
     _save_auth()
-    print("[AUTH] Created default admin user (password: admin, must change on first login)")
+    log.info("auth_default_user_created", username="admin")
 
 
 def _save_auth():
@@ -50,7 +53,7 @@ def _save_auth():
         with open(AUTH_FILE, "w") as f:
             json.dump(_auth_data, f, indent=2)
     except Exception as e:
-        print(f"[AUTH ERROR] Unable to save auth.json: {e}")
+        log.error("auth_save_failed", error=str(e))
 
 
 def hash_password(plain: str) -> str:
@@ -100,7 +103,7 @@ def change_password(old_password: str, new_password: str) -> bool:
     _auth_data["password_hash"] = hash_password(new_password)
     _auth_data["must_change_password"] = False
     _save_auth()
-    print("[AUTH] Admin password changed successfully")
+    log.info("password_changed", username="admin")
     return True
 
 

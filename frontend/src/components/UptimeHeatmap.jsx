@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { API_BASE } from "../config";
 
 export function UptimeHeatmap({ target }) {
   const [data, setData] = useState([]);
@@ -14,7 +15,7 @@ export function UptimeHeatmap({ target }) {
       try {
         setLoading(true);
         const nameParam = target.name ? `&target_name=${encodeURIComponent(target.name)}` : '';
-        const res = await fetch(`/api/time-machine/uptime?target_id=${encodeURIComponent(target.id)}&target_type=${encodeURIComponent(target.type)}&days=30${nameParam}`);
+        const res = await fetch(`${API_BASE}/time-machine/uptime?target_id=${encodeURIComponent(target.id)}&target_type=${encodeURIComponent(target.type)}&days=30${nameParam}`);
         if (!res.ok) {
           throw new Error("Unable to retrieve historical data: " + res.statusText);
         }

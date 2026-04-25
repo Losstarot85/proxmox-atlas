@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { API_BASE } from "../config";
 
 const MAX_HISTORY_LENGTH = 40;
 const INITIAL_RETRY_DELAY = 1000;   // 1 second
 const MAX_RETRY_DELAY = 30000;      // 30 seconds cap
 
-export function useClusterData(token) {
+export function useClusterData(token, onAuthError) {
   const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,50 +30,69 @@ export function useClusterData(token) {
 
     if (!mountedRef.current || !token) return;
 
-    const eventSource = new EventSource(`/api/stream?token=${encodeURIComponent(token)}`);
-    eventSourceRef.current = eventSource;
-
-    eventSource.onopen = () => {
+    // Pre-flight: validate token before opening EventSource
+    // EventSource doesn't expose HTTP status codes, so we use a fetch probe
+    fetch(`${API_BASE}/stream?token=${encodeURIComponent(token)}`, {
+      method: 'GET',
+      headers: { 'Accept': 'text/event-stream' }
+    }).then(res => {
       if (!mountedRef.current) return;
-      setLoading(false);
-      setError(null);
-      // Reset backoff on successful connection
-      retryDelayRef.current = INITIAL_RETRY_DELAY;
-    };
 
-    eventSource.onmessage = (event) => {
-      if (!mountedRef.current) return;
-      try {
-        const data = JSON.parse(event.data);
-        if (data && data.clusters) {
-          const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          
-          setClusters(data.clusters);
-          
-          let tCpu = 0, mCpu = 0, tMem = 0, mMem = 0;
-          
-          data.clusters.forEach(c => {
-            c.nodes?.forEach(n => {
-              if (n.status === 'online') {
-                  tCpu += (n.cpu || 0) * n.maxcpu;
-                  mCpu += n.maxcpu;
-                  tMem += (n.mem || 0);
-                  mMem += (n.maxmem || 0);
-              }
-              const cpuP = n.status === "online" && n.maxcpu > 0 ? Number(((n.cpu || 0) * 100).toFixed(1)) : 0;
-              const ramP = n.status === "online" && n.maxmem > 0 ? Number(((n.mem || 0) / n.maxmem * 100).toFixed(1)) : 0;
-              
-              // Mutate in-place — zero allocations
-              const key = `NODE-${n.name}`;
-              if (!metricsMapRef.current[key]) metricsMapRef.current[key] = { cpu: [], ram: [], status: [] };
-              const h = metricsMapRef.current[key];
-              h.cpu.push(cpuP);
-              h.ram.push(ramP);
-              h.status.push(n.status);
-              if (h.cpu.length > MAX_HISTORY_LENGTH) h.cpu.shift();
-              if (h.ram.length > MAX_HISTORY_LENGTH) h.ram.shift();
-              if (h.status.length > MAX_HISTORY_LENGTH) h.status.shift();
-            });
+      if (res.status === 401) {
+        // Token is invalid/expired — stop retrying and trigger logout
+        setError(null);
+        setLoading(true);
+        if (onAuthError) onAuthError();
+        return;
+      }
+
+      // Token is valid — abort this fetch and open a real EventSource
+      res.body?.cancel();
+
+      const eventSource = new EventSource(`${API_BASE}/stream?token=${encodeURIComponent(token)}`);
+      eventSourceRef.current = eventSource;
+
+      eventSource.onopen = () => {
+        if (!mountedRef.current) return;
+        setLoading(false);
+        setError(null);
+        // Reset backoff on successful connection
+        retryDelayRef.current = INITIAL_RETRY_DELAY;
+      };
+
+      eventSource.onmessage = (event) => {
+        if (!mountedRef.current) return;
+        try {
+          const data = JSON.parse(event.data);
+          if (data && data.clusters) {
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            setClusters(data.clusters);
+            
+            let tCpu = 0, mCpu = 0, tMem = 0, mMem = 0;
+            
+            data.clusters.forEach(c => {
+              c.nodes?.forEach(n => {
+                if (n.status === 'online') {
+                    tCpu += (n.cpu || 0) * n.maxcpu;
+                    mCpu += n.maxcpu;
+                    tMem += (n.mem || 0);
+                    mMem += (n.maxmem || 0);
+                }
+                const cpuP = n.status === "online" && n.maxcpu > 0 ? Number(((n.cpu || 0) * 100).toFixed(1)) : 0;
+                const ramP = n.status === "online" && n.maxmem > 0 ? Number(((n.mem || 0) / n.maxmem * 100).toFixed(1)) : 0;
+                
+                // Mutate in-place — zero allocations
+                const key = `NODE-${n.name}`;
+                if (!metricsMapRef.current[key]) metricsMapRef.current[key] = { cpu: [], ram: [], status: [] };
+                const h = metricsMapRef.current[key];
+                h.cpu.push(cpuP);
+                h.ram.push(ramP);
+                h.status.push(n.status);
+                if (h.cpu.length > MAX_HISTORY_LENGTH) h.cpu.shift();
+                if (h.ram.length > MAX_HISTORY_LENGTH) h.ram.shift();
+                if (h.status.length > MAX_HISTORY_LENGTH) h.status.shift();
+              });
             c.resources?.forEach(r => {
               const isRunning = r.status === 'running';
               const r_cpuP = isRunning ? Number(((r.cpu || 0) * 100).toFixed(1)) : 0;
@@ -104,29 +124,38 @@ export function useClusterData(token) {
       }
     };
 
-    eventSource.onerror = () => {
+      eventSource.onerror = () => {
+        if (!mountedRef.current) return;
+
+        // Close the broken connection
+        eventSource.close();
+        eventSourceRef.current = null;
+
+        const delay = retryDelayRef.current;
+        const delaySec = Math.round(delay / 1000);
+        setError(`Real-time connection lost. Reconnecting in ${delaySec}s...`);
+
+        // Schedule reconnect with exponential backoff
+        retryTimerRef.current = setTimeout(() => {
+          if (mountedRef.current) {
+            setError("Real-time connection lost. Reconnecting...");
+            connect();
+          }
+        }, delay);
+
+        // Increase delay for next attempt (exponential backoff with cap)
+        retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_DELAY);
+      };
+    }).catch(() => {
+      // Network error on pre-flight — schedule retry
       if (!mountedRef.current) return;
-
-      // Close the broken connection
-      eventSource.close();
-      eventSourceRef.current = null;
-
       const delay = retryDelayRef.current;
-      const delaySec = Math.round(delay / 1000);
-      setError(`Real-time connection lost. Reconnecting in ${delaySec}s...`);
-
-      // Schedule reconnect with exponential backoff
       retryTimerRef.current = setTimeout(() => {
-        if (mountedRef.current) {
-          setError("Real-time connection lost. Reconnecting...");
-          connect();
-        }
+        if (mountedRef.current) connect();
       }, delay);
-
-      // Increase delay for next attempt (exponential backoff with cap)
       retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_DELAY);
-    };
-  }, [token]);
+    });
+  }, [token, onAuthError]);
 
   useEffect(() => {
     mountedRef.current = true;

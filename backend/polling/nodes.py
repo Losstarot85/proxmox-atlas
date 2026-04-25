@@ -1,10 +1,15 @@
 import httpx
 from datetime import datetime
 from cache import cache
+from logger import get_logger
+
+log = get_logger("polling.nodes")
 
 async def fetch_nodes_from_proxmox(cluster: dict):
     """Retrieves the node list from a Proxmox cluster,
     with advanced metrics fetched via RRD (IOWait, Pressure, Server Load)."""
+    from config import resolve_cluster_secrets
+    cluster = resolve_cluster_secrets(cluster)
     cluster_name = cluster["name"]
     host = cluster["host"]
     headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
@@ -58,7 +63,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                             node_item["pressure_ram"] = float(last_tick.get("pressurememorysome") or 0.0)
                             node_item["pressure_io"] = float(last_tick.get("pressureiosome") or 0.0)
                     except Exception as e:
-                        print(f"[WARN] [{cluster_name}] RRD data unavailable for node {node_item['name']}: {e}")
+                        log.warning("rrd_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
                         
                     try:
                         storage_url = f"{host}/api2/json/nodes/{node_item['name']}/storage"
@@ -76,7 +81,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                                 "avail": float(st.get("avail") or 0.0)
                             })
                     except Exception as e:
-                        print(f"[WARN] [{cluster_name}] Storage data unavailable for node {node_item['name']}: {e}")
+                        log.warning("storage_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
 
                     try:
                         net_url = f"{host}/api2/json/nodes/{node_item['name']}/network"
@@ -89,7 +94,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                                     node_ips.append(iface.get("address"))
                             node_item["ips"] = list(set(node_ips))
                     except Exception as e:
-                        print(f"[WARN] [{cluster_name}] Network data unavailable for node {node_item['name']}: {e}")
+                        log.warning("network_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
 
                 nodes.append(node_item)
 
@@ -149,13 +154,13 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                 
         cache[cluster_name]["active_node_labels"] = current_node_labels
         cache[cluster_name]["active_storage_labels"] = current_storage_labels
-        print(f"[INFO] [{cluster_name}] Nodes updated: {len(nodes)} nodes")
+        log.info("nodes_updated", cluster=cluster_name, count=len(nodes))
 
     except httpx.RequestError:
         cache[cluster_name]["error"] = "Proxmox host unreachable"
         cache[cluster_name]["nodes"] = []
-        print(f"[ERROR] [{cluster_name}] Host unreachable")
+        log.error("host_unreachable", cluster=cluster_name)
 
     except Exception as e:
         cache[cluster_name]["error"] = str(e)
-        print(f"[ERROR] [{cluster_name}] {e}")
+        log.error("nodes_polling_error", cluster=cluster_name, error=str(e))

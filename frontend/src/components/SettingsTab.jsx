@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../config";
 
 export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) {
   const [intervalVal, setIntervalVal] = useState(globalInterval);
@@ -36,7 +37,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
 
   const fetchClusters = async () => {
     try {
-      const res = await fetch("/api/clusters");
+      const res = await fetch(`${API_BASE}/clusters`);
       if (res.ok) {
         const data = await res.json();
         setClusters(data.clusters || []);
@@ -49,7 +50,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const res = await fetch("/api/alerts/webhook_logs");
+        const res = await fetch(`${API_BASE}/alerts/webhook_logs`);
         if (res.ok) {
           const data = await res.json();
           setLogs(data.logs || []);
@@ -69,7 +70,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
     setTestResult(null);
     setClusterError(null);
     try {
-      const res = await fetch("/api/clusters/test", {
+      const res = await fetch(`${API_BASE}/clusters/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCluster)
@@ -96,7 +97,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
     setClusterError(null);
     setClusterSuccess(null);
     try {
-      const res = await fetch("/api/clusters", {
+      const res = await fetch(`${API_BASE}/clusters`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCluster)
@@ -120,7 +121,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
     if (!confirm(`Delete cluster '${name}'? It will be removed from monitoring.`)) return;
     setClusterError(null);
     try {
-      const res = await fetch(`/api/clusters/${encodeURIComponent(name)}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE}/clusters/${encodeURIComponent(name)}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Error");
       setClusterSuccess(`Cluster '${name}' removed.`);
@@ -141,7 +142,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
     setError(null);
     setSuccess(false);
     try {
-      const res = await fetch("/api/settings", {
+      const res = await fetch(`${API_BASE}/settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ polling_interval: intervalVal, webhooks: webhooks })
@@ -238,7 +239,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
             if (newPw !== confirmPw) { setPwError("Passwords do not match"); return; }
             setPwSaving(true);
             try {
-              const res = await fetch("/api/auth/change-password", {
+              const res = await fetch(`${API_BASE}/auth/change-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ old_password: currentPw, new_password: newPw })

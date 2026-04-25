@@ -5,6 +5,9 @@ import httpx
 import json
 import os
 from config import CONFIG_PATH
+from logger import get_logger
+
+log = get_logger("routes.clusters")
 
 router = APIRouter()
 
@@ -64,7 +67,7 @@ def _hot_reload_clusters(clusters_list):
         from prometheus_config import generate_prometheus_config
         generate_prometheus_config()
     except Exception as e:
-        print(f"[WARN] Prometheus config not regenerated: {e}")
+        log.warning("prometheus_config_failed", error=str(e))
 
 
 @router.get("/clusters")

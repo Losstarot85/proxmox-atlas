@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../config";
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return "0 B";
@@ -17,7 +18,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/what-if?cluster=${encodeURIComponent(cluster)}&remove_node=${encodeURIComponent(node)}`)
+    fetch(`${API_BASE}/what-if?cluster=${encodeURIComponent(cluster)}&remove_node=${encodeURIComponent(node)}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();

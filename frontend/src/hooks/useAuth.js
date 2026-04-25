@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { API_BASE } from "../config";
 
 const TOKEN_KEY = "atlas-auth-token";
 
@@ -12,7 +13,7 @@ export function useAuth() {
   const login = useCallback(async (username, password) => {
     setLoginError(null);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
@@ -41,7 +42,7 @@ export function useAuth() {
   const changePassword = useCallback(async (oldPassword, newPassword) => {
     setLoginError(null);
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const res = await fetch(`${API_BASE}/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +80,7 @@ export function useAuth() {
       const url = typeof input === 'string' ? input : input instanceof Request ? input.url : '';
       
       // Only intercept our own API calls, excluding the login endpoint which shouldn't have tokens
-      if (url.startsWith('/api') && !url.includes('/api/auth/login')) {
+      if (url.startsWith('/api') && !url.includes('/auth/login')) {
         const currentToken = localStorage.getItem(TOKEN_KEY);
         if (currentToken) {
           init.headers = {
@@ -91,7 +92,7 @@ export function useAuth() {
 
       const response = await originalFetch(input, init);
 
-      if (response.status === 401 && url.startsWith('/api') && !url.includes('/api/auth/login')) {
+      if (response.status === 401 && url.startsWith('/api') && !url.includes('/auth/login')) {
         console.warn("API returned 401 Unauthorized, automatically logging out.");
         logout();
       }

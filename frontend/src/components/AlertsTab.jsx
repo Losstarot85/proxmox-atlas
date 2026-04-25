@@ -1,49 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
 
 export function AlertsTab() {
-  const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useAlerts();
+  const alerts = data?.alerts || [];
 
-  const fetchAlerts = async () => {
-    try {
-      const res = await fetch("/api/alerts");
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data.alerts || []);
-      }
-    } catch (err) {
-      console.error("Error fetching alerts", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const dismissMutation = useDismissAlert();
+  const markReadMutation = useMarkAlertRead();
+  const silenceMutation = useSilenceAlert();
+  const clearAllMutation = useClearAllAlerts();
 
-  useEffect(() => {
-    fetchAlerts();
-    // Poll every 10 seconds just for new alerts, since alerts aren't currently part of SSE cache
-    const interval = setInterval(fetchAlerts, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleMarkRead = async (id) => {
-    await fetch(`/api/alerts/${id}/read`, { method: "PATCH" });
-    setAlerts(alerts.map(a => a.id === id ? { ...a, read: true } : a));
-  };
-
-  const handleSilence = async (id) => {
-    await fetch(`/api/alerts/${id}/silence?minutes=60`, { method: "PATCH" });
-    setAlerts(alerts.map(a => a.id === id ? { ...a, read: true } : a));
-  };
-
-  const handleDelete = async (id) => {
-    await fetch(`/api/alerts/${id}`, { method: "DELETE" });
-    setAlerts(alerts.filter(a => a.id !== id));
-  };
-
-  const handleClearAll = async () => {
-    await fetch(`/api/alerts`, { method: "DELETE" });
-    setAlerts([]);
-  };
+  const handleMarkRead = (id) => markReadMutation.mutate(id);
+  const handleSilence = (id) => silenceMutation.mutate({ alertId: id });
+  const handleDelete = (id) => dismissMutation.mutate(id);
+  const handleClearAll = () => clearAllMutation.mutate();
 
   const formatTime = (ts) => {
     return new Date(ts * 1000).toLocaleString("sv-SE");

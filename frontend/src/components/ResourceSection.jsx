@@ -1,9 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 
+const VIRTUAL_THRESHOLD = 100;
+
 // Sub-component for resources (VM, LXC) with metrics
 export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
+  const [showAll, setShowAll] = useState(false);
   const term = searchQuery.toLowerCase();
   const filtered = useMemo(() => {
     const list = resources.filter(r => {
@@ -32,9 +35,12 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
     return null;
   }
 
+  const needsVirtualization = filtered.length > VIRTUAL_THRESHOLD && !showAll;
+  const visible = needsVirtualization ? filtered.slice(0, VIRTUAL_THRESHOLD) : filtered;
+
   return (
     <>
-      <h3 className="section-title">{title}</h3>
+      <h3 className="section-title">{title} {filtered.length > VIRTUAL_THRESHOLD && <span style={{fontWeight: 400, fontSize: '0.85rem', opacity: 0.7}}>({filtered.length} total)</span>}</h3>
       <div className="table-wrapper">
         <div className="responsive-table">
           <table style={{ tableLayout: "fixed", width: "100%" }}>
@@ -53,7 +59,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
               </tr>
             </thead>
             <tbody>
-              {filtered.map(r => {
+              {visible.map(r => {
                 const isRunning = r.status === "running";
                 const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                 const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
@@ -129,6 +135,13 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
           </table>
         </div>
       </div>
+      {needsVirtualization && (
+        <div style={{ textAlign: 'center', padding: '1rem' }}>
+          <button className="btn" onClick={() => setShowAll(true)}>
+            Show all {filtered.length} items ({filtered.length - VIRTUAL_THRESHOLD} hidden)
+          </button>
+        </div>
+      )}
     </>
   );
 }

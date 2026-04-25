@@ -1,5 +1,9 @@
 import os
 import json
+import re
+from logger import get_logger
+
+log = get_logger("config")
 
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
 CONFIG_PATH = os.path.join(DATA_DIR, "clusters.json")
@@ -8,16 +12,37 @@ try:
     with open(CONFIG_PATH) as f:
         CLUSTERS = json.load(f)
 except FileNotFoundError:
-    print(f"[INFO] {CONFIG_PATH} not found. Initialized an empty cluster database.")
+    log.info("clusters_file_not_found", path=CONFIG_PATH)
     CLUSTERS = []
     try:
         with open(CONFIG_PATH, "w") as f:
             json.dump(CLUSTERS, f, indent=2)
     except Exception as e:
-        print(f"[ERROR] Unable to create {CONFIG_PATH}: {e}")
+        log.error("clusters_file_create_failed", path=CONFIG_PATH, error=str(e))
 except json.JSONDecodeError as e:
-    print(f"[FATAL] clusters.json contains invalid JSON: {e}")
+    log.error("clusters_json_invalid", path=CONFIG_PATH, error=str(e))
     raise SystemExit(1)
+
+
+def _resolve_env_vars(value: str) -> str:
+    """Resolve ${ENV:VAR_NAME} placeholders to environment variable values."""
+    def replacer(match):
+        var_name = match.group(1)
+        env_val = os.environ.get(var_name)
+        if env_val is None:
+            log.warning("env_var_not_found", variable=var_name)
+            return match.group(0)  # Leave placeholder as-is
+        return env_val
+    return re.sub(r'\$\{ENV:([^}]+)\}', replacer, value)
+
+
+def resolve_cluster_secrets(cluster: dict) -> dict:
+    """Return a copy of the cluster config with env var placeholders resolved."""
+    resolved = dict(cluster)
+    for key in ("token_id", "token_secret", "host"):
+        if key in resolved and isinstance(resolved[key], str):
+            resolved[key] = _resolve_env_vars(resolved[key])
+    return resolved
 
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
 DEFAULT_SETTINGS = {
@@ -59,7 +84,7 @@ def load_settings():
         else:
             save_settings(DEFAULT_SETTINGS)
     except Exception as e:
-        print(f"[WARN] Unable to load settings.json: {e}")
+        log.warning("settings_load_failed", error=str(e))
 
 def save_settings(new_settings):
     global SETTINGS
@@ -68,7 +93,7 @@ def save_settings(new_settings):
             json.dump(new_settings, f, indent=2)
         SETTINGS.update(new_settings)
     except Exception as e:
-        print(f"[ERROR] Unable to save settings.json: {e}")
+        log.error("settings_save_failed", error=str(e))
 
 load_settings()
 

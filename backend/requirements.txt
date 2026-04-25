@@ -5,3 +5,6 @@ python-dotenv
 prometheus-client
 bcrypt
 pyjwt
+structlog
+pytest
+pytest-asyncio

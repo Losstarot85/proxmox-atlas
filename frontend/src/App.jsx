@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { API_BASE } from "./config";
 import { useAuth } from "./hooks/useAuth";
 import { useClusterData } from "./hooks/useClusterData";
 import { LoginPage } from "./components/LoginPage";
@@ -46,7 +47,7 @@ function App() {
     if (!auth.isAuthenticated) return;
     const fetchSettings = async () => {
       try {
-        const res = await fetch("/api/settings");
+        const res = await fetch(`${API_BASE}/settings`);
         if (res.ok) {
           const data = await res.json();
           setPollingIntervalSeconds(data.polling_interval || 15);
@@ -66,7 +67,7 @@ function App() {
     let active = true;
     const fetchUnread = async () => {
       try {
-        const res = await fetch("/api/alerts");
+        const res = await fetch(`${API_BASE}/alerts`);
         if (res.ok && active) {
           const data = await res.json();
           const unreadCount = data.alerts?.filter(a => !a.read).length || 0;
@@ -84,7 +85,7 @@ function App() {
     };
   }, [auth.isAuthenticated]);
 
-  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.token);
+  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.token, auth.logout);
 
   // Auth gate: show login page if not authenticated
   if (!auth.isAuthenticated) {
