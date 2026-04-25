@@ -31,11 +31,41 @@ def mark_read(alert_id: str):
 
 def delete_alert(alert_id: str):
     global alerts_store
+    # Clear the cooldown in engine so the same condition can re-trigger immediately
+    from alerts.engine import active_alerts
+    for a in alerts_store:
+        if a["id"] == alert_id:
+            _clear_cooldown_for_alert(a, active_alerts)
+            break
     alerts_store = [a for a in alerts_store if a["id"] != alert_id]
 
 def clear_alerts():
     global alerts_store
+    from alerts.engine import active_alerts
+    active_alerts.clear()
     alerts_store = []
+
+
+def _clear_cooldown_for_alert(alert, active_alerts):
+    """Remove all cooldown keys that match this alert's cluster/resource."""
+    cluster = alert.get("cluster", "")
+    node = alert.get("node", "")
+    resource = alert.get("resource", "")
+
+    # Build the base key used by the engine
+    if "VM" in resource or "LXC" in resource:
+        try:
+            vmid = resource.split(" ")[1]
+        except IndexError:
+            vmid = "unknown"
+        prefix = f"{cluster}:{vmid}:vm"
+    else:
+        prefix = f"{cluster}:{node}:node"
+
+    # Remove all cooldown entries that start with this prefix
+    keys_to_remove = [k for k in active_alerts if k.startswith(prefix)]
+    for k in keys_to_remove:
+        del active_alerts[k]
 
 def silence_resource(alert_id: str, minutes: int = 60):
     for a in alerts_store:

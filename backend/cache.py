@@ -7,7 +7,8 @@ cache = {
         "resources": [],
         "network": [],
         "last_update": None,
-        "error": None,
+        "node_error": None,
+        "resource_error": None,
         "failed_nodes": []
     }
     for cluster in CLUSTERS

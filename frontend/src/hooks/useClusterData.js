@@ -31,10 +31,11 @@ export function useClusterData(token, onAuthError) {
     if (!mountedRef.current || !token) return;
 
     // Pre-flight: validate token before opening EventSource
-    // EventSource doesn't expose HTTP status codes, so we use a fetch probe
-    fetch(`${API_BASE}/stream?token=${encodeURIComponent(token)}`, {
-      method: 'GET',
-      headers: { 'Accept': 'text/event-stream' }
+    // Use a lightweight HEAD to an authenticated endpoint — NOT /stream
+    // which would open a full SSE connection and waste resources
+    fetch(`${API_BASE}/alerts`, {
+      method: 'HEAD',
+      headers: { 'Accept': 'application/json' }
     }).then(res => {
       if (!mountedRef.current) return;
 
@@ -45,9 +46,6 @@ export function useClusterData(token, onAuthError) {
         if (onAuthError) onAuthError();
         return;
       }
-
-      // Token is valid — abort this fetch and open a real EventSource
-      res.body?.cancel();
 
       const eventSource = new EventSource(`${API_BASE}/stream?token=${encodeURIComponent(token)}`);
       eventSourceRef.current = eventSource;

@@ -84,7 +84,7 @@ def what_if_simulation(
 
     for vm in displaced_sorted:
         vm_needed_vcpus = vm["maxcpu"]
-        vm_needed_mem = vm["mem"]  # Currently used RAM as a realistic proxy
+        vm_needed_mem = vm["maxmem"]  # Use allocated RAM, not current usage, for safe capacity planning
 
         # Find the best candidate node: sufficient free memory and vCPU
         best_node = None

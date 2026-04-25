@@ -56,7 +56,7 @@ async def health_check():
     for cluster_conf in CLUSTERS:
         name = cluster_conf["name"]
         cluster_cache = cache.get(name, {})
-        error = cluster_cache.get("error")
+        error = cluster_cache.get("node_error") or cluster_cache.get("resource_error")
         last_update = cluster_cache.get("last_update")
         node_count = len(cluster_cache.get("nodes", []))
         resource_count = len(cluster_cache.get("resources", []))

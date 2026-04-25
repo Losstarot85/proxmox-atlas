@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error, tempPassword }) {
+export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error }) {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -30,7 +30,7 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
     }
 
     setLoading(true);
-    await onChangePassword(tempPassword || password, newPassword);
+    await onChangePassword(password, newPassword);
     setLoading(false);
   };
 

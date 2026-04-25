@@ -12,7 +12,7 @@ def get_resources():
                 "name": cluster_name,
                 "resources": data["resources"],
                 "last_update": data["last_update"],
-                "error": data["error"],
+                "error": data.get("resource_error"),
                 "failed_nodes": data["failed_nodes"]
             }
             for cluster_name, data in cache.items()

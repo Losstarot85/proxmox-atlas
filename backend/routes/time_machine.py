@@ -2,9 +2,15 @@ from fastapi import APIRouter, HTTPException, Query
 import httpx
 from typing import Optional
 import os
+import re
 
 router = APIRouter()
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
+
+
+def _sanitize_promql_label(value: str) -> str:
+    """Strip any character that could escape a PromQL label matcher."""
+    return re.sub(r'[^a-zA-Z0-9._:\-]', '', value)
 
 @router.get("/time-machine/uptime")
 async def get_uptime_history(
@@ -18,6 +24,10 @@ async def get_uptime_history(
     start = end - (days * 24 * 3600)
     step = 3600  # 1 hour
     
+    target_id = _sanitize_promql_label(target_id)
+    if target_name:
+        target_name = _sanitize_promql_label(target_name)
+
     if target_type.upper() == "NODE":
         expr = f'max_over_time(proxmox_node_uptime_seconds{{node="{target_id}"}}[1h])'
     else:
@@ -66,6 +76,10 @@ async def get_time_machine_data(
     """Queries Prometheus for historical data."""
     window = max(300, step * 2)
     window_str = f"{window}s"
+
+    target_id = _sanitize_promql_label(target_id)
+    if target_name:
+        target_name = _sanitize_promql_label(target_name)
 
     # Lista delle query in base al tipo
     queries = []

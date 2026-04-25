@@ -30,12 +30,22 @@ async def sse_stream(request: Request, token: str = ""):
         # On first connect, immediately send the current cache state for fast boot!
         results_by_cluster = []
         for cluster_name, data in cache.items():
+            node_err = data.get("node_error")
+            resource_err = data.get("resource_error")
+            combined_error = None
+            if node_err and resource_err:
+                combined_error = f"Nodes: {node_err} | Resources: {resource_err}"
+            elif node_err:
+                combined_error = node_err
+            elif resource_err:
+                combined_error = resource_err
+
             results_by_cluster.append({
                 "name": cluster_name,
                 "nodes": data.get("nodes", []),
                 "resources": _enrich_resources_with_ips(cluster_name, data.get("resources", [])),
                 "last_update": data.get("last_update"),
-                "error": data.get("error"),
+                "error": combined_error,
                 "failed_nodes": data.get("failed_nodes", [])
             })
         

@@ -151,18 +151,18 @@ async def fetch_resources_from_proxmox(cluster: dict):
                 
         cache[cluster_name]["active_vm_labels"] = current_vm_labels
         
-        cache[cluster_name]["error"] = None
+        cache[cluster_name]["resource_error"] = None
 
         log.info("resources_updated", cluster=cluster_name, count=len(all_resources), failed_nodes=failed_nodes)
 
     except httpx.RequestError:
-        cache[cluster_name]["error"] = "Proxmox host unreachable"
+        cache[cluster_name]["resource_error"] = "Proxmox host unreachable"
         cache[cluster_name]["resources"] = []
         cache[cluster_name]["failed_nodes"] = []
         log.error("host_unreachable", cluster=cluster_name)
 
     except Exception as e:
-        cache[cluster_name]["error"] = str(e)
+        cache[cluster_name]["resource_error"] = str(e)
         cache[cluster_name]["resources"] = []
         cache[cluster_name]["failed_nodes"] = []
         log.error("resources_polling_error", cluster=cluster_name, error=str(e))

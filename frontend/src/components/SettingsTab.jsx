@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
-export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) {
+export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, onUpdateToken }) {
   const [intervalVal, setIntervalVal] = useState(globalInterval);
   const [webhooks, setWebhooks] = useState(globalWebhooks || []);
   const [logs, setLogs] = useState([]);
@@ -249,8 +249,12 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings }) 
                 throw new Error(d.detail || "Error changing password");
               }
               const data = await res.json();
-              // Update token in localStorage with new one
-              if (data.token) localStorage.setItem("atlas-auth-token", data.token);
+              // Sync token in both localStorage and React auth state
+              if (data.token && onUpdateToken) {
+                onUpdateToken(data.token);
+              } else if (data.token) {
+                localStorage.setItem("atlas-auth-token", data.token);
+              }
               setPwSuccess(true);
               setCurrentPw(""); setNewPw(""); setConfirmPw("");
               setTimeout(() => setPwSuccess(false), 5000);

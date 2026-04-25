@@ -100,7 +100,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
 
         cache[cluster_name]["nodes"] = nodes
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cache[cluster_name]["error"] = None
+        cache[cluster_name]["node_error"] = None
 
         from metrics import NODE_CPU, NODE_MEM_TOTAL, NODE_MEM_USED, NODE_UPTIME, NODE_STORAGE_TOTAL, NODE_STORAGE_USED, NODE_STORAGE_AVAIL
         
@@ -157,10 +157,10 @@ async def fetch_nodes_from_proxmox(cluster: dict):
         log.info("nodes_updated", cluster=cluster_name, count=len(nodes))
 
     except httpx.RequestError:
-        cache[cluster_name]["error"] = "Proxmox host unreachable"
+        cache[cluster_name]["node_error"] = "Proxmox host unreachable"
         cache[cluster_name]["nodes"] = []
         log.error("host_unreachable", cluster=cluster_name)
 
     except Exception as e:
-        cache[cluster_name]["error"] = str(e)
+        cache[cluster_name]["node_error"] = str(e)
         log.error("nodes_polling_error", cluster=cluster_name, error=str(e))

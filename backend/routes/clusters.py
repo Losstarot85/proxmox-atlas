@@ -58,7 +58,8 @@ def _hot_reload_clusters(clusters_list):
                 "resources": [],
                 "network": [],
                 "last_update": None,
-                "error": None,
+                "node_error": None,
+                "resource_error": None,
                 "failed_nodes": []
             }
 

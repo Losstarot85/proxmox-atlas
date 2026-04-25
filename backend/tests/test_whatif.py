@@ -14,7 +14,8 @@ def _seed_cache_with_cluster(cluster_name, nodes, resources):
         "resources": resources,
         "network": [],
         "last_update": "2026-01-01 00:00:00",
-        "error": None,
+        "node_error": None,
+        "resource_error": None,
         "failed_nodes": []
     }
 

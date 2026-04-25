@@ -209,10 +209,20 @@ async def evaluate_alerts():
     silenced = get_silenced()
     for an in anomalies:
         ak = f"{an['cluster']}:{an['key_suffix']}"
-        # Skip if silenced
-        if ak in silenced and current_time < silenced[ak]:
+
+        # Derive the base silence key from the anomaly's key_suffix
+        # key_suffix format: "node:node:anomaly" or "vmid:vm:cpu_anomaly"
+        suffix_parts = an['key_suffix'].split(":")
+        if len(suffix_parts) >= 2:
+            # e.g. "123:vm:cpu_anomaly" → base = "cluster:123:vm"
+            silence_base = f"{an['cluster']}:{suffix_parts[0]}:{suffix_parts[1]}"
+        else:
+            silence_base = ak
+
+        # Skip if the resource is silenced
+        if silence_base in silenced and current_time < silenced[silence_base]:
             continue
-            
+
         if ak not in active_alerts:
             # Remove key_suffix before inserting
             an.pop("key_suffix", None)

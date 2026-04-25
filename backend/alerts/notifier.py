@@ -2,8 +2,10 @@ import asyncio
 import time
 import json
 import httpx
-import logging
 from config import SETTINGS
+from logger import get_logger
+
+log = get_logger("alerts.notifier")
 
 LOG_SIZE = 100
 webhook_logs = []
@@ -39,7 +41,7 @@ def queue_alert(alert):
     try:
         _get_queue().put_nowait(alert)
     except Exception as e:
-        logging.error(f"Cannot enqueue alert for webhook dispatch: {e}")
+        log.error("alert_enqueue_failed", error=str(e))
 
 async def dispatch_worker():
     q = _get_queue()
@@ -84,5 +86,5 @@ async def dispatch_worker():
             
             q.task_done()
         except Exception as e:
-            logging.error(f"Webhook dispatcher worker error: {e}")
+            log.error("webhook_dispatcher_error", error=str(e))
             await asyncio.sleep(5)

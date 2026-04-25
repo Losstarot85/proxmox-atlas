@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { API_BASE } from "./config";
 import { useAuth } from "./hooks/useAuth";
 import { useClusterData } from "./hooks/useClusterData";
+import { useAlerts } from "./hooks/useApiQueries";
 import { LoginPage } from "./components/LoginPage";
 import { ClusterSection } from "./components/ClusterSection";
 import { SettingsTab } from "./components/SettingsTab";
@@ -26,7 +27,6 @@ function App() {
   const [forceCollapse, setForceCollapse] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
   const [timeMachineTarget, setTimeMachineTarget] = useState(null);
-  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [whatIfTarget, setWhatIfTarget] = useState(null);
 
   const [theme, setTheme] = useState(() => {
@@ -62,28 +62,9 @@ function App() {
     fetchSettings();
   }, [auth.isAuthenticated]);
 
-  useEffect(() => {
-    if (!auth.isAuthenticated) return;
-    let active = true;
-    const fetchUnread = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/alerts`);
-        if (res.ok && active) {
-          const data = await res.json();
-          const unreadCount = data.alerts?.filter(a => !a.read).length || 0;
-          setUnreadAlerts(unreadCount);
-        }
-      } catch (err) {
-        console.error("Fetch alerts error:", err);
-      }
-    };
-    fetchUnread();
-    const inv = setInterval(fetchUnread, 15000);
-    return () => {
-      active = false;
-      clearInterval(inv);
-    };
-  }, [auth.isAuthenticated]);
+  // Unread alerts badge — uses the same React Query cache as AlertsTab (no double fetch)
+  const { data: alertsData } = useAlerts(auth.isAuthenticated);
+  const unreadAlerts = alertsData?.alerts?.filter(a => !a.read).length || 0;
 
   const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.token, auth.logout);
 
@@ -95,7 +76,6 @@ function App() {
         onChangePassword={auth.changePassword}
         mustChangePassword={auth.mustChangePassword}
         error={auth.loginError}
-        tempPassword={auth.mustChangePassword ? undefined : undefined}
       />
     );
   }
@@ -309,6 +289,7 @@ function App() {
               if (settings.polling_interval) setPollingIntervalSeconds(settings.polling_interval);
               if (settings.webhooks !== undefined) setWebhooks(settings.webhooks);
             }}
+            onUpdateToken={auth.updateToken}
           />
         )}
       </main>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { API_BASE } from "../config";
 
 const TOKEN_KEY = "atlas-auth-token";
@@ -72,9 +72,21 @@ export function useAuth() {
     setLoginError(null);
   }, []);
 
+  const updateToken = useCallback((newToken) => {
+    localStorage.setItem(TOKEN_KEY, newToken);
+    setToken(newToken);
+  }, []);
+
   // Global fetch override to inject Bearer token into all API calls and handle 401s
+  // Uses a ref to store the true original fetch — survives StrictMode double-mounts
+  const originalFetchRef = useRef(null);
+
   useEffect(() => {
-    const originalFetch = window.fetch;
+    // Only capture the true original on the very first mount
+    if (!originalFetchRef.current) {
+      originalFetchRef.current = window.fetch.bind(window);
+    }
+    const trueFetch = originalFetchRef.current;
 
     window.fetch = async (input, init = {}) => {
       const url = typeof input === 'string' ? input : input instanceof Request ? input.url : '';
@@ -90,7 +102,7 @@ export function useAuth() {
         }
       }
 
-      const response = await originalFetch(input, init);
+      const response = await trueFetch(input, init);
 
       if (response.status === 401 && url.startsWith('/api') && !url.includes('/auth/login')) {
         console.warn("API returned 401 Unauthorized, automatically logging out.");
@@ -101,7 +113,7 @@ export function useAuth() {
     };
 
     return () => {
-      window.fetch = originalFetch;
+      window.fetch = trueFetch;
     };
   }, [logout]);
 
@@ -112,6 +124,7 @@ export function useAuth() {
     loginError,
     login,
     changePassword,
-    logout
+    logout,
+    updateToken
   };
 }

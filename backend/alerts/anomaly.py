@@ -1,6 +1,8 @@
 import httpx
-import logging
 import os
+from logger import get_logger
+
+log = get_logger("alerts.anomaly")
 
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
@@ -62,6 +64,6 @@ async def check_anomalies():
                         })
 
     except Exception as e:
-        logging.getLogger().error(f"Anomaly detection error: {e}")
+        log.error("anomaly_detection_error", error=str(e))
 
     return anomalous_alerts

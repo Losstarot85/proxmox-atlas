@@ -32,10 +32,11 @@ async def lifespan(app: FastAPI):
     yield
     task.cancel()
     notifier_task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
+    for t in (task, notifier_task):
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass
     log.info("atlas_stopped")
 
 
