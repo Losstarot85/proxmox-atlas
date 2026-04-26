@@ -1,6 +1,5 @@
 import time
 import uuid
-from config import SETTINGS
 
 # In-memory buffer, list of dicts
 # Alert format: { "id": str, "timestamp": float, "cluster": str, "node": str, "resource": str, "severity": "warning"|"critical", "message": str, "read": bool }
@@ -10,6 +9,7 @@ silenced_resources = {}
 
 from alerts.notifier import queue_alert
 
+
 def add_alert(alert):
     alert["id"] = str(uuid.uuid4())
     alert["timestamp"] = time.time()
@@ -17,7 +17,7 @@ def add_alert(alert):
     alerts_store.insert(0, alert)
     if len(alerts_store) > MAX_ALERTS:
         alerts_store.pop()
-        
+
     queue_alert(alert)
 
 def get_alerts():
@@ -87,11 +87,11 @@ def silence_resource(alert_id: str, minutes: int = 60):
                 key = f"{a['cluster']}:{vmid}:vm"
             else:
                 key = f"{a['cluster']}:{a['node']}:node"
-                
+
             silenced_resources[key] = time.time() + (minutes * 60)
             a["read"] = True
             break
-            
+
 def get_silenced():
     # Clean up expired entries
     curr = time.time()

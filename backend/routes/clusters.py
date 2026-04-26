@@ -1,9 +1,9 @@
+import json
+
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-import httpx
-import json
-import os
+
 from config import CONFIG_PATH
 from logger import get_logger
 
@@ -17,7 +17,7 @@ class ClusterCreate(BaseModel):
     host: str
     token_id: str
     token_secret: str
-    verify_ssl: Optional[bool] = False
+    verify_ssl: bool | None = False
 
 
 def _load_clusters_file():
@@ -44,12 +44,12 @@ def _hot_reload_clusters(clusters_list):
 
     # Sync the cache: add new entries, remove old ones
     current_names = {c["name"] for c in clusters_list}
-    
+
     # Remove clusters no longer present
     for name in list(cache.keys()):
         if name not in current_names:
             del cache[name]
-    
+
     # Add new clusters
     for c in clusters_list:
         if c["name"] not in cache:
@@ -112,7 +112,7 @@ def add_cluster(cluster: ClusterCreate):
 @router.delete("/clusters/{name}")
 def delete_cluster(name: str):
     clusters = _load_clusters_file()
-    
+
     new_list = [c for c in clusters if c["name"] != name]
     if len(new_list) == len(clusters):
         raise HTTPException(status_code=404, detail=f"Cluster '{name}' not found")
@@ -142,11 +142,11 @@ async def test_cluster_connection(cluster: ClusterCreate):
                 "repoid": version_data.get("repoid", "unknown")
             }
     except httpx.ConnectError:
-        raise HTTPException(status_code=502, detail="Host unreachable. Check the address and port.")
+        raise HTTPException(status_code=502, detail="Host unreachable. Check the address and port.") from None
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code,
-                            detail=f"Authentication failed (HTTP {e.response.status_code}). Check token_id and token_secret.")
+                            detail=f"Authentication failed (HTTP {e.response.status_code}). Check token_id and token_secret.") from None
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Connection timeout (8s). Host too slow or firewall active.")
+        raise HTTPException(status_code=504, detail="Connection timeout (8s). Host too slow or firewall active.") from None
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}") from e

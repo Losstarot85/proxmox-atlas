@@ -1,6 +1,8 @@
-import httpx
 import asyncio
 from datetime import datetime
+
+import httpx
+
 from cache import cache
 from logger import get_logger
 
@@ -45,7 +47,7 @@ async def fetch_resources_from_proxmox(cluster: dict):
                     )
                     res.raise_for_status()
                     items = res.json().get("data", [])
-                    
+
                     if r_type == "qemu":
                         running_vms = [item for item in items if item.get("status") == "running"]
                         async def fetch_qemu_disk_io(vm_item):
@@ -64,7 +66,7 @@ async def fetch_resources_from_proxmox(cluster: dict):
 
                         if running_vms:
                             await asyncio.gather(*(fetch_qemu_disk_io(vm) for vm in running_vms))
-                            
+
                     return {"node_name": node_name, "r_type": r_type, "items": items, "error": None}
                 except Exception as e:
                     return {"node_name": node_name, "r_type": r_type, "items": [], "error": str(e)}
@@ -74,9 +76,9 @@ async def fetch_resources_from_proxmox(cluster: dict):
                 node_name = node["name"]
                 for r_type in resource_types:
                     tasks.append(fetch_node_resources(node_name, r_type))
-            
+
             results = await asyncio.gather(*tasks)
-            
+
             for r in results:
                 node_name = r["node_name"]
                 if r["error"]:
@@ -112,17 +114,26 @@ async def fetch_resources_from_proxmox(cluster: dict):
         cache[cluster_name]["failed_nodes"] = failed_nodes
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        from metrics import VM_CPU, VM_MEM_TOTAL, VM_MEM_USED, VM_DISK_READ, VM_DISK_WRITE, VM_NET_IN, VM_NET_OUT, VM_UPTIME
-        
+        from metrics import (
+            VM_CPU,
+            VM_DISK_READ,
+            VM_DISK_WRITE,
+            VM_MEM_TOTAL,
+            VM_MEM_USED,
+            VM_NET_IN,
+            VM_NET_OUT,
+            VM_UPTIME,
+        )
+
         if "active_vm_labels" not in cache[cluster_name]:
             cache[cluster_name]["active_vm_labels"] = set()
-            
+
         current_vm_labels = set()
-        
+
         for r in all_resources:
             lbls = {"cluster": cluster_name, "node": r["node"], "vmid": str(r["vmid"]), "type": r["type"], "name": r["name"]}
             current_vm_labels.add(tuple(lbls.items()))
-            
+
             VM_CPU.labels(**lbls).set(r["cpu"])
             VM_MEM_TOTAL.labels(**lbls).set(r["maxmem"])
             VM_MEM_USED.labels(**lbls).set(r["mem"])
@@ -148,9 +159,9 @@ async def fetch_resources_from_proxmox(cluster: dict):
                 VM_UPTIME.remove(*lv)
             except KeyError:
                 pass
-                
+
         cache[cluster_name]["active_vm_labels"] = current_vm_labels
-        
+
         cache[cluster_name]["resource_error"] = None
 
         log.info("resources_updated", cluster=cluster_name, count=len(all_resources), failed_nodes=failed_nodes)

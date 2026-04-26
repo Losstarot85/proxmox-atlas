@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query
-import httpx
-from typing import Optional
 import os
 import re
+
+import httpx
+from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter()
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
@@ -17,13 +17,13 @@ async def get_uptime_history(
     target_id: str,
     target_type: str = Query(..., description="VM or NODE"),
     days: int = Query(30, description="Number of days of history"),
-    target_name: Optional[str] = Query(None, description="Explicit target name")
+    target_name: str | None = Query(None, description="Explicit target name")
 ):
     import time
     end = time.time()
     start = end - (days * 24 * 3600)
     step = 3600  # 1 hour
-    
+
     target_id = _sanitize_promql_label(target_id)
     if target_name:
         target_name = _sanitize_promql_label(target_name)
@@ -33,7 +33,7 @@ async def get_uptime_history(
     else:
         name_filter = f',name="{target_name}"' if target_name else ""
         expr = f'max_over_time(proxmox_vm_uptime_seconds{{vmid="{target_id}"{name_filter}}}[1h])'
-        
+
     try:
         async with httpx.AsyncClient() as client:
             res = await client.get(
@@ -48,10 +48,10 @@ async def get_uptime_history(
             )
             res.raise_for_status()
             data = res.json()
-            
+
             results = data.get("data", {}).get("result", [])
             # expected format: values: [[timestamp, "value"]]
-            
+
             heatmap = []
             if results and len(results) > 0:
                 values = results[0].get("values", [])
@@ -59,16 +59,16 @@ async def get_uptime_history(
                     t, val = pt[0], float(pt[1])
                     is_up = val > 0
                     heatmap.append({"time": t, "up": is_up})
-            
+
             return {"results": heatmap}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prometheus uptime query error: {e}")
+        raise HTTPException(status_code=500, detail=f"Prometheus uptime query error: {e}") from e
 
 @router.get("/time-machine/{target_id}")
 async def get_time_machine_data(
     target_id: str,
     target_type: str = Query(..., description="VM or NODE"),
-    target_name: Optional[str] = Query(None, description="Explicit VM Name to avoid cluster VS label vmid collisions"),
+    target_name: str | None = Query(None, description="Explicit VM Name to avoid cluster VS label vmid collisions"),
     start: float = Query(..., description="Start timestamp in seconds"),
     end: float = Query(..., description="End timestamp in seconds"),
     step: int = Query(60, description="Step in seconds for aggregation")
@@ -120,7 +120,7 @@ async def get_time_machine_data(
                 data = res.json()
                 results.append({"name": name, "data": data.get("data", {}).get("result", [])})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prometheus query error: {e}")
+        raise HTTPException(status_code=500, detail=f"Prometheus query error: {e}") from e
 
     # Reorganize data into a Recharts-compatible format
     # Recharts expects an array of objects with aligned timestamps
@@ -133,7 +133,7 @@ async def get_time_machine_data(
                 if t not in timeline:
                     timeline[t] = {"time": t}
                 timeline[t][metric_name] = round(val, 2)
-                
+
     chart_data = [timeline[t] for t in sorted(timeline.keys())]
     return {"results": chart_data}
 

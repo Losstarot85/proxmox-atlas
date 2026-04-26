@@ -1,5 +1,6 @@
 import asyncio
 import json
+
 from cache import cache
 
 # Interfaces to exclude (Docker, container bridges, loopback, veth pairs)
@@ -19,7 +20,7 @@ def _enrich_resources_with_ips(cluster_name, resources):
             ]
             if filtered:
                 ip_by_vmid[vmid] = filtered
-    
+
     enriched = []
     for r in resources:
         r_copy = dict(r)
@@ -63,9 +64,9 @@ class SSEBroker:
                 "error": combined_error,
                 "failed_nodes": data.get("failed_nodes", [])
             })
-            
+
         payload = json.dumps({"clusters": results_by_cluster})
-        
+
         # Iterate over a copy to allow safe removal
         for q in list(self.queues):
             try:

@@ -1,6 +1,5 @@
 """Tests for cluster CRUD operations."""
 
-import json
 
 
 def test_list_clusters_empty(client, auth_headers):

@@ -1,5 +1,7 @@
-import httpx
 import os
+
+import httpx
+
 from logger import get_logger
 
 log = get_logger("alerts.anomaly")

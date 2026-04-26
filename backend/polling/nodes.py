@@ -1,5 +1,7 @@
-import httpx
 from datetime import datetime
+
+import httpx
+
 from cache import cache
 from logger import get_logger
 
@@ -50,11 +52,11 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                         rrd_res = await client.get(rrd_url, headers=headers)
                         rrd_res.raise_for_status()
                         rrd_data = rrd_res.json().get("data", [])
-                        
+
                         if rrd_data:
                             # Take the last valid tick (ignoring null/None)
                             last_tick = next((t for t in reversed(rrd_data) if t.get("loadavg") is not None), {})
-                            
+
                             node_item["loadavg"] = float(last_tick.get("loadavg") or 0.0)
                             node_item["netin"] = float(last_tick.get("netin") or 0.0)
                             node_item["netout"] = float(last_tick.get("netout") or 0.0)
@@ -64,13 +66,13 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                             node_item["pressure_io"] = float(last_tick.get("pressureiosome") or 0.0)
                     except Exception as e:
                         log.warning("rrd_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
-                        
+
                     try:
                         storage_url = f"{host}/api2/json/nodes/{node_item['name']}/storage"
                         storage_res = await client.get(storage_url, headers=headers)
                         storage_res.raise_for_status()
                         storage_data = storage_res.json().get("data", [])
-                        
+
                         for st in storage_data:
                             node_item["storage_pools"].append({
                                 "storage": st.get("storage"),
@@ -102,26 +104,34 @@ async def fetch_nodes_from_proxmox(cluster: dict):
         cache[cluster_name]["last_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cache[cluster_name]["node_error"] = None
 
-        from metrics import NODE_CPU, NODE_MEM_TOTAL, NODE_MEM_USED, NODE_UPTIME, NODE_STORAGE_TOTAL, NODE_STORAGE_USED, NODE_STORAGE_AVAIL
-        
+        from metrics import (
+            NODE_CPU,
+            NODE_MEM_TOTAL,
+            NODE_MEM_USED,
+            NODE_STORAGE_AVAIL,
+            NODE_STORAGE_TOTAL,
+            NODE_STORAGE_USED,
+            NODE_UPTIME,
+        )
+
         if "active_node_labels" not in cache[cluster_name]:
             cache[cluster_name]["active_node_labels"] = set()
         if "active_storage_labels" not in cache[cluster_name]:
             cache[cluster_name]["active_storage_labels"] = set()
-            
+
         current_node_labels = set()
         current_storage_labels = set()
 
         for n in nodes:
             lbls = {"cluster": cluster_name, "node": n["name"]}
             current_node_labels.add(tuple(lbls.items()))
-            
+
             NODE_CPU.labels(**lbls).set(n["cpu"])
             NODE_MEM_TOTAL.labels(**lbls).set(n["maxmem"])
             NODE_MEM_USED.labels(**lbls).set(n["mem"])
             if "uptime" in n:
                 NODE_UPTIME.labels(**lbls).set(n["uptime"])
-                
+
             for sp in n.get("storage_pools", []):
                 if sp.get("active", 0) == 1:
                     slbls = {"cluster": cluster_name, "node": n["name"], "storage": sp["storage"]}
@@ -141,7 +151,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                 NODE_UPTIME.remove(*lv)
             except KeyError:
                 pass
-                
+
         for labels_tuple in cache[cluster_name]["active_storage_labels"] - current_storage_labels:
             old_lbls = dict(labels_tuple)
             lv = (old_lbls["cluster"], old_lbls["node"], old_lbls["storage"])
@@ -151,7 +161,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                 NODE_STORAGE_AVAIL.remove(*lv)
             except KeyError:
                 pass
-                
+
         cache[cluster_name]["active_node_labels"] = current_node_labels
         cache[cluster_name]["active_storage_labels"] = current_storage_labels
         log.info("nodes_updated", cluster=cluster_name, count=len(nodes))

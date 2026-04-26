@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+
 from cache import cache
 
 router = APIRouter()

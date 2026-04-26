@@ -5,9 +5,8 @@ Provides a FastAPI test client and isolated auth/config state.
 
 import os
 import sys
-import json
+
 import pytest
-import tempfile
 
 # Ensure backend is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -36,13 +35,12 @@ def app(isolated_data_dir):
         "routes.settings", "routes.time_machine", "routes.stream",
         "routes.alerts", "routes.whatif", "routes.clusters", "routes.health"
     ]
-    import importlib
     for mod in modules_to_clear:
         if mod in sys.modules:
             del sys.modules[mod]
 
-    from main import app as fastapi_app
     from auth import init_auth
+    from main import app as fastapi_app
     init_auth()
 
     return fastapi_app

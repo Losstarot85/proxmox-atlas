@@ -3,10 +3,12 @@ Health check endpoint for Proxmox Atlas.
 Reports the status of all system components.
 """
 
-import time
 import os
-from fastapi import APIRouter
+import time
+
 import httpx
+from fastapi import APIRouter
+
 from cache import cache
 from config import CLUSTERS
 

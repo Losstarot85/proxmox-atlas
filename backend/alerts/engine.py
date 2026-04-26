@@ -1,9 +1,10 @@
 import json
 import os
 import time
-from cache import cache
-from alerts.store import add_alert, get_silenced
+
 from alerts.anomaly import check_anomalies
+from alerts.store import add_alert, get_silenced
+from cache import cache
 from logger import get_logger
 
 log = get_logger("alerts.engine")
@@ -86,7 +87,7 @@ def load_rules():
 async def evaluate_alerts():
     rules = load_rules()
     current_time = time.time()
-    
+
     global _state_dirty
     _initial_size = len(active_alerts)
 
@@ -120,8 +121,8 @@ async def evaluate_alerts():
                         })
                         active_alerts[ak] = current_time
                 continue
-                
-            
+
+
             # CPU Node
             cpu_p = (node.get("cpu", 0)) * 100
 
@@ -162,7 +163,7 @@ async def evaluate_alerts():
                                 "message": f"Storage pool '{pool_name}' almost full on {n_name}: {disk_p:.1f}%"
                             })
                             active_alerts[ak] = current_time
-            
+
             # IO Stall
             if node.get("pressure_io", 0) > rules["io_stall_threshold_percent"]:
                 ak = f"{base_key}:iostall"
@@ -214,11 +215,11 @@ async def evaluate_alerts():
             vmid = res["vmid"]
             r_name = res["name"]
             base_key = f"{cluster_name}:{vmid}:vm"
-            
+
             # Crash / Shutdown Tracker
             prev_status = previous_states.get(base_key, res.get("status"))
             previous_states[base_key] = res.get("status")
-            
+
             if res.get("status") != "running":
                 if prev_status == "running":
                     ak = f"{base_key}:offline"
@@ -231,12 +232,12 @@ async def evaluate_alerts():
                         })
                         active_alerts[ak] = current_time
                 continue
-            
-            
+
+
             # CPU VM
             cpu_p = (res.get("cpu", 0)) * 100
             silenced = get_silenced()
-            
+
             if cpu_p > rules["cpu_threshold_percent"]:
                 ak = f"{base_key}:cpu"
                 if ak not in active_alerts and base_key not in silenced:
@@ -246,7 +247,7 @@ async def evaluate_alerts():
                         "message": f"High CPU usage on {res['type']} {r_name}: {cpu_p:.1f}%"
                     })
                     active_alerts[ak] = current_time
-                    
+
             # RAM VM
             if res.get("maxmem", 0) > 0:
                 ram_p = (res.get("mem", 0) / res["maxmem"]) * 100

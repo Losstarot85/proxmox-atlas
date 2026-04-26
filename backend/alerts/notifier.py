@@ -1,7 +1,9 @@
 import asyncio
-import time
 import json
+import time
+
 import httpx
+
 from config import SETTINGS
 from logger import get_logger
 
@@ -49,20 +51,20 @@ async def dispatch_worker():
         try:
             alert = await q.get()
             webhooks = SETTINGS.get("webhooks", [])
-            
+
             for index, wh in enumerate(webhooks):
                 # Filter by severity
                 filter_sev = wh.get("severity_filter", "all")
                 if filter_sev != "all" and alert.get("severity") != filter_sev:
                     continue
-                
+
                 # Basic template substitution
                 template = wh.get("json_template", "{\"text\": \"[{{severity}}] {{message}}\"}")
                 payload_str = template.replace("{{message}}", alert.get("message", ""))
                 payload_str = payload_str.replace("{{severity}}", alert.get("severity", ""))
                 payload_str = payload_str.replace("{{cluster}}", alert.get("cluster", ""))
                 payload_str = payload_str.replace("{{node}}", alert.get("node", ""))
-                
+
                 try:
                     payload = json.loads(payload_str)
                 except Exception:
@@ -75,7 +77,7 @@ async def dispatch_worker():
                     try:
                         async with httpx.AsyncClient(timeout=5.0) as client:
                             resp = await client.post(wh["url"], json=payload)
-                            
+
                             add_log(wh.get("name", f"Webhook {index}"), wh["url"], resp.status_code, resp.status_code < 400, None, payload_str)
                             break # Success, esci dai retry
                     except Exception as e:
@@ -83,7 +85,7 @@ async def dispatch_worker():
                             add_log(wh.get("name", f"Webhook {index}"), wh["url"], 0, False, str(e), payload_str)
                         else:
                             await asyncio.sleep(2 ** attempt) # backoff
-            
+
             q.task_done()
         except Exception as e:
             log.error("webhook_dispatcher_error", error=str(e))

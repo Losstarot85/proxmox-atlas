@@ -4,9 +4,9 @@ Outputs JSON in production for compatibility with log aggregators (Loki, ELK, Cl
 """
 
 import logging
-import sys
 import os
 import re
+import sys
 
 try:
     import structlog

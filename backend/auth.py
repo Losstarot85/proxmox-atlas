@@ -4,13 +4,14 @@ Handles JWT token creation/validation and bcrypt password hashing.
 Persists credentials in auth.json alongside settings.json and clusters.json.
 """
 
-import os
 import json
-import uuid
+import os
 import time
+import uuid
 
 import bcrypt
 import jwt
+
 from logger import get_logger
 
 log = get_logger("auth")
@@ -114,22 +115,22 @@ def get_auth_data() -> dict:
 
 # --- FastAPI Dependency ---
 
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
 
 
 async def get_current_user(request: Request) -> str:
     """FastAPI dependency: extract and validate JWT from Authorization header."""
     auth_header = request.headers.get("Authorization", "")
-    
+
     if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     token = auth_header[7:]  # Strip "Bearer "
-    
+
     try:
         payload = decode_token(token)
         return payload["sub"]
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Token expired") from None
     except (jwt.InvalidTokenError, KeyError):
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token") from None

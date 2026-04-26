@@ -1,6 +1,7 @@
-import os
 import json
+import os
 import re
+
 from logger import get_logger
 
 log = get_logger("config")
@@ -21,7 +22,7 @@ except FileNotFoundError:
         log.error("clusters_file_create_failed", path=CONFIG_PATH, error=str(e))
 except json.JSONDecodeError as e:
     log.error("clusters_json_invalid", path=CONFIG_PATH, error=str(e))
-    raise SystemExit(1)
+    raise SystemExit(1) from e
 
 
 def _resolve_env_vars(value: str) -> str:
@@ -58,7 +59,7 @@ def load_settings():
         if os.path.exists(SETTINGS_PATH):
             with open(SETTINGS_PATH) as f:
                 loaded = json.load(f)
-                
+
                 # Migrate legacy "webhook_url" setting into the webhooks array
                 if "webhook_url" in loaded and loaded["webhook_url"]:
                     if "webhooks" not in loaded:
@@ -71,10 +72,10 @@ def load_settings():
                         "severity_filter": "all",
                         "json_template": "{\"text\": \"[{{severity}}] {{message}}\"}"
                     })
-                    
+
                 if "webhook_url" in loaded:
                     del loaded["webhook_url"]
-                    
+
                 # Fill in missing defaults
                 for k, v in DEFAULT_SETTINGS.items():
                     if k not in loaded:

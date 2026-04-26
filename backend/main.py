@@ -1,32 +1,34 @@
-from logger import setup_logging, get_logger
+from logger import get_logger, setup_logging
+
 setup_logging()
 log = get_logger("main")
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
 import asyncio
 import traceback
+from contextlib import asynccontextmanager
 
-from polling import poll_proxmox
-from routes import router, auth_public_router, stream_public_router
-from routes.health import router as health_router
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
 from auth import init_auth
+from polling import poll_proxmox
+from routes import auth_public_router, router, stream_public_router
+from routes.health import router as health_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from prometheus_config import generate_prometheus_config
     from alerts.notifier import dispatch_worker
-    
+    from prometheus_config import generate_prometheus_config
+
     # Initialize auth system (creates admin on first deploy)
     init_auth()
-    
+
     # Generate the Prometheus config at startup, ensuring it's in sync with polling
     generate_prometheus_config()
-    
+
     log.info("atlas_started", message="Proxmox Atlas backend ready")
-    
+
     task = asyncio.create_task(poll_proxmox())
     notifier_task = asyncio.create_task(dispatch_worker())
     yield
@@ -67,6 +69,7 @@ async def catch_unhandled_exceptions(request: Request, call_next):
 
 
 from prometheus_client import make_asgi_app
+
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 

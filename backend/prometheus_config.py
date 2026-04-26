@@ -1,5 +1,7 @@
 import os
+
 import httpx
+
 from config import SETTINGS
 from logger import get_logger
 
@@ -11,10 +13,10 @@ PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 def generate_prometheus_config():
     """Generates the prometheus.yml file with a dynamic scrape interval aligned to polling."""
     interval = SETTINGS.get("polling_interval", 15)
-    
+
     # Ensure the interval is not too low to avoid overloading (min 5s)
     scrape_interval = max(5, interval)
-    
+
     config_content = f"""global:
   scrape_interval: {scrape_interval}s
   evaluation_interval: {scrape_interval}s

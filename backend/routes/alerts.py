@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from alerts.store import get_alerts, mark_read, delete_alert, clear_alerts, silence_resource
+
+from alerts.store import clear_alerts, delete_alert, get_alerts, mark_read, silence_resource
 
 router = APIRouter()
 
@@ -28,6 +29,7 @@ def clear_all_alerts():
     return {"status": "ok"}
 
 from alerts.notifier import get_webhook_logs
+
 
 @router.get("/alerts/webhook_logs")
 def fetch_webhook_logs():
