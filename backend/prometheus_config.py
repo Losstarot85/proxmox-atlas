@@ -10,6 +10,7 @@ log = get_logger("prometheus_config")
 PROMETHEUS_CONFIG_PATH = os.environ.get("PROMETHEUS_CONFIG_PATH", "/etc/prometheus/prometheus.yml")
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
+
 def generate_prometheus_config():
     """Generates the prometheus.yml file with a dynamic scrape interval aligned to polling."""
     interval = SETTINGS.get("polling_interval", 15)
@@ -33,6 +34,7 @@ scrape_configs:
         log.info("prometheus_config_generated", scrape_interval=scrape_interval, path=PROMETHEUS_CONFIG_PATH)
     except Exception as e:
         log.error("prometheus_config_write_failed", error=str(e))
+
 
 async def reload_prometheus_config():
     """Sends a reload signal to Prometheus to apply the new intervals."""

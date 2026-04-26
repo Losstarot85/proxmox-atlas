@@ -10,15 +10,16 @@ import sys
 
 try:
     import structlog
+
     _HAS_STRUCTLOG = True
 except ImportError:
     _HAS_STRUCTLOG = False
 
 # Patterns for sensitive data that should never appear in logs
 _SENSITIVE_PATTERNS = [
-    re.compile(r'PVEAPIToken=[^\s&"\']+'),          # Proxmox API tokens
-    re.compile(r'Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+'),  # JWT in headers
-    re.compile(r'token=[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+'),      # JWT in query params
+    re.compile(r'PVEAPIToken=[^\s&"\']+'),  # Proxmox API tokens
+    re.compile(r"Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"),  # JWT in headers
+    re.compile(r"token=[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"),  # JWT in query params
 ]
 _REDACTED = "***REDACTED***"
 
@@ -58,9 +59,7 @@ def setup_logging():
                 _redact_secrets,  # Sanitize before serialization
                 structlog.processors.JSONRenderer(),
             ],
-            wrapper_class=structlog.make_filtering_bound_logger(
-                getattr(logging, log_level, logging.INFO)
-            ),
+            wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, log_level, logging.INFO)),
             context_class=dict,
             logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
             cache_logger_on_first_use=True,

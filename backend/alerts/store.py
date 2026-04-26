@@ -20,8 +20,10 @@ def add_alert(alert):
 
     queue_alert(alert)
 
+
 def get_alerts():
     return alerts_store
+
 
 def mark_read(alert_id: str):
     for a in alerts_store:
@@ -29,10 +31,12 @@ def mark_read(alert_id: str):
             a["read"] = True
             break
 
+
 def delete_alert(alert_id: str):
     global alerts_store
     # Clear the cooldown in engine so the same condition can re-trigger immediately
     from alerts.engine import active_alerts, mark_state_dirty, save_alert_state
+
     for a in alerts_store:
         if a["id"] == alert_id:
             _clear_cooldown_for_alert(a, active_alerts)
@@ -41,9 +45,11 @@ def delete_alert(alert_id: str):
     mark_state_dirty()
     save_alert_state()
 
+
 def clear_alerts():
     global alerts_store
     from alerts.engine import active_alerts, mark_state_dirty, save_alert_state
+
     active_alerts.clear()
     alerts_store = []
     mark_state_dirty()
@@ -71,6 +77,7 @@ def _clear_cooldown_for_alert(alert, active_alerts):
     for k in keys_to_remove:
         del active_alerts[k]
 
+
 def silence_resource(alert_id: str, minutes: int = 60):
     for a in alerts_store:
         if a["id"] == alert_id:
@@ -91,6 +98,7 @@ def silence_resource(alert_id: str, minutes: int = 60):
             silenced_resources[key] = time.time() + (minutes * 60)
             a["read"] = True
             break
+
 
 def get_silenced():
     # Clean up expired entries

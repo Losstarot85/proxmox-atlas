@@ -18,6 +18,7 @@ def test_get_alerts_empty(client, auth_headers):
 def test_dismiss_alert(client, auth_headers):
     """Dismissing an alert by ID should work."""
     from alerts.store import alerts_store
+
     test_alert = {
         "id": "test-alert-1",
         "key": "test:alert:1",
@@ -27,7 +28,7 @@ def test_dismiss_alert(client, auth_headers):
         "severity": "warning",
         "message": "Test alert",
         "timestamp": 1700000000,
-        "read": False
+        "read": False,
     }
     alerts_store.insert(0, test_alert)
 
@@ -49,19 +50,23 @@ def test_dismiss_alert(client, auth_headers):
 def test_clear_all_alerts(client, auth_headers):
     """Clear all should remove every alert."""
     from alerts.store import alerts_store
+
     # Inject multiple alerts
     for i in range(5):
-        alerts_store.insert(0, {
-            "id": f"bulk-{i}",
-            "key": f"bulk:{i}",
-            "cluster": "cl",
-            "node": "n",
-            "resource": "NODE",
-            "severity": "info",
-            "message": f"Alert {i}",
-            "timestamp": 1700000000 + i,
-            "read": False
-        })
+        alerts_store.insert(
+            0,
+            {
+                "id": f"bulk-{i}",
+                "key": f"bulk:{i}",
+                "cluster": "cl",
+                "node": "n",
+                "resource": "NODE",
+                "severity": "info",
+                "message": f"Alert {i}",
+                "timestamp": 1700000000 + i,
+                "read": False,
+            },
+        )
 
     res = client.get("/alerts", headers=auth_headers)
     assert len(res.json()["alerts"]) >= 5

@@ -15,7 +15,7 @@ async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host
         "cluster": resource["cluster"],
         "type": r_type,
         "agent_available": False,
-        "ips": []
+        "ips": [],
     }
 
     try:
@@ -31,11 +31,13 @@ async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host
                     continue
                 for ip_info in iface.get("ip-addresses", []):
                     if ip_info.get("ip-address-type") == "ipv4":
-                        result["ips"].append({
-                            "interface": iface.get("name"),
-                            "ip": ip_info.get("ip-address"),
-                            "prefix": ip_info.get("prefix")
-                        })
+                        result["ips"].append(
+                            {
+                                "interface": iface.get("name"),
+                                "ip": ip_info.get("ip-address"),
+                                "prefix": ip_info.get("prefix"),
+                            }
+                        )
 
         elif r_type == "LXC":
             url = f"{host}/api2/json/nodes/{node}/lxc/{vmid}/interfaces"
@@ -51,11 +53,7 @@ async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host
                 if inet:
                     ip = inet.split("/")[0]
                     prefix = inet.split("/")[1] if "/" in inet else None
-                    result["ips"].append({
-                        "interface": iface.get("name"),
-                        "ip": ip,
-                        "prefix": prefix
-                    })
+                    result["ips"].append({"interface": iface.get("name"), "ip": ip, "prefix": prefix})
 
     except httpx.TimeoutException:
         result["agent_available"] = False
@@ -64,6 +62,7 @@ async def fetch_ips_for_resource(client: httpx.AsyncClient, resource: dict, host
 
     return result
 
+
 import asyncio
 
 from cache import cache
@@ -71,18 +70,17 @@ from logger import get_logger
 
 log = get_logger("polling.network")
 
+
 async def update_network_ips_for_cluster(cluster: dict):
     from config import resolve_cluster_secrets
+
     cluster = resolve_cluster_secrets(cluster)
     cluster_name = cluster["name"]
     host = cluster["host"]
     headers = {"Authorization": f"PVEAPIToken={cluster['token_id']}={cluster['token_secret']}"}
     verify_ssl = cluster.get("verify_ssl", False)
 
-    running_resources = [
-        r for r in cache[cluster_name].get("resources", [])
-        if r.get("status") == "running"
-    ]
+    running_resources = [r for r in cache[cluster_name].get("resources", []) if r.get("status") == "running"]
 
     if not running_resources:
         cache[cluster_name]["network"] = []

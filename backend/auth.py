@@ -42,7 +42,7 @@ def init_auth():
         "username": "admin",
         "password_hash": hash_password("admin"),
         "must_change_password": True,
-        "jwt_secret": str(uuid.uuid4())
+        "jwt_secret": str(uuid.uuid4()),
     }
     _save_auth()
     log.info("auth_default_user_created", username="admin")
@@ -72,11 +72,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_token(username: str) -> str:
     """Create a signed JWT token with expiration."""
-    payload = {
-        "sub": username,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + (TOKEN_EXPIRY_HOURS * 3600)
-    }
+    payload = {"sub": username, "iat": int(time.time()), "exp": int(time.time()) + (TOKEN_EXPIRY_HOURS * 3600)}
     return jwt.encode(payload, _auth_data["jwt_secret"], algorithm="HS256")
 
 
@@ -91,10 +87,7 @@ def authenticate(username: str, password: str) -> dict | None:
         return None
     if not verify_password(password, _auth_data["password_hash"]):
         return None
-    return {
-        "username": _auth_data["username"],
-        "must_change_password": _auth_data.get("must_change_password", False)
-    }
+    return {"username": _auth_data["username"], "must_change_password": _auth_data.get("must_change_password", False)}
 
 
 def change_password(old_password: str, new_password: str) -> bool:

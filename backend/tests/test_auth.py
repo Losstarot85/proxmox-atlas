@@ -45,10 +45,9 @@ def test_change_password(client, auth_token):
     headers = {"Authorization": f"Bearer {auth_token}"}
 
     # Change password
-    res = client.post("/auth/change-password", json={
-        "old_password": "admin",
-        "new_password": "newpass123"
-    }, headers=headers)
+    res = client.post(
+        "/auth/change-password", json={"old_password": "admin", "new_password": "newpass123"}, headers=headers
+    )
     assert res.status_code == 200
 
     # Login with new password
@@ -63,8 +62,7 @@ def test_change_password(client, auth_token):
 
 def test_change_password_wrong_old(client, auth_headers):
     """Changing password with wrong old password should fail."""
-    res = client.post("/auth/change-password", json={
-        "old_password": "wrongold",
-        "new_password": "newpass"
-    }, headers=auth_headers)
+    res = client.post(
+        "/auth/change-password", json={"old_password": "wrongold", "new_password": "newpass"}, headers=auth_headers
+    )
     assert res.status_code == 400

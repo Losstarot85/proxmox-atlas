@@ -7,10 +7,12 @@ from logger import get_logger
 
 log = get_logger("polling.nodes")
 
+
 async def fetch_nodes_from_proxmox(cluster: dict):
     """Retrieves the node list from a Proxmox cluster,
     with advanced metrics fetched via RRD (IOWait, Pressure, Server Load)."""
     from config import resolve_cluster_secrets
+
     cluster = resolve_cluster_secrets(cluster)
     cluster_name = cluster["name"]
     host = cluster["host"]
@@ -43,7 +45,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                     "pressure_io": 0.0,
                     "uptime": n.get("uptime"),
                     "ips": [],
-                    "storage_pools": []
+                    "storage_pools": [],
                 }
 
                 if node_item["status"] == "online":
@@ -65,7 +67,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                             node_item["pressure_ram"] = float(last_tick.get("pressurememorysome") or 0.0)
                             node_item["pressure_io"] = float(last_tick.get("pressureiosome") or 0.0)
                     except Exception as e:
-                        log.warning("rrd_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
+                        log.warning("rrd_data_unavailable", cluster=cluster_name, node=node_item["name"], error=str(e))
 
                     try:
                         storage_url = f"{host}/api2/json/nodes/{node_item['name']}/storage"
@@ -74,16 +76,20 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                         storage_data = storage_res.json().get("data", [])
 
                         for st in storage_data:
-                            node_item["storage_pools"].append({
-                                "storage": st.get("storage"),
-                                "type": st.get("type"),
-                                "active": st.get("active", 0),
-                                "total": float(st.get("total") or 0.0),
-                                "used": float(st.get("used") or 0.0),
-                                "avail": float(st.get("avail") or 0.0)
-                            })
+                            node_item["storage_pools"].append(
+                                {
+                                    "storage": st.get("storage"),
+                                    "type": st.get("type"),
+                                    "active": st.get("active", 0),
+                                    "total": float(st.get("total") or 0.0),
+                                    "used": float(st.get("used") or 0.0),
+                                    "avail": float(st.get("avail") or 0.0),
+                                }
+                            )
                     except Exception as e:
-                        log.warning("storage_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
+                        log.warning(
+                            "storage_data_unavailable", cluster=cluster_name, node=node_item["name"], error=str(e)
+                        )
 
                     try:
                         net_url = f"{host}/api2/json/nodes/{node_item['name']}/network"
@@ -96,7 +102,9 @@ async def fetch_nodes_from_proxmox(cluster: dict):
                                     node_ips.append(iface.get("address"))
                             node_item["ips"] = list(set(node_ips))
                     except Exception as e:
-                        log.warning("network_data_unavailable", cluster=cluster_name, node=node_item['name'], error=str(e))
+                        log.warning(
+                            "network_data_unavailable", cluster=cluster_name, node=node_item["name"], error=str(e)
+                        )
 
                 nodes.append(node_item)
 

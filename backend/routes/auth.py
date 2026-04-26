@@ -24,10 +24,7 @@ async def login(data: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token(result["username"])
-    return {
-        "token": token,
-        "must_change_password": result["must_change_password"]
-    }
+    return {"token": token, "must_change_password": result["must_change_password"]}
 
 
 @router.post("/change-password")

@@ -8,7 +8,7 @@ router = APIRouter()
 @router.get("/what-if")
 def what_if_simulation(
     cluster: str = Query(..., description="Cluster name"),
-    remove_node: str = Query(..., description="Physical node to simulate as removed")
+    remove_node: str = Query(..., description="Physical node to simulate as removed"),
 ):
     """
     Simulates the removal of a physical node from the cluster and calculates:
@@ -57,8 +57,8 @@ def what_if_simulation(
                 "total_displaced_vms": len(orphaned_vms),
                 "migratable": 0,
                 "orphaned": len(orphaned_vms),
-                "congested_count": 0
-            }
+                "congested_count": 0,
+            },
         }
 
     # VM/LXC currently running on the removed node
@@ -82,7 +82,7 @@ def what_if_simulation(
             "free_vcpus": sn["maxcpu"] - used_vcpus,
             "free_mem": sn["maxmem"] - used_mem,
             "current_cpu_ratio": sn["cpu"],
-            "vm_count": len(current_vms)
+            "vm_count": len(current_vms),
         }
 
     # Greedy migration: assign each displaced VM to the node with the most free resources
@@ -107,11 +107,13 @@ def what_if_simulation(
                     best_node = sn_name
 
         if best_node:
-            migration_plan.append({
-                "vm": _vm_summary(vm),
-                "target_node": best_node,
-                "fit_score": round(best_free_mem / node_capacity[best_node]["total_mem"] * 100, 1)
-            })
+            migration_plan.append(
+                {
+                    "vm": _vm_summary(vm),
+                    "target_node": best_node,
+                    "fit_score": round(best_free_mem / node_capacity[best_node]["total_mem"] * 100, 1),
+                }
+            )
             # Update capacity
             node_capacity[best_node]["free_mem"] -= vm_needed_mem
             node_capacity[best_node]["used_mem"] += vm_needed_mem
@@ -142,7 +144,7 @@ def what_if_simulation(
             "mem_ratio_after": round(mem_ratio * 100, 1),
             "vcpu_ratio_after": round(cpu_overcommit * 100, 1),
             "vm_count_after": cap["vm_count"],
-            "congested": mem_ratio > CONGESTION_MEM_THRESHOLD or cpu_overcommit > CONGESTION_CPU_THRESHOLD
+            "congested": mem_ratio > CONGESTION_MEM_THRESHOLD or cpu_overcommit > CONGESTION_CPU_THRESHOLD,
         }
 
         surviving_summary.append(node_report)
@@ -162,14 +164,14 @@ def what_if_simulation(
             "total_displaced_vms": len(displaced_vms),
             "migratable": len(migration_plan),
             "orphaned": len(orphaned_vms),
-            "congested_count": len(congested_nodes)
+            "congested_count": len(congested_nodes),
         },
         "limitations": [
             "Does not model CPU overcommit — treats vCPU as discrete units; Proxmox may tolerate higher overcommit in practice",
             "Does not consider shared storage topology — migration requires storage to be accessible from the target node (Ceph, NFS, iSCSI)",
             "Uses allocated RAM (maxmem) for capacity checks — actual usage may be lower, enabling denser packing with ballooning",
-            "Congestion thresholds are hardcoded at CPU >80% and RAM >85% — not configurable via API"
-        ]
+            "Congestion thresholds are hardcoded at CPU >80% and RAM >85% — not configurable via API",
+        ],
     }
 
 
@@ -180,7 +182,7 @@ def _node_summary(node: dict) -> dict:
         "cpu": node["cpu"],
         "maxcpu": node["maxcpu"],
         "mem": node["mem"],
-        "maxmem": node["maxmem"]
+        "maxmem": node["maxmem"],
     }
 
 
@@ -192,5 +194,5 @@ def _vm_summary(vm: dict) -> dict:
         "cpu": vm["cpu"],
         "maxcpu": vm["maxcpu"],
         "mem": vm["mem"],
-        "maxmem": vm["maxmem"]
+        "maxmem": vm["maxmem"],
     }

@@ -13,7 +13,7 @@ def get_nodes():
                 "name": cluster_name,
                 "nodes": data["nodes"],
                 "last_update": data["last_update"],
-                "error": data.get("node_error")
+                "error": data.get("node_error"),
             }
             for cluster_name, data in cache.items()
         ]

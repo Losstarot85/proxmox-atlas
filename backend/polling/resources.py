@@ -12,6 +12,7 @@ log = get_logger("polling.resources")
 async def fetch_resources_from_proxmox(cluster: dict):
     """Retrieves VMs and LXC containers from all nodes of a cluster."""
     from config import resolve_cluster_secrets
+
     cluster = resolve_cluster_secrets(cluster)
     cluster_name = cluster["name"]
     host = cluster["host"]
@@ -27,10 +28,7 @@ async def fetch_resources_from_proxmox(cluster: dict):
 
             pool_by_vmid = {}
             try:
-                cluster_res = await client.get(
-                    f"{host}/api2/json/cluster/resources",
-                    headers=headers
-                )
+                cluster_res = await client.get(f"{host}/api2/json/cluster/resources", headers=headers)
                 if cluster_res.status_code == 200:
                     cdata = cluster_res.json().get("data", [])
                     for i in cdata:
@@ -41,21 +39,18 @@ async def fetch_resources_from_proxmox(cluster: dict):
 
             async def fetch_node_resources(node_name, r_type):
                 try:
-                    res = await client.get(
-                        f"{host}/api2/json/nodes/{node_name}/{r_type}",
-                        headers=headers
-                    )
+                    res = await client.get(f"{host}/api2/json/nodes/{node_name}/{r_type}", headers=headers)
                     res.raise_for_status()
                     items = res.json().get("data", [])
 
                     if r_type == "qemu":
                         running_vms = [item for item in items if item.get("status") == "running"]
+
                         async def fetch_qemu_disk_io(vm_item):
                             try:
                                 vmid = vm_item.get("vmid")
                                 status_res = await client.get(
-                                    f"{host}/api2/json/nodes/{node_name}/qemu/{vmid}/status/current",
-                                    headers=headers
+                                    f"{host}/api2/json/nodes/{node_name}/qemu/{vmid}/status/current", headers=headers
                                 )
                                 status_res.raise_for_status()
                                 status_data = status_res.json().get("data", {})
@@ -82,33 +77,41 @@ async def fetch_resources_from_proxmox(cluster: dict):
             for r in results:
                 node_name = r["node_name"]
                 if r["error"]:
-                    log.error("node_resources_failed", cluster=cluster_name, node=node_name, type=r['r_type'], error=r['error'])
+                    log.error(
+                        "node_resources_failed",
+                        cluster=cluster_name,
+                        node=node_name,
+                        type=r["r_type"],
+                        error=r["error"],
+                    )
                     if node_name not in failed_nodes:
                         failed_nodes.append(node_name)
                 else:
                     for item in r["items"]:
-                        all_resources.append({
-                            "vmid": item.get("vmid"),
-                            "name": item.get("name"),
-                            "node": node_name,
-                            "cluster": cluster_name,
-                            "type": "VM" if r["r_type"] == "qemu" else "LXC",
-                            "tags": item.get("tags", ""),
-                            "pool": pool_by_vmid.get(item.get("vmid"), ""),
-                            "status": item.get("status"),
-                            "uptime": item.get("uptime"),
-                            "cpu": float(item.get("cpu") or 0.0),
-                            "maxcpu": float(item.get("maxcpu") or 1.0),
-                            "mem": float(item.get("mem") or 0.0),
-                            "maxmem": float(item.get("maxmem") or 0.0),
-                            "netin": float(item.get("netin") or 0.0),
-                            "netout": float(item.get("netout") or 0.0),
-                            "diskread": float(item.get("diskread") or 0.0),
-                            "diskwrite": float(item.get("diskwrite") or 0.0),
-                            "pressure_cpu": float(item.get("pressurecpusome") or 0.0),
-                            "pressure_ram": float(item.get("pressurememorysome") or 0.0),
-                            "pressure_io": float(item.get("pressureiosome") or 0.0)
-                        })
+                        all_resources.append(
+                            {
+                                "vmid": item.get("vmid"),
+                                "name": item.get("name"),
+                                "node": node_name,
+                                "cluster": cluster_name,
+                                "type": "VM" if r["r_type"] == "qemu" else "LXC",
+                                "tags": item.get("tags", ""),
+                                "pool": pool_by_vmid.get(item.get("vmid"), ""),
+                                "status": item.get("status"),
+                                "uptime": item.get("uptime"),
+                                "cpu": float(item.get("cpu") or 0.0),
+                                "maxcpu": float(item.get("maxcpu") or 1.0),
+                                "mem": float(item.get("mem") or 0.0),
+                                "maxmem": float(item.get("maxmem") or 0.0),
+                                "netin": float(item.get("netin") or 0.0),
+                                "netout": float(item.get("netout") or 0.0),
+                                "diskread": float(item.get("diskread") or 0.0),
+                                "diskwrite": float(item.get("diskwrite") or 0.0),
+                                "pressure_cpu": float(item.get("pressurecpusome") or 0.0),
+                                "pressure_ram": float(item.get("pressurememorysome") or 0.0),
+                                "pressure_io": float(item.get("pressureiosome") or 0.0),
+                            }
+                        )
 
         cache[cluster_name]["resources"] = all_resources
         cache[cluster_name]["failed_nodes"] = failed_nodes
@@ -131,7 +134,13 @@ async def fetch_resources_from_proxmox(cluster: dict):
         current_vm_labels = set()
 
         for r in all_resources:
-            lbls = {"cluster": cluster_name, "node": r["node"], "vmid": str(r["vmid"]), "type": r["type"], "name": r["name"]}
+            lbls = {
+                "cluster": cluster_name,
+                "node": r["node"],
+                "vmid": str(r["vmid"]),
+                "type": r["type"],
+                "name": r["name"],
+            }
             current_vm_labels.add(tuple(lbls.items()))
 
             VM_CPU.labels(**lbls).set(r["cpu"])

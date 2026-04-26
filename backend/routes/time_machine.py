@@ -10,16 +10,18 @@ PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://proxmox-prometheus:9090")
 
 def _sanitize_promql_label(value: str) -> str:
     """Strip any character that could escape a PromQL label matcher."""
-    return re.sub(r'[^a-zA-Z0-9._:\-]', '', value)
+    return re.sub(r"[^a-zA-Z0-9._:\-]", "", value)
+
 
 @router.get("/time-machine/uptime")
 async def get_uptime_history(
     target_id: str,
     target_type: str = Query(..., description="VM or NODE"),
     days: int = Query(30, description="Number of days of history"),
-    target_name: str | None = Query(None, description="Explicit target name")
+    target_name: str | None = Query(None, description="Explicit target name"),
 ):
     import time
+
     end = time.time()
     start = end - (days * 24 * 3600)
     step = 3600  # 1 hour
@@ -38,13 +40,8 @@ async def get_uptime_history(
         async with httpx.AsyncClient() as client:
             res = await client.get(
                 f"{PROMETHEUS_URL}/api/v1/query_range",
-                params={
-                    "query": expr,
-                    "start": start,
-                    "end": end,
-                    "step": step
-                },
-                timeout=15.0
+                params={"query": expr, "start": start, "end": end, "step": step},
+                timeout=15.0,
             )
             res.raise_for_status()
             data = res.json()
@@ -64,6 +61,7 @@ async def get_uptime_history(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prometheus uptime query error: {e}") from e
 
+
 @router.get("/time-machine/{target_id}")
 async def get_time_machine_data(
     target_id: str,
@@ -71,7 +69,7 @@ async def get_time_machine_data(
     target_name: str | None = Query(None, description="Explicit VM Name to avoid cluster VS label vmid collisions"),
     start: float = Query(..., description="Start timestamp in seconds"),
     end: float = Query(..., description="End timestamp in seconds"),
-    step: int = Query(60, description="Step in seconds for aggregation")
+    step: int = Query(60, description="Step in seconds for aggregation"),
 ):
     """Queries Prometheus for historical data."""
     window = max(300, step * 2)
@@ -88,7 +86,7 @@ async def get_time_machine_data(
             ("cpu", f'proxmox_node_cpu_usage_ratio{{node="{target_id}"}} * 100'),
             ("mem_used", f'proxmox_node_mem_used_bytes{{node="{target_id}"}}'),
             ("storage_used", f'sum(proxmox_node_storage_used_bytes{{node="{target_id}"}})'),
-            ("storage_total", f'sum(proxmox_node_storage_total_bytes{{node="{target_id}"}})')
+            ("storage_total", f'sum(proxmox_node_storage_total_bytes{{node="{target_id}"}})'),
         ]
     else:
         name_filter = f',name="{target_name}"' if target_name else ""
@@ -108,13 +106,8 @@ async def get_time_machine_data(
             for name, expr in queries:
                 res = await client.get(
                     f"{PROMETHEUS_URL}/api/v1/query_range",
-                    params={
-                        "query": expr,
-                        "start": start,
-                        "end": end,
-                        "step": step
-                    },
-                    timeout=30.0
+                    params={"query": expr, "start": start, "end": end, "step": step},
+                    timeout=30.0,
                 )
                 res.raise_for_status()
                 data = res.json()
@@ -136,4 +129,3 @@ async def get_time_machine_data(
 
     chart_data = [timeline[t] for t in sorted(timeline.keys())]
     return {"results": chart_data}
-

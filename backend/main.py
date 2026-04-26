@@ -42,11 +42,7 @@ async def lifespan(app: FastAPI):
     log.info("atlas_stopped")
 
 
-app = FastAPI(
-    title="Proxmox Atlas",
-    description="Multi-cluster monitoring dashboard for Proxmox VE",
-    lifespan=lifespan
-)
+app = FastAPI(title="Proxmox Atlas", description="Multi-cluster monitoring dashboard for Proxmox VE", lifespan=lifespan)
 
 
 # ── Global Exception Handler ──
@@ -60,12 +56,9 @@ async def catch_unhandled_exceptions(request: Request, call_next):
             path=request.url.path,
             method=request.method,
             error=str(exc),
-            traceback=traceback.format_exc()
+            traceback=traceback.format_exc(),
         )
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal server error"}
-        )
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 from prometheus_client import make_asgi_app
@@ -77,6 +70,7 @@ app.mount("/metrics", metrics_app)
 @app.get("/")
 def root():
     return {"message": "Proxmox Atlas backend running"}
+
 
 # Public health check (no auth required — needed for Docker healthcheck & monitoring)
 app.include_router(health_router)

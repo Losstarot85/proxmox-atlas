@@ -47,11 +47,7 @@ def save_alert_state():
         return
     try:
         with open(ALERT_STATE_PATH, "w") as f:
-            json.dump({
-                "active_alerts": active_alerts,
-                "previous_states": previous_states,
-                "saved_at": time.time()
-            }, f)
+            json.dump({"active_alerts": active_alerts, "previous_states": previous_states, "saved_at": time.time()}, f)
         _state_dirty = False
     except Exception as e:
         log.error("alert_state_save_failed", error=str(e))
@@ -66,6 +62,7 @@ def mark_state_dirty():
 # Load persisted state on import
 _load_alert_state()
 
+
 def load_rules():
     defaults = {
         "cpu_threshold_percent": 85,
@@ -73,7 +70,7 @@ def load_rules():
         "disk_usage_threshold_percent": 85,
         "io_stall_threshold_percent": 15,
         "network_threshold_mbps": 800,
-        "ram_pressure_threshold_percent": 15
+        "ram_pressure_threshold_percent": 15,
     }
     try:
         with open(RULES_PATH) as f:
@@ -83,6 +80,7 @@ def load_rules():
             return defaults
     except FileNotFoundError:
         return defaults
+
 
 async def evaluate_alerts():
     rules = load_rules()
@@ -114,14 +112,17 @@ async def evaluate_alerts():
                 if prev_status == "online":
                     ak = f"{base_key}:offline"
                     if ak not in active_alerts and base_key not in silenced:
-                        add_alert({
-                            "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                            "severity": "critical",
-                            "message": f"CRITICAL: Node {n_name} is OFFLINE or unreachable!"
-                        })
+                        add_alert(
+                            {
+                                "cluster": cluster_name,
+                                "node": n_name,
+                                "resource": "NODE",
+                                "severity": "critical",
+                                "message": f"CRITICAL: Node {n_name} is OFFLINE or unreachable!",
+                            }
+                        )
                         active_alerts[ak] = current_time
                 continue
-
 
             # CPU Node
             cpu_p = (node.get("cpu", 0)) * 100
@@ -129,11 +130,15 @@ async def evaluate_alerts():
             if cpu_p > rules["cpu_threshold_percent"]:
                 ak = f"{base_key}:cpu"
                 if ak not in active_alerts and base_key not in silenced:
-                    add_alert({
-                        "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                        "severity": "critical" if cpu_p > 95 else "warning",
-                        "message": f"High CPU usage on node {n_name}: {cpu_p:.1f}%"
-                    })
+                    add_alert(
+                        {
+                            "cluster": cluster_name,
+                            "node": n_name,
+                            "resource": "NODE",
+                            "severity": "critical" if cpu_p > 95 else "warning",
+                            "message": f"High CPU usage on node {n_name}: {cpu_p:.1f}%",
+                        }
+                    )
                     active_alerts[ak] = current_time
 
             # RAM Node
@@ -142,11 +147,15 @@ async def evaluate_alerts():
                 if ram_p > rules["ram_threshold_percent"]:
                     ak = f"{base_key}:ram"
                     if ak not in active_alerts and base_key not in silenced:
-                        add_alert({
-                            "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                            "severity": "critical" if ram_p > 95 else "warning",
-                            "message": f"High RAM usage on node {n_name}: {ram_p:.1f}%"
-                        })
+                        add_alert(
+                            {
+                                "cluster": cluster_name,
+                                "node": n_name,
+                                "resource": "NODE",
+                                "severity": "critical" if ram_p > 95 else "warning",
+                                "message": f"High RAM usage on node {n_name}: {ram_p:.1f}%",
+                            }
+                        )
                         active_alerts[ak] = current_time
 
             # Storage
@@ -157,33 +166,45 @@ async def evaluate_alerts():
                         pool_name = sp["storage"]
                         ak = f"{base_key}:storage:{pool_name}"
                         if ak not in active_alerts and base_key not in silenced:
-                            add_alert({
-                                "cluster": cluster_name, "node": n_name, "resource": "STORAGE",
-                                "severity": "critical" if disk_p > 95 else "warning",
-                                "message": f"Storage pool '{pool_name}' almost full on {n_name}: {disk_p:.1f}%"
-                            })
+                            add_alert(
+                                {
+                                    "cluster": cluster_name,
+                                    "node": n_name,
+                                    "resource": "STORAGE",
+                                    "severity": "critical" if disk_p > 95 else "warning",
+                                    "message": f"Storage pool '{pool_name}' almost full on {n_name}: {disk_p:.1f}%",
+                                }
+                            )
                             active_alerts[ak] = current_time
 
             # IO Stall
             if node.get("pressure_io", 0) > rules["io_stall_threshold_percent"]:
                 ak = f"{base_key}:iostall"
                 if ak not in active_alerts and base_key not in silenced:
-                    add_alert({
-                        "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                        "severity": "warning",
-                        "message": f"High IO pressure stall on {n_name}: {node['pressure_io']:.1f}%"
-                    })
+                    add_alert(
+                        {
+                            "cluster": cluster_name,
+                            "node": n_name,
+                            "resource": "NODE",
+                            "severity": "warning",
+                            "message": f"High IO pressure stall on {n_name}: {node['pressure_io']:.1f}%",
+                        }
+                    )
                     active_alerts[ak] = current_time
 
             # RAM Pressure Stall (Thrashing)
             if node.get("pressure_ram", 0) > rules["ram_pressure_threshold_percent"]:
                 ak = f"{base_key}:ramstall"
                 if ak not in active_alerts and base_key not in silenced:
-                    add_alert({
-                        "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                        "severity": "warning",
-                        "message": f"RAM Thrashing (Memory Stalls) on {n_name}: {node['pressure_ram']:.1f}%"
-                    })
+                    add_alert(
+                        {
+                            "cluster": cluster_name,
+                            "node": n_name,
+                            "resource": "NODE",
+                            "severity": "warning",
+                            "message": f"RAM Thrashing (Memory Stalls) on {n_name}: {node['pressure_ram']:.1f}%",
+                        }
+                    )
                     active_alerts[ak] = current_time
 
             # Load Average vs Capacity
@@ -191,11 +212,15 @@ async def evaluate_alerts():
                 if node["loadavg"] > node["maxcpu"] + 2:
                     ak = f"{base_key}:loadavg"
                     if ak not in active_alerts and base_key not in silenced:
-                        add_alert({
-                            "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                            "severity": "warning",
-                            "message": f"Saturated Load Average on {n_name}: {node['loadavg']:.2f} (Max CPU Core: {node['maxcpu']})"
-                        })
+                        add_alert(
+                            {
+                                "cluster": cluster_name,
+                                "node": n_name,
+                                "resource": "NODE",
+                                "severity": "warning",
+                                "message": f"Saturated Load Average on {n_name}: {node['loadavg']:.2f} (Max CPU Core: {node['maxcpu']})",
+                            }
+                        )
                         active_alerts[ak] = current_time
 
             # Network Saturation
@@ -203,11 +228,15 @@ async def evaluate_alerts():
             if mbps > rules["network_threshold_mbps"]:
                 ak = f"{base_key}:network"
                 if ak not in active_alerts and base_key not in silenced:
-                    add_alert({
-                        "cluster": cluster_name, "node": n_name, "resource": "NODE",
-                        "severity": "warning",
-                        "message": f"High Network Bandwidth on Node {n_name}: {mbps:.1f} Mbps"
-                    })
+                    add_alert(
+                        {
+                            "cluster": cluster_name,
+                            "node": n_name,
+                            "resource": "NODE",
+                            "severity": "warning",
+                            "message": f"High Network Bandwidth on Node {n_name}: {mbps:.1f} Mbps",
+                        }
+                    )
                     active_alerts[ak] = current_time
 
         # Check VM/LXC
@@ -225,14 +254,17 @@ async def evaluate_alerts():
                     ak = f"{base_key}:offline"
                     silenced = get_silenced()
                     if ak not in active_alerts and base_key not in silenced:
-                        add_alert({
-                            "cluster": cluster_name, "node": res.get("node", "unknown"), "resource": f"VM {vmid} ({r_name})",
-                            "severity": "warning",
-                            "message": f"WARNING: Unexpected {res.get('type','VM')} Stop ({r_name})!"
-                        })
+                        add_alert(
+                            {
+                                "cluster": cluster_name,
+                                "node": res.get("node", "unknown"),
+                                "resource": f"VM {vmid} ({r_name})",
+                                "severity": "warning",
+                                "message": f"WARNING: Unexpected {res.get('type', 'VM')} Stop ({r_name})!",
+                            }
+                        )
                         active_alerts[ak] = current_time
                 continue
-
 
             # CPU VM
             cpu_p = (res.get("cpu", 0)) * 100
@@ -241,11 +273,15 @@ async def evaluate_alerts():
             if cpu_p > rules["cpu_threshold_percent"]:
                 ak = f"{base_key}:cpu"
                 if ak not in active_alerts and base_key not in silenced:
-                    add_alert({
-                        "cluster": cluster_name, "node": res["node"], "resource": f"VM {vmid} ({r_name})",
-                        "severity": "warning",
-                        "message": f"High CPU usage on {res['type']} {r_name}: {cpu_p:.1f}%"
-                    })
+                    add_alert(
+                        {
+                            "cluster": cluster_name,
+                            "node": res["node"],
+                            "resource": f"VM {vmid} ({r_name})",
+                            "severity": "warning",
+                            "message": f"High CPU usage on {res['type']} {r_name}: {cpu_p:.1f}%",
+                        }
+                    )
                     active_alerts[ak] = current_time
 
             # RAM VM
@@ -254,11 +290,15 @@ async def evaluate_alerts():
                 if ram_p > rules["ram_threshold_percent"]:
                     ak = f"{base_key}:ram"
                     if ak not in active_alerts and base_key not in silenced:
-                        add_alert({
-                            "cluster": cluster_name, "node": res["node"], "resource": f"VM {vmid} ({r_name})",
-                            "severity": "warning",
-                            "message": f"High RAM usage on {res['type']} {r_name}: {ram_p:.1f}%"
-                        })
+                        add_alert(
+                            {
+                                "cluster": cluster_name,
+                                "node": res["node"],
+                                "resource": f"VM {vmid} ({r_name})",
+                                "severity": "warning",
+                                "message": f"High RAM usage on {res['type']} {r_name}: {ram_p:.1f}%",
+                            }
+                        )
                         active_alerts[ak] = current_time
 
     # ANOMALY DETECTION
@@ -269,7 +309,7 @@ async def evaluate_alerts():
 
         # Derive the base silence key from the anomaly's key_suffix
         # key_suffix format: "node:node:anomaly" or "vmid:vm:cpu_anomaly"
-        suffix_parts = an['key_suffix'].split(":")
+        suffix_parts = an["key_suffix"].split(":")
         if len(suffix_parts) >= 2:
             # e.g. "123:vm:cpu_anomaly" → base = "cluster:123:vm"
             silence_base = f"{an['cluster']}:{suffix_parts[0]}:{suffix_parts[1]}"

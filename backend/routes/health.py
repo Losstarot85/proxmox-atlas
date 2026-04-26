@@ -28,11 +28,7 @@ async def health_check():
     result = {
         "status": "healthy",
         "timestamp": time.time(),
-        "components": {
-            "backend": {"status": "ok"},
-            "prometheus": {"status": "unknown"},
-            "clusters": {}
-        }
+        "components": {"backend": {"status": "ok"}, "prometheus": {"status": "unknown"}, "clusters": {}},
     }
 
     # Check Prometheus
@@ -42,16 +38,10 @@ async def health_check():
             if res.status_code == 200:
                 result["components"]["prometheus"] = {"status": "ok"}
             else:
-                result["components"]["prometheus"] = {
-                    "status": "degraded",
-                    "detail": f"HTTP {res.status_code}"
-                }
+                result["components"]["prometheus"] = {"status": "degraded", "detail": f"HTTP {res.status_code}"}
                 result["status"] = "degraded"
     except Exception as e:
-        result["components"]["prometheus"] = {
-            "status": "unreachable",
-            "detail": str(e)
-        }
+        result["components"]["prometheus"] = {"status": "unreachable", "detail": str(e)}
         result["status"] = "degraded"
 
     # Check each cluster
@@ -64,23 +54,16 @@ async def health_check():
         resource_count = len(cluster_cache.get("resources", []))
 
         if error:
-            result["components"]["clusters"][name] = {
-                "status": "error",
-                "error": error,
-                "last_update": last_update
-            }
+            result["components"]["clusters"][name] = {"status": "error", "error": error, "last_update": last_update}
             result["status"] = "degraded"
         elif last_update is None:
-            result["components"]["clusters"][name] = {
-                "status": "pending",
-                "detail": "Awaiting first poll"
-            }
+            result["components"]["clusters"][name] = {"status": "pending", "detail": "Awaiting first poll"}
         else:
             result["components"]["clusters"][name] = {
                 "status": "ok",
                 "last_update": last_update,
                 "nodes": node_count,
-                "resources": resource_count
+                "resources": resource_count,
             }
 
     return result

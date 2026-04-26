@@ -27,6 +27,7 @@ except json.JSONDecodeError as e:
 
 def _resolve_env_vars(value: str) -> str:
     """Resolve ${ENV:VAR_NAME} placeholders to environment variable values."""
+
     def replacer(match):
         var_name = match.group(1)
         env_val = os.environ.get(var_name)
@@ -34,7 +35,8 @@ def _resolve_env_vars(value: str) -> str:
             log.warning("env_var_not_found", variable=var_name)
             return match.group(0)  # Leave placeholder as-is
         return env_val
-    return re.sub(r'\$\{ENV:([^}]+)\}', replacer, value)
+
+    return re.sub(r"\$\{ENV:([^}]+)\}", replacer, value)
 
 
 def resolve_cluster_secrets(cluster: dict) -> dict:
@@ -45,13 +47,12 @@ def resolve_cluster_secrets(cluster: dict) -> dict:
             resolved[key] = _resolve_env_vars(resolved[key])
     return resolved
 
+
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
-DEFAULT_SETTINGS = {
-    "polling_interval": 15,
-    "webhooks": []
-}
+DEFAULT_SETTINGS = {"polling_interval": 15, "webhooks": []}
 
 SETTINGS = DEFAULT_SETTINGS.copy()
+
 
 def load_settings():
     global SETTINGS
@@ -65,13 +66,16 @@ def load_settings():
                     if "webhooks" not in loaded:
                         loaded["webhooks"] = []
                     import uuid
-                    loaded["webhooks"].append({
-                        "id": str(uuid.uuid4()),
-                        "name": "Legacy Webhook",
-                        "url": loaded["webhook_url"],
-                        "severity_filter": "all",
-                        "json_template": "{\"text\": \"[{{severity}}] {{message}}\"}"
-                    })
+
+                    loaded["webhooks"].append(
+                        {
+                            "id": str(uuid.uuid4()),
+                            "name": "Legacy Webhook",
+                            "url": loaded["webhook_url"],
+                            "severity_filter": "all",
+                            "json_template": '{"text": "[{{severity}}] {{message}}"}',
+                        }
+                    )
 
                 if "webhook_url" in loaded:
                     del loaded["webhook_url"]
@@ -87,6 +91,7 @@ def load_settings():
     except Exception as e:
         log.warning("settings_load_failed", error=str(e))
 
+
 def save_settings(new_settings):
     global SETTINGS
     try:
@@ -96,5 +101,5 @@ def save_settings(new_settings):
     except Exception as e:
         log.error("settings_save_failed", error=str(e))
 
-load_settings()
 
+load_settings()

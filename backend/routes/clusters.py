@@ -60,12 +60,13 @@ def _hot_reload_clusters(clusters_list):
                 "last_update": None,
                 "node_error": None,
                 "resource_error": None,
-                "failed_nodes": []
+                "failed_nodes": [],
             }
 
     # Regenerate Prometheus config to include/exclude new targets
     try:
         from prometheus_config import generate_prometheus_config
+
         generate_prometheus_config()
     except Exception as e:
         log.warning("prometheus_config_failed", error=str(e))
@@ -77,13 +78,15 @@ def list_clusters():
     # Non esporre i token_secret in chiaro nel GET
     safe = []
     for c in clusters:
-        safe.append({
-            "name": c["name"],
-            "host": c["host"],
-            "token_id": c["token_id"],
-            "token_secret_masked": c["token_secret"][:8] + "••••••••",
-            "verify_ssl": c.get("verify_ssl", False)
-        })
+        safe.append(
+            {
+                "name": c["name"],
+                "host": c["host"],
+                "token_id": c["token_id"],
+                "token_secret_masked": c["token_secret"][:8] + "••••••••",
+                "verify_ssl": c.get("verify_ssl", False),
+            }
+        )
     return {"clusters": safe}
 
 
@@ -100,7 +103,7 @@ def add_cluster(cluster: ClusterCreate):
         "host": cluster.host.rstrip("/"),
         "token_id": cluster.token_id,
         "token_secret": cluster.token_secret,
-        "verify_ssl": cluster.verify_ssl
+        "verify_ssl": cluster.verify_ssl,
     }
     clusters.append(new_entry)
     _save_clusters_file(clusters)
@@ -139,14 +142,18 @@ async def test_cluster_connection(cluster: ClusterCreate):
                 "status": "ok",
                 "version": version_data.get("version", "unknown"),
                 "release": version_data.get("release", "unknown"),
-                "repoid": version_data.get("repoid", "unknown")
+                "repoid": version_data.get("repoid", "unknown"),
             }
     except httpx.ConnectError:
         raise HTTPException(status_code=502, detail="Host unreachable. Check the address and port.") from None
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code,
-                            detail=f"Authentication failed (HTTP {e.response.status_code}). Check token_id and token_secret.") from None
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Authentication failed (HTTP {e.response.status_code}). Check token_id and token_secret.",
+        ) from None
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Connection timeout (8s). Host too slow or firewall active.") from None
+        raise HTTPException(
+            status_code=504, detail="Connection timeout (8s). Host too slow or firewall active."
+        ) from None
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}") from e

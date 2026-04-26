@@ -11,6 +11,7 @@ from sse import _enrich_resources_with_ips, broker
 
 router = APIRouter()
 
+
 @router.get("/stream")
 async def sse_stream(request: Request, token: str = ""):
     """Server-Sent Events endpoint for real-time cache update streaming.
@@ -42,14 +43,16 @@ async def sse_stream(request: Request, token: str = ""):
             elif resource_err:
                 combined_error = resource_err
 
-            results_by_cluster.append({
-                "name": cluster_name,
-                "nodes": data.get("nodes", []),
-                "resources": _enrich_resources_with_ips(cluster_name, data.get("resources", [])),
-                "last_update": data.get("last_update"),
-                "error": combined_error,
-                "failed_nodes": data.get("failed_nodes", [])
-            })
+            results_by_cluster.append(
+                {
+                    "name": cluster_name,
+                    "nodes": data.get("nodes", []),
+                    "resources": _enrich_resources_with_ips(cluster_name, data.get("resources", [])),
+                    "last_update": data.get("last_update"),
+                    "error": combined_error,
+                    "failed_nodes": data.get("failed_nodes", []),
+                }
+            )
 
         initial_payload = json.dumps({"clusters": results_by_cluster})
         yield f"data: {initial_payload}\n\n"

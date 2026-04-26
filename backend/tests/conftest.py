@@ -27,13 +27,32 @@ def app(isolated_data_dir):
     """Create a fresh FastAPI app instance for testing."""
     # Clear cached modules to get fresh state with new DATA_DIR
     modules_to_clear = [
-        "config", "cache", "auth", "main", "polling", "polling.nodes",
-        "polling.resources", "polling.network", "sse", "metrics",
-        "prometheus_config", "alerts.engine", "alerts.store",
-        "alerts.anomaly", "alerts.notifier",
-        "routes", "routes.auth", "routes.nodes", "routes.resources",
-        "routes.settings", "routes.time_machine", "routes.stream",
-        "routes.alerts", "routes.whatif", "routes.clusters", "routes.health"
+        "config",
+        "cache",
+        "auth",
+        "main",
+        "polling",
+        "polling.nodes",
+        "polling.resources",
+        "polling.network",
+        "sse",
+        "metrics",
+        "prometheus_config",
+        "alerts.engine",
+        "alerts.store",
+        "alerts.anomaly",
+        "alerts.notifier",
+        "routes",
+        "routes.auth",
+        "routes.nodes",
+        "routes.resources",
+        "routes.settings",
+        "routes.time_machine",
+        "routes.stream",
+        "routes.alerts",
+        "routes.whatif",
+        "routes.clusters",
+        "routes.health",
     ]
     for mod in modules_to_clear:
         if mod in sys.modules:
@@ -41,6 +60,7 @@ def app(isolated_data_dir):
 
     from auth import init_auth
     from main import app as fastapi_app
+
     init_auth()
 
     return fastapi_app
@@ -50,6 +70,7 @@ def app(isolated_data_dir):
 def client(app):
     """Synchronous test client."""
     from fastapi.testclient import TestClient
+
     return TestClient(app)
 
 

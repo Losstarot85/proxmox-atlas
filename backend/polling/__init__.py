@@ -13,9 +13,7 @@ async def poll_proxmox():
     while True:
         start_time = time.time()
 
-        await asyncio.gather(*[
-            poll_cluster(cluster) for cluster in CLUSTERS
-        ])
+        await asyncio.gather(*[poll_cluster(cluster) for cluster in CLUSTERS])
 
         # Evaluate alerts based on the completed tasks
         await evaluate_alerts()
@@ -44,4 +42,5 @@ async def poll_cluster(cluster: dict):
     await fetch_resources_from_proxmox(cluster)
 
     from polling.network import update_network_ips_for_cluster
+
     await update_network_ips_for_cluster(cluster)

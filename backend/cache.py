@@ -9,7 +9,7 @@ cache = {
         "last_update": None,
         "node_error": None,
         "resource_error": None,
-        "failed_nodes": []
+        "failed_nodes": [],
     }
     for cluster in CLUSTERS
 }
