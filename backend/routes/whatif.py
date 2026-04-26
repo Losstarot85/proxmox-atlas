@@ -15,6 +15,15 @@ def what_if_simulation(
     - Where surviving VMs could migrate to
     - Which nodes would become congested after migration
     No actual changes to the cluster. Pure in-memory calculation on cached data.
+
+    Algorithm: Greedy bin-packing (largest-first by maxmem).
+    Displaced VMs are sorted by allocated RAM descending and placed on the
+    surviving node with the most free memory that still has sufficient vCPU capacity.
+
+    Known limitations (also surfaced in the response):
+    - Does not model CPU overcommit ratios (treats vCPU as discrete units)
+    - Does not consider shared storage topology (Ceph, NFS, iSCSI reachability)
+    - Congestion thresholds are hardcoded (CPU >80%, RAM >85%)
     """
 
     if cluster not in cache:
@@ -153,7 +162,13 @@ def what_if_simulation(
             "migratable": len(migration_plan),
             "orphaned": len(orphaned_vms),
             "congested_count": len(congested_nodes)
-        }
+        },
+        "limitations": [
+            "Does not model CPU overcommit — treats vCPU as discrete units; Proxmox may tolerate higher overcommit in practice",
+            "Does not consider shared storage topology — migration requires storage to be accessible from the target node (Ceph, NFS, iSCSI)",
+            "Uses allocated RAM (maxmem) for capacity checks — actual usage may be lower, enabling denser packing with ballooning",
+            "Congestion thresholds are hardcoded at CPU >80% and RAM >85% — not configurable via API"
+        ]
     }
 
 

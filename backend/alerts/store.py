@@ -32,18 +32,22 @@ def mark_read(alert_id: str):
 def delete_alert(alert_id: str):
     global alerts_store
     # Clear the cooldown in engine so the same condition can re-trigger immediately
-    from alerts.engine import active_alerts
+    from alerts.engine import active_alerts, mark_state_dirty, save_alert_state
     for a in alerts_store:
         if a["id"] == alert_id:
             _clear_cooldown_for_alert(a, active_alerts)
             break
     alerts_store = [a for a in alerts_store if a["id"] != alert_id]
+    mark_state_dirty()
+    save_alert_state()
 
 def clear_alerts():
     global alerts_store
-    from alerts.engine import active_alerts
+    from alerts.engine import active_alerts, mark_state_dirty, save_alert_state
     active_alerts.clear()
     alerts_store = []
+    mark_state_dirty()
+    save_alert_state()
 
 
 def _clear_cooldown_for_alert(alert, active_alerts):

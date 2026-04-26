@@ -4,13 +4,66 @@ import time
 from cache import cache
 from alerts.store import add_alert, get_silenced
 from alerts.anomaly import check_anomalies
+from logger import get_logger
+
+log = get_logger("alerts.engine")
 
 RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.json")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(os.path.dirname(__file__)))
+ALERT_STATE_PATH = os.path.join(DATA_DIR, "alert_state.json")
 
 # In-memory record of current alerts to prevent repeated spam on every poll
 active_alerts = {}
 previous_states = {}
-ALERT_COOLDOWN = 3600 # Do not regenerate the same alert for one hour, unless changes occur
+ALERT_COOLDOWN = 3600  # Do not regenerate the same alert for one hour, unless changes occur
+
+# Track whether state changed to avoid unnecessary disk writes
+_state_dirty = False
+
+
+def _load_alert_state():
+    """Load persisted alert state from disk on startup."""
+    global active_alerts, previous_states
+    try:
+        if os.path.exists(ALERT_STATE_PATH):
+            with open(ALERT_STATE_PATH) as f:
+                data = json.load(f)
+            active_alerts = data.get("active_alerts", {})
+            previous_states = data.get("previous_states", {})
+            # Convert string keys back to float values (JSON serializes them fine, but be safe)
+            active_alerts = {k: float(v) for k, v in active_alerts.items()}
+            log.info("alert_state_loaded", keys=len(active_alerts))
+    except (json.JSONDecodeError, Exception) as e:
+        log.warning("alert_state_load_failed", error=str(e))
+        active_alerts = {}
+        previous_states = {}
+
+
+def save_alert_state():
+    """Persist alert state to disk. Only writes if state has changed."""
+    global _state_dirty
+    if not _state_dirty:
+        return
+    try:
+        with open(ALERT_STATE_PATH, "w") as f:
+            json.dump({
+                "active_alerts": active_alerts,
+                "previous_states": previous_states,
+                "saved_at": time.time()
+            }, f)
+        _state_dirty = False
+    except Exception as e:
+        log.error("alert_state_save_failed", error=str(e))
+
+
+def mark_state_dirty():
+    """Mark state as needing persistence (called from store.py on dismiss/clear)."""
+    global _state_dirty
+    _state_dirty = True
+
+
+# Load persisted state on import
+_load_alert_state()
 
 def load_rules():
     defaults = {
@@ -34,6 +87,9 @@ async def evaluate_alerts():
     rules = load_rules()
     current_time = time.time()
     
+    global _state_dirty
+    _initial_size = len(active_alerts)
+
     # Clean up expired active alerts
     keys_to_remove = []
     for k, v in active_alerts.items():
@@ -228,3 +284,10 @@ async def evaluate_alerts():
             an.pop("key_suffix", None)
             add_alert(an)
             active_alerts[ak] = current_time
+
+    # Mark dirty if any alerts were added or removed during this cycle
+    if len(active_alerts) != _initial_size:
+        _state_dirty = True
+
+    # Persist state to disk (debounced — only writes if something changed)
+    save_alert_state()

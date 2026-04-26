@@ -6,12 +6,41 @@ Outputs JSON in production for compatibility with log aggregators (Loki, ELK, Cl
 import logging
 import sys
 import os
+import re
 
 try:
     import structlog
     _HAS_STRUCTLOG = True
 except ImportError:
     _HAS_STRUCTLOG = False
+
+# Patterns for sensitive data that should never appear in logs
+_SENSITIVE_PATTERNS = [
+    re.compile(r'PVEAPIToken=[^\s&"\']+'),          # Proxmox API tokens
+    re.compile(r'Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+'),  # JWT in headers
+    re.compile(r'token=[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+'),      # JWT in query params
+]
+_REDACTED = "***REDACTED***"
+
+
+def _redact_value(value):
+    """Recursively redact sensitive patterns from a value."""
+    if isinstance(value, str):
+        for pattern in _SENSITIVE_PATTERNS:
+            value = pattern.sub(_REDACTED, value)
+        return value
+    if isinstance(value, dict):
+        return {k: _redact_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return type(value)(_redact_value(v) for v in value)
+    return value
+
+
+def _redact_secrets(logger, method_name, event_dict):
+    """Structlog processor: redact sensitive tokens from all event fields."""
+    for key in list(event_dict.keys()):
+        event_dict[key] = _redact_value(event_dict[key])
+    return event_dict
 
 
 def setup_logging():
@@ -26,6 +55,7 @@ def setup_logging():
                 structlog.processors.TimeStamper(fmt="iso"),
                 structlog.processors.StackInfoRenderer(),
                 structlog.processors.format_exc_info,
+                _redact_secrets,  # Sanitize before serialization
                 structlog.processors.JSONRenderer(),
             ],
             wrapper_class=structlog.make_filtering_bound_logger(

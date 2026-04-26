@@ -13,14 +13,14 @@ Proxmox Atlas provides a unified, high-performance dashboard to monitor all your
 
 - **Multi-Cluster Monitoring** — Monitor unlimited Proxmox clusters from a single dashboard
 - **Real-Time Metrics** — Live CPU, RAM, Storage, Network, Disk I/O, Pressure Stalls via SSE
-- **Anomaly Detection** — Automatic 3σ deviation alerts powered by Prometheus PromQL
+- **Anomaly Detection** — Automatic 3σ statistical deviation alerts powered by Prometheus PromQL
 - **What-If Engine** — Simulate node failures and predict migration outcomes
 - **Time Machine** — Browse historical metrics with interactive Prometheus-backed charts
 - **Uptime Heatmaps** — 30-day uptime visualization for every node and VM
 - **Smart Alerts** — Configurable thresholds with webhook notifications (Slack, Teams, Discord)
 - **JWT Authentication** — Secure login with bcrypt-hashed passwords
 - **HTTPS by Default** — Self-signed SSL certificate auto-generated on first deploy
-- **Ultra Lightweight** — Native SVG charts, zero external charting libraries, ~100MB RAM footprint
+- **Ultra Lightweight** — Native SVG sparklines on the dashboard, Recharts for historical views (lazy-loaded), ~100MB RAM footprint
 
 ---
 
@@ -181,6 +181,14 @@ Your data (clusters, settings, credentials) is persisted in Docker volumes and w
 For monitoring, Proxmox API tokens only need **read-only** permissions:
 - `PVEAuditor` role is sufficient for full monitoring capabilities
 - Never use root tokens in production
+
+### Security Notes
+
+> **JWT Secret Lifecycle:** The JWT signing secret is generated once on first deploy and persisted in `auth.json` on the `atlas-data` Docker volume. If this file is deleted or corrupted, all active sessions are invalidated and the admin password resets to `admin`. Back up the Docker volume to preserve sessions across restarts.
+
+> **SSE Token in URL:** The Server-Sent Events endpoint uses a query parameter (`/stream?token=...`) for authentication because the browser `EventSource` API does not support custom HTTP headers. Nginx is configured to strip query parameters from access logs for this endpoint, but operators should be aware of this if adding custom log forwarding.
+
+> **Password Change:** After changing the admin password, a new JWT is issued. The old token remains valid until its natural expiration (24 hours). For immediate revocation, restart the backend container.
 
 ---
 
