@@ -1,9 +1,10 @@
 import json
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from auth import require_role
 from config import CONFIG_PATH
 from logger import get_logger
 
@@ -91,7 +92,7 @@ def list_clusters():
 
 
 @router.post("/clusters")
-def add_cluster(cluster: ClusterCreate):
+def add_cluster(cluster: ClusterCreate, user: dict = Depends(require_role("admin", "editor"))):
     clusters = _load_clusters_file()
 
     # Check name uniqueness
@@ -113,7 +114,7 @@ def add_cluster(cluster: ClusterCreate):
 
 
 @router.delete("/clusters/{name}")
-def delete_cluster(name: str):
+def delete_cluster(name: str, user: dict = Depends(require_role("admin", "editor"))):
     clusters = _load_clusters_file()
 
     new_list = [c for c in clusters if c["name"] != name]

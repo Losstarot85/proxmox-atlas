@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
-export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, onUpdateToken }) {
+export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, onUpdateToken, userRole = 'viewer', username = '' }) {
+  const canEdit = userRole === 'admin' || userRole === 'editor';
+  const isAdmin = userRole === 'admin';
   const [intervalVal, setIntervalVal] = useState(globalInterval);
   const [webhooks, setWebhooks] = useState(globalWebhooks || []);
   const [logs, setLogs] = useState([]);
@@ -27,6 +29,15 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
   const [clusterError, setClusterError] = useState(null);
   const [clusterSuccess, setClusterSuccess] = useState(null);
 
+  // User Management State (admin only)
+  const [users, setUsers] = useState([]);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'viewer' });
+  const [userError, setUserError] = useState(null);
+  const [userSuccess, setUserSuccess] = useState(null);
+  const [resetPwUser, setResetPwUser] = useState(null);
+  const [resetPwValue, setResetPwValue] = useState('');
+
   useEffect(() => {
     setIntervalVal(globalInterval);
     setWebhooks(globalWebhooks || []);
@@ -34,6 +45,50 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
 
   // Fetch clusters list
   useEffect(() => { fetchClusters(); }, []);
+  useEffect(() => { if (isAdmin) fetchUsers(); }, [isAdmin]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/users`);
+      if (res.ok) { const data = await res.json(); setUsers(data.users || []); }
+    } catch (err) { console.error('Failed to fetch users', err); }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUser.username || !newUser.password) { setUserError('All fields are required.'); return; }
+    if (newUser.password.length < 6) { setUserError('Password must be at least 6 characters.'); return; }
+    setUserError(null);
+    try {
+      const res = await fetch(`${API_BASE}/users`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Error');
+      setUserSuccess(`User '${newUser.username}' created.`);
+      setNewUser({ username: '', password: '', role: 'viewer' }); setShowAddUser(false); fetchUsers();
+      setTimeout(() => setUserSuccess(null), 5000);
+    } catch (err) { setUserError(err.message); }
+  };
+
+  const handleDeleteUser = async (uname) => {
+    if (!confirm(`Delete user '${uname}'?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/users/${encodeURIComponent(uname)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Error');
+      setUserSuccess(`User '${uname}' deleted.`); fetchUsers();
+      setTimeout(() => setUserSuccess(null), 5000);
+    } catch (err) { setUserError(err.message); }
+  };
+
+  const handleResetPassword = async (uname) => {
+    if (resetPwValue.length < 6) { setUserError('Password must be at least 6 characters.'); return; }
+    try {
+      const res = await fetch(`${API_BASE}/users/${encodeURIComponent(uname)}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ new_password: resetPwValue }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Error');
+      setUserSuccess(`Password reset for '${uname}'. They must change it on next login.`); setResetPwUser(null); setResetPwValue('');
+      setTimeout(() => setUserSuccess(null), 5000);
+    } catch (err) { setUserError(err.message); }
+  };
 
   const fetchClusters = async () => {
     try {
@@ -277,9 +332,9 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
               Add, test, and remove Proxmox clusters. Changes take effect immediately without restart.
             </p>
           </div>
-          <button className="btn btn-primary" onClick={() => { setShowAddForm(!showAddForm); setTestResult(null); setClusterError(null); }}>
+          {canEdit && <button className="btn btn-primary" onClick={() => { setShowAddForm(!showAddForm); setTestResult(null); setClusterError(null); }}>
             {showAddForm ? "Cancel" : "+ Add Cluster"}
-          </button>
+          </button>}
         </div>
 
         {clusterError && (
@@ -292,7 +347,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
         )}
 
         {/* Add Cluster Form */}
-        {showAddForm && (
+        {showAddForm && canEdit && (
           <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div>
@@ -352,7 +407,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
                   <th>Token ID</th>
                   <th>Secret</th>
                   <th>SSL</th>
-                  <th>Actions</th>
+                  {canEdit && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -366,11 +421,11 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
                       <td className="mono-cell" style={{ fontSize: '0.85rem' }}>{c.token_id}</td>
                       <td className="mono-cell" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c.token_secret_masked}</td>
                       <td>{c.verify_ssl ? <span className="badge badge-online">Yes</span> : <span className="badge" style={{ opacity: 0.5 }}>No</span>}</td>
-                      <td>
+                      {canEdit && <td>
                         <button className="btn btn-sm" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: '0.75rem' }} onClick={() => handleDeleteCluster(c.name)}>
                           Remove
                         </button>
-                      </td>
+                      </td>}
                     </tr>
                   ))
                 )}
@@ -402,7 +457,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
           <p className="msg-success" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>✅ Global settings saved successfully.</p>
         )}
 
-        <div className="settings-actions" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+        {canEdit && <div className="settings-actions" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
           <button className="btn" onClick={handleDefault} disabled={isSaving}>Load Default (15s)</button>
           <div className="actions-right">
             <button className="btn" onClick={handleCancel} disabled={isSaving}>Cancel changes</button>
@@ -410,7 +465,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
                {isSaving ? "Saving..." : "Save Configuration"}
             </button>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* ==================== WEBHOOKS ==================== */}
@@ -420,7 +475,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
             <h3>Webhook Alerts Export</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>Configure multiple webhook endpoints to dispatch generated alerts externally.</p>
           </div>
-          <button className="btn btn-primary" onClick={handleAddWebhook}>+ Add Webhook</button>
+          {canEdit && <button className="btn btn-primary" onClick={handleAddWebhook}>+ Add Webhook</button>}
         </div>
 
         {webhooks.length === 0 ? (
@@ -502,6 +557,79 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
           </div>
         </div>
       </div>
+
+      {/* ==================== USER MANAGEMENT (admin only) ==================== */}
+      {isAdmin && (
+        <div className="glass-card" style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+            <div>
+              <h3>👥 User Management</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>Create, delete, and manage user accounts and roles.</p>
+            </div>
+            <button className="btn btn-primary" onClick={() => { setShowAddUser(!showAddUser); setUserError(null); }}>{showAddUser ? 'Cancel' : '+ Add User'}</button>
+          </div>
+
+          {userError && <div className="global-error" style={{ marginBottom: '1rem' }}><span>❌</span><span>{userError}</span></div>}
+          {userSuccess && <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ {userSuccess}</p>}
+
+          {showAddUser && (
+            <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Username</label>
+                  <input type="text" className="search-input" style={{ width: '100%', padding: '0.5rem' }} placeholder="john.doe" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Password</label>
+                  <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} placeholder="Min. 6 characters" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Role</label>
+                  <select className="search-input" style={{ width: '100%', padding: '0.5rem', appearance: 'auto' }} value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
+                    <option value="viewer">Viewer — Read only</option>
+                    <option value="editor">Editor — Read + Modify</option>
+                    <option value="admin">Admin — Full access</option>
+                    <option value="demo">Demo — View only, no settings</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn btn-primary" onClick={handleAddUser} disabled={!newUser.username || !newUser.password}>Create User</button>
+              </div>
+            </div>
+          )}
+
+          <div className="table-wrapper" style={{ marginBottom: 0 }}>
+            <div className="responsive-table">
+              <table>
+                <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.username}>
+                      <td style={{ fontWeight: 600 }}>{u.username}</td>
+                      <td><span className="badge" style={{ padding: '0.2rem 0.5rem', textTransform: 'uppercase', fontSize: '0.7rem', background: u.role === 'admin' ? 'rgba(239,68,68,0.15)' : u.role === 'editor' ? 'rgba(59,130,246,0.15)' : u.role === 'demo' ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.08)', color: u.role === 'admin' ? '#ef4444' : u.role === 'editor' ? '#3b82f6' : u.role === 'demo' ? '#a855f7' : 'var(--text-secondary)' }}>{u.role}</span></td>
+                      <td>{u.must_change_password ? <span style={{ color: 'var(--warning)', fontSize: '0.85rem' }}>⚠ Must change password</span> : <span style={{ color: '#22c55e', fontSize: '0.85rem' }}>✓ Active</span>}</td>
+                      <td className="mono-cell" style={{ fontSize: '0.8rem' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+                      <td style={{ display: 'flex', gap: '0.5rem' }}>
+                        {u.username !== 'admin' && <button className="btn btn-sm" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: '0.75rem' }} onClick={() => handleDeleteUser(u.username)}>Delete</button>}
+                        {resetPwUser === u.username ? (
+                          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                            <input type="password" className="search-input" style={{ padding: '0.25rem 0.5rem', width: '140px', fontSize: '0.8rem' }} placeholder="New password" value={resetPwValue} onChange={e => setResetPwValue(e.target.value)} />
+                            <button className="btn btn-sm btn-primary" style={{ fontSize: '0.75rem' }} onClick={() => handleResetPassword(u.username)}>Set</button>
+                            <button className="btn btn-sm" style={{ fontSize: '0.75rem' }} onClick={() => { setResetPwUser(null); setResetPwValue(''); }}>✕</button>
+                          </div>
+                        ) : (
+                          <button className="btn btn-sm" style={{ fontSize: '0.75rem' }} onClick={() => { setResetPwUser(u.username); setResetPwValue(''); }}>Reset PW</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

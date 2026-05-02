@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from auth import require_role
 from config import SETTINGS, save_settings
 
 router = APIRouter()
@@ -26,7 +27,7 @@ def get_settings():
 
 
 @router.post("/settings")
-async def update_settings(data: SettingsUpdate):
+async def update_settings(data: SettingsUpdate, user: dict = Depends(require_role("admin", "editor"))):
     """Updates the settings."""
     if data.polling_interval < 5:
         raise HTTPException(

@@ -18,25 +18,37 @@ class ChangePasswordRequest(BaseModel):
 
 @router.post("/login")
 async def login(data: LoginRequest):
-    """Authenticate user and return JWT token."""
+    """Authenticate user and return JWT token with role."""
     result = authenticate(data.username, data.password)
     if result is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token(result["username"])
-    return {"token": token, "must_change_password": result["must_change_password"]}
+    return {
+        "token": token,
+        "username": result["username"],
+        "role": result["role"],
+        "must_change_password": result["must_change_password"],
+    }
 
 
 @router.post("/change-password")
-async def change_pw(data: ChangePasswordRequest, user: str = Depends(get_current_user)):
-    """Change the admin password. Requires valid Bearer token."""
+async def change_pw(data: ChangePasswordRequest, user: dict = Depends(get_current_user)):
+    """Change the current user's password. Requires valid Bearer token."""
+    username = user["username"]
+    role = user["role"]
+
+    # Demo users cannot change passwords
+    if role == "demo":
+        raise HTTPException(status_code=403, detail="Demo users cannot change passwords")
+
     if len(data.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
 
-    success = change_password(data.old_password, data.new_password)
+    success = change_password(username, data.old_password, data.new_password)
     if not success:
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
     # Issue a fresh token after password change
-    new_token = create_token(user)
+    new_token = create_token(username)
     return {"message": "Password changed successfully", "token": new_token}

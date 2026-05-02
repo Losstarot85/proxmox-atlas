@@ -174,6 +174,7 @@ function App() {
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
             onClick={() => handleNavClick("settings")}
             title={!isExpanded ? "Settings" : ""}
+            style={auth.userRole === 'demo' ? { display: 'none' } : {}}
           >
             <span className="nav-icon">⚙️</span>
             <span className="nav-text">Settings</span>
@@ -234,6 +235,10 @@ function App() {
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.75rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{auth.username}</span>
+              <span className="badge" style={{ padding: '0.15rem 0.5rem', fontSize: '0.7rem', textTransform: 'uppercase', background: auth.userRole === 'admin' ? 'rgba(239, 68, 68, 0.15)' : auth.userRole === 'editor' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.08)', color: auth.userRole === 'admin' ? '#ef4444' : auth.userRole === 'editor' ? '#3b82f6' : 'var(--text-secondary)' }}>{auth.userRole}</span>
+            </div>
           </div>
         </header>
 
@@ -285,6 +290,8 @@ function App() {
           <SettingsTab
             globalInterval={pollingIntervalSeconds}
             globalWebhooks={webhooks}
+            userRole={auth.userRole}
+            username={auth.username}
             onSaveSettings={(settings) => {
               if (settings.polling_interval) setPollingIntervalSeconds(settings.polling_interval);
               if (settings.webhooks !== undefined) setWebhooks(settings.webhooks);

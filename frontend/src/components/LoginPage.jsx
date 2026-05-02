@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error }) {
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

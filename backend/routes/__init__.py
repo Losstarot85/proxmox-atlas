@@ -10,6 +10,7 @@ from .resources import router as resources_router
 from .settings import router as settings_router
 from .stream import router as stream_router
 from .time_machine import router as time_machine_router
+from .users import router as users_router
 from .whatif import router as whatif_router
 
 # Auth routes are public (no token required)
@@ -29,3 +30,4 @@ router.include_router(time_machine_router)
 router.include_router(alerts_router)
 router.include_router(whatif_router)
 router.include_router(clusters_router)
+router.include_router(users_router)

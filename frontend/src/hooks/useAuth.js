@@ -3,20 +3,37 @@ import { API_BASE } from "../config";
 
 const TOKEN_KEY = "atlas-auth-token";
 
+/**
+ * Decode JWT payload (base64url) without external libraries.
+ */
+function decodeJwtPayload(token) {
+  try {
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(base64));
+  } catch {
+    return {};
+  }
+}
+
 export function useAuth() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [loginError, setLoginError] = useState(null);
 
+  // Derive role and username from the stored token
+  const payload = token ? decodeJwtPayload(token) : {};
+  const userRole = payload.role || "viewer";
+  const username = payload.sub || "";
+
   const isAuthenticated = !!token && !mustChangePassword;
 
-  const login = useCallback(async (username, password) => {
+  const login = useCallback(async (user, password) => {
     setLoginError(null);
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username: user, password })
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -122,6 +139,8 @@ export function useAuth() {
     isAuthenticated,
     mustChangePassword,
     loginError,
+    userRole,
+    username,
     login,
     changePassword,
     logout,
