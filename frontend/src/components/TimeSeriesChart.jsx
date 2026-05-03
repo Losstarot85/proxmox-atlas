@@ -6,33 +6,9 @@ export const TimeSeriesChart = ({ data, dataKey, color = "#3b82f6", title, value
   const svgRef = useRef(null);
   const tooltipRef = useRef(null);
 
-  if (!data || data.length === 0) return <div className="loading-view" style={{height: 120}}>No data</div>;
-
-  const width = 500;
-  const height = 80;
-  const padTop = 4;
-  const padBottom = 4;
-  const drawH = height - padTop - padBottom;
-
-  const values = data.map(d => d[dataKey] ?? 0);
-  const maxVal = Math.max(100, ...values); // At least 100 for percentage
-  const currentVal = values[values.length - 1];
-  const displayVal = valueFormatter ? valueFormatter(currentVal) : `${currentVal}%`;
-
-  // Build polyline points
-  const pts = values.map((val, i) => {
-    const x = (i / Math.max(values.length - 1, 1)) * width;
-    const y = padTop + drawH - (Math.min(Math.max(val, 0), maxVal) / maxVal) * drawH;
-    return `${x},${y}`;
-  });
-  const polylinePoints = pts.join(" ");
-
-  // Build closed polygon for the gradient fill area
-  const polygonPoints = `0,${height} ${pts.join(" ")} ${width},${height}`;
-
   // Native zero-allocation hover handler
   const handleMouseMove = useCallback((e) => {
-    if (!svgRef.current || !tooltipRef.current || data.length === 0) return;
+    if (!svgRef.current || !tooltipRef.current || !data || data.length === 0) return;
     
     const rect = svgRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -61,6 +37,31 @@ export const TimeSeriesChart = ({ data, dataKey, color = "#3b82f6", title, value
   const handleMouseLeave = useCallback(() => {
     if (tooltipRef.current) tooltipRef.current.style.opacity = "0";
   }, []);
+
+  // Early return AFTER all hooks to satisfy React's rules of hooks
+  if (!data || data.length === 0) return <div className="loading-view" style={{height: 120}}>No data</div>;
+
+  const width = 500;
+  const height = 80;
+  const padTop = 4;
+  const padBottom = 4;
+  const drawH = height - padTop - padBottom;
+
+  const values = data.map(d => d[dataKey] ?? 0);
+  const maxVal = Math.max(100, ...values); // At least 100 for percentage
+  const currentVal = values[values.length - 1];
+  const displayVal = valueFormatter ? valueFormatter(currentVal) : `${currentVal}%`;
+
+  // Build polyline points
+  const pts = values.map((val, i) => {
+    const x = (i / Math.max(values.length - 1, 1)) * width;
+    const y = padTop + drawH - (Math.min(Math.max(val, 0), maxVal) / maxVal) * drawH;
+    return `${x},${y}`;
+  });
+  const polylinePoints = pts.join(" ");
+
+  // Build closed polygon for the gradient fill area
+  const polygonPoints = `0,${height} ${pts.join(" ")} ${width},${height}`;
 
   return (
     <div className="time-series-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, position: 'relative' }}>

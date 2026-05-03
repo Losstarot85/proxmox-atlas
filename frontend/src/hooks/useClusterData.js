@@ -5,7 +5,7 @@ const MAX_HISTORY_LENGTH = 40;
 const INITIAL_RETRY_DELAY = 1000;   // 1 second
 const MAX_RETRY_DELAY = 30000;      // 30 seconds cap
 
-export function useClusterData(token, onAuthError) {
+export function useClusterData(token) {
   const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,6 +20,7 @@ export function useClusterData(token, onAuthError) {
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
   const retryTimerRef = useRef(null);
   const mountedRef = useRef(true);
+  const connectRef = useRef(null);
 
   const connect = useCallback(() => {
     // Clean up any existing connection
@@ -31,19 +32,19 @@ export function useClusterData(token, onAuthError) {
     if (!mountedRef.current || !token) return;
 
     // Pre-flight: validate token before opening EventSource
-    // Use a lightweight HEAD to an authenticated endpoint — NOT /stream
-    // which would open a full SSE connection and waste resources
-    fetch(`${API_BASE}/alerts`, {
-      method: 'HEAD',
+    // Use a lightweight GET to an authenticated endpoint — NOT /stream
+    fetch(`${API_BASE}/settings`, {
+      method: 'GET',
       headers: { 'Accept': 'application/json' }
     }).then(res => {
       if (!mountedRef.current) return;
 
-      if (res.status === 401) {
-        // Token is invalid/expired — stop retrying and trigger logout
-        setError(null);
-        setLoading(true);
-        if (onAuthError) onAuthError();
+      if (!res.ok) {
+        // 401 is handled by the global fetch interceptor (auto-logout)
+        // Any other error → skip EventSource, schedule retry
+        if (res.status !== 401) {
+          throw new Error(`Preflight failed: ${res.status}`);
+        }
         return;
       }
 
@@ -137,7 +138,7 @@ export function useClusterData(token, onAuthError) {
         retryTimerRef.current = setTimeout(() => {
           if (mountedRef.current) {
             setError("Real-time connection lost. Reconnecting...");
-            connect();
+            connectRef.current();
           }
         }, delay);
 
@@ -149,17 +150,32 @@ export function useClusterData(token, onAuthError) {
       if (!mountedRef.current) return;
       const delay = retryDelayRef.current;
       retryTimerRef.current = setTimeout(() => {
-        if (mountedRef.current) connect();
+        if (mountedRef.current) connectRef.current();
       }, delay);
       retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_DELAY);
     });
-  }, [token, onAuthError]);
+  }, [token]);
 
   useEffect(() => {
+    connectRef.current = connect;
     mountedRef.current = true;
+
+    // Close SSE BEFORE the browser forcefully interrupts it on F5/navigation
+    // This prevents onerror from firing state updates during page teardown
+    const handleBeforeUnload = () => {
+      mountedRef.current = false;
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     connect();
 
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       mountedRef.current = false;
       if (retryTimerRef.current) {
         clearTimeout(retryTimerRef.current);

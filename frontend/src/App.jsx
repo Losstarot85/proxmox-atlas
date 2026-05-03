@@ -66,7 +66,7 @@ function App() {
   const { data: alertsData } = useAlerts(auth.isAuthenticated);
   const unreadAlerts = alertsData?.alerts?.filter(a => !a.read).length || 0;
 
-  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.token, auth.logout);
+  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.token);
 
   // Auth gate: show login page if not authenticated
   if (!auth.isAuthenticated) {
