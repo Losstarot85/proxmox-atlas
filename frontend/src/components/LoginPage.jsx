@@ -102,7 +102,6 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
                 className="search-input"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="admin"
                 autoComplete="username"
                 autoFocus
                 style={{
@@ -128,7 +127,6 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
                 className="search-input"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
                 autoComplete="current-password"
                 style={{
                   width: '100%',
