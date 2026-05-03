@@ -18,7 +18,7 @@ Proxmox Atlas provides a unified, high-performance dashboard to monitor all your
 - **Time Machine** — Browse historical metrics with interactive Prometheus-backed charts
 - **Uptime Heatmaps** — 30-day uptime visualization for every node and VM
 - **Smart Alerts** — Configurable thresholds with webhook notifications (Slack, Teams, Discord)
-- **JWT Authentication** — Secure login with bcrypt-hashed passwords
+- **JWT Authentication** — Secure login with bcrypt-hashed passwords and role-based access control
 - **HTTPS by Default** — Self-signed SSL certificate auto-generated on first deploy
 - **Ultra Lightweight** — Native SVG sparklines on the dashboard, Recharts for historical views (lazy-loaded), ~100MB RAM footprint
 
@@ -46,6 +46,8 @@ This will:
 | Password | `admin` |
 
 > You will be prompted to set a new password on first login.
+
+> Additional users can be created from **Settings → User Management** after logging in as admin.
 
 ### Manual Install
 
@@ -113,6 +115,28 @@ ATLAS_HTTPS_PORT=8443 docker compose up -d
 
 ---
 
+## 👥 User Management & Roles
+
+Proxmox Atlas supports multiple users with role-based access control. Users are managed from the **Settings** tab (admin only).
+
+### Roles
+
+| Role | Dashboard | Topology | Alerts | Clusters | Settings | Users | Password |
+|------|-----------|----------|--------|----------|----------|-------|----------|
+| **admin** | ✅ view | ✅ view | ✅ view | ✅ add/remove | ✅ edit | ✅ create/delete/reset | ✅ change any |
+| **editor** | ✅ view | ✅ view | ✅ view | ✅ add/remove | ✅ edit | ❌ | ✅ self only |
+| **viewer** | ✅ view | ✅ view | ✅ view | 👁 read-only | 👁 read-only | ❌ | ✅ self only |
+| **demo** | ✅ view | ✅ view | ✅ view | 👁 read-only | 👁 read-only | ❌ | ❌ |
+
+### Key Behaviors
+
+- **First login**: All users (except `demo`) must change their password on first login
+- **Demo users**: Read-only access to everything, no password change allowed — ideal for public demos
+- **Admin protection**: The `admin` account cannot be deleted
+- **Password reset**: Only admins can reset other users' passwords (forces password change on next login)
+
+---
+
 ## 🔐 SSL Certificates
 
 ### Self-Signed (Default)
@@ -170,8 +194,9 @@ Your data (clusters, settings, credentials) is persisted in Docker volumes and w
 ## 🛡️ Security
 
 - **HTTPS enforced** — HTTP automatically redirects to HTTPS
-- **JWT authentication** — All API endpoints require a valid Bearer token
-- **bcrypt passwords** — Admin password is hashed with bcrypt (never stored in plaintext)
+- **JWT authentication** — All API endpoints require a valid Bearer token with embedded role
+- **Role-based access control** — Four roles (admin, editor, viewer, demo) with granular permissions
+- **bcrypt passwords** — All passwords are hashed with bcrypt (never stored in plaintext)
 - **No exposed internal services** — Prometheus and backend are only accessible within the Docker network
 - **Security headers** — HSTS, X-Frame-Options, X-Content-Type-Options, CSP
 - **Non-root containers** — Backend runs as unprivileged `atlas` user
@@ -186,9 +211,11 @@ For monitoring, Proxmox API tokens only need **read-only** permissions:
 
 > **JWT Secret Lifecycle:** The JWT signing secret is generated once on first deploy and persisted in `auth.json` on the `atlas-data` Docker volume. If this file is deleted or corrupted, all active sessions are invalidated and the admin password resets to `admin`. Back up the Docker volume to preserve sessions across restarts.
 
+> **Multi-User Auth Migration:** If upgrading from a single-user version, the old `auth.json` format is automatically migrated to the multi-user structure on startup. No manual intervention required.
+
 > **SSE Token in URL:** The Server-Sent Events endpoint uses a query parameter (`/stream?token=...`) for authentication because the browser `EventSource` API does not support custom HTTP headers. Nginx is configured to strip query parameters from access logs for this endpoint, but operators should be aware of this if adding custom log forwarding.
 
-> **Password Change:** After changing the admin password, a new JWT is issued. The old token remains valid until its natural expiration (24 hours). For immediate revocation, restart the backend container.
+> **Password Change:** After changing a password, a new JWT is issued. The old token remains valid until its natural expiration (24 hours). For immediate revocation, restart the backend container. If an admin changes a user's role, the change takes effect on the user's next login.
 
 ---
 
