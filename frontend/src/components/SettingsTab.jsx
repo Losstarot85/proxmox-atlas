@@ -254,7 +254,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
     <div className="settings-content" style={{ maxWidth: '1000px' }}>
 
       {/* ==================== ACCOUNT SECURITY ==================== */}
-      <div className="glass-card" style={{ marginBottom: '2rem' }}>
+      {userRole !== 'demo' && <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <h3>🔐 Account Security</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
@@ -322,7 +322,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
             {pwSaving ? "Changing..." : "🔒 Change Password"}
           </button>
         </div>
-      </div>
+      </div>}
       {/* ==================== CLUSTER MANAGEMENT ==================== */}
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>

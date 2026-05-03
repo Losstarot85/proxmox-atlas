@@ -174,7 +174,6 @@ function App() {
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
             onClick={() => handleNavClick("settings")}
             title={!isExpanded ? "Settings" : ""}
-            style={auth.userRole === 'demo' ? { display: 'none' } : {}}
           >
             <span className="nav-icon">⚙️</span>
             <span className="nav-text">Settings</span>
