@@ -66,18 +66,21 @@ export function useAuth() {
   const login = useCallback(async (user, password) => {
     setLoginError(null);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await _originalFetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: user, password }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || "Invalid credentials");
-      }
       const data = await res.json();
+
+      // Backend returns 200 for both success and failure.
+      // Failure is indicated by an `error` field in the response body.
+      if (data.error) {
+        setLoginError(data.error);
+        return false;
+      }
+
       if (data.must_change_password) {
-        // Store token temporarily for the change-password call
         setToken(data.token);
         setMustChangePassword(true);
       } else {
@@ -87,7 +90,7 @@ export function useAuth() {
       }
       return true;
     } catch (err) {
-      setLoginError(err.message);
+      setLoginError("Unable to reach the server. Please check your connection and try again.");
       return false;
     }
   }, []);

@@ -18,10 +18,15 @@ class ChangePasswordRequest(BaseModel):
 
 @router.post("/login")
 async def login(data: LoginRequest):
-    """Authenticate user and return JWT token with role."""
+    """Authenticate user and return JWT token with role.
+
+    Returns HTTP 200 for both success and failure to avoid Firefox blocking
+    401 response bodies on self-signed certificates. The `error` field
+    distinguishes success from failure.
+    """
     result = authenticate(data.username, data.password)
     if result is None:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        return {"error": "Invalid credentials"}
 
     token = create_token(result["username"])
     return {

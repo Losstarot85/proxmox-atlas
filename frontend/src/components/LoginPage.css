@@ -1,0 +1,366 @@
+/* ═══════════════════════════════════════════════════════════════
+   Login Page — Premium Redesign
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Animated Mesh Gradient Background ── */
+.login-bg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 40%, rgba(168, 85, 247, 0.15), transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 20%, rgba(59, 130, 246, 0.12), transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 80%, rgba(139, 92, 246, 0.08), transparent 50%);
+  animation: meshDrift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes meshDrift {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-20px, 15px) scale(1.05);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(15px, -10px) scale(1.02);
+    opacity: 1;
+  }
+}
+
+/* Subtle floating particles */
+.login-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 25%, rgba(168, 85, 247, 0.3), transparent),
+    radial-gradient(1px 1px at 85% 60%, rgba(59, 130, 246, 0.3), transparent),
+    radial-gradient(1px 1px at 45% 80%, rgba(139, 92, 246, 0.2), transparent),
+    radial-gradient(1.5px 1.5px at 70% 15%, rgba(168, 85, 247, 0.25), transparent),
+    radial-gradient(1px 1px at 30% 55%, rgba(59, 130, 246, 0.2), transparent);
+  animation: particleFloat 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes particleFloat {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-30px); }
+}
+
+/* ── Frosted Glass Card ── */
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: linear-gradient(
+    135deg,
+    rgba(20, 24, 36, 0.85) 0%,
+    rgba(15, 18, 28, 0.9) 100%
+  );
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.75rem 2.25rem;
+  box-shadow:
+    0 16px 64px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 1;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.login-card:focus-within {
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow:
+    0 16px 64px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(168, 85, 247, 0.15),
+    0 0 40px rgba(168, 85, 247, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Light theme overrides */
+[data-theme="light"] .login-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(248, 250, 252, 0.95) 100%
+  );
+  box-shadow:
+    0 16px 64px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .login-card:focus-within {
+  border-color: rgba(147, 51, 234, 0.3);
+  box-shadow:
+    0 16px 64px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(147, 51, 234, 0.15),
+    0 0 40px rgba(147, 51, 234, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ── Logo ── */
+.login-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.login-logo-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.25);
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  transition: transform 0.3s ease;
+}
+
+.login-logo-img:hover {
+  transform: scale(1.05) rotate(2deg);
+}
+
+.login-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0.75rem 0 0 0;
+  letter-spacing: -0.02em;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+/* ── Typing Animation for Subtitle ── */
+.login-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  min-height: 1.3em;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.login-subtitle-typing {
+  display: inline;
+  border-right: 2px solid var(--accent);
+  animation: blink 0.8s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 100% { border-color: var(--accent); }
+  50% { border-color: transparent; }
+}
+
+/* ── Error Message ── */
+.login-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--danger);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  animation: shakeIn 0.4s ease;
+}
+
+@keyframes shakeIn {
+  0%   { transform: translateX(0); opacity: 0; }
+  20%  { transform: translateX(-8px); opacity: 1; }
+  40%  { transform: translateX(6px); }
+  60%  { transform: translateX(-4px); }
+  80%  { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+/* ── Form Labels ── */
+.login-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ── Form Fields ── */
+.login-field {
+  margin-bottom: 1.25rem;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+
+.login-field:last-of-type {
+  margin-bottom: 1.75rem;
+}
+
+.login-input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 10px;
+  font-family: var(--sans);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  background: rgba(168, 85, 247, 0.03);
+}
+
+.login-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+/* ── Password Field with Toggle ── */
+.login-password-wrapper {
+  position: relative;
+}
+
+.login-password-wrapper .login-input {
+  padding-right: 2.75rem;
+}
+
+.login-pw-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s, background-color 0.2s;
+  line-height: 1;
+}
+
+.login-pw-toggle:hover {
+  color: var(--accent-light);
+  background: var(--accent-glow);
+}
+
+.login-pw-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Submit Button ── */
+.login-submit {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--sans);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+
+.login-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.3);
+}
+
+.login-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Shimmer effect on button */
+.login-submit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(255, 255, 255, 0.12) 55%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.login-submit:hover:not(:disabled)::after {
+  transform: translateX(100%);
+}
+
+/* ── Info Banner (Change Password) ── */
+.login-info-banner {
+  background: rgba(168, 85, 247, 0.06);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--accent-light);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.5;
+}
+
+/* ── Footer ── */
+.login-footer {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  margin-top: 2rem;
+  margin-bottom: 0;
+  opacity: 0.4;
+  animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
