@@ -11,15 +11,17 @@ def test_login_success(client):
 
 
 def test_login_wrong_password(client):
-    """Wrong password should return 401."""
+    """Wrong password should return 200 with error field."""
     res = client.post("/auth/login", json={"username": "admin", "password": "wrong"})
-    assert res.status_code == 401
+    assert res.status_code == 200
+    assert res.json()["error"] == "Invalid credentials"
 
 
 def test_login_wrong_username(client):
-    """Non-existent username should return 401."""
+    """Non-existent username should return 200 with error field."""
     res = client.post("/auth/login", json={"username": "nobody", "password": "admin"})
-    assert res.status_code == 401
+    assert res.status_code == 200
+    assert res.json()["error"] == "Invalid credentials"
 
 
 def test_protected_route_without_token(client):
@@ -57,7 +59,8 @@ def test_change_password(client, auth_token):
 
     # Old password should fail
     res = client.post("/auth/login", json={"username": "admin", "password": "admin"})
-    assert res.status_code == 401
+    assert res.status_code == 200
+    assert res.json()["error"] == "Invalid credentials"
 
 
 def test_change_password_wrong_old(client, auth_headers):
