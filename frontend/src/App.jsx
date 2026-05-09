@@ -9,6 +9,7 @@ import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
 import { exportJSON, exportCSV } from "./utils/exportData";
+import { SkeletonDashboard } from "./components/Skeletons";
 import "./App.css";
 
 // Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
@@ -81,21 +82,11 @@ function App() {
   }
 
   if (!initialSettingsLoaded) {
-    return (
-      <div className="loading-view">
-        <div className="spinner"></div>
-        <p>Loading Configuration...</p>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   if (loading && clusters.length === 0) {
-    return (
-      <div className="loading-view">
-        <div className="spinner"></div>
-        <p>Connecting to Atlas...</p>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   const activeNodes = clusters.reduce((acc, c) => acc + (c.nodes?.filter(n => n.status === "online").length || 0), 0);
@@ -275,7 +266,7 @@ function App() {
         )}
 
         {activeTab === "topology" && (
-          <Suspense fallback={<div className="loading-view"><div className="spinner"></div><p>Loading Topology...</p></div>}>
+          <Suspense fallback={<SkeletonDashboard />}>
             <TopologyTab 
               clusters={clusters} 
               onOpenTimeMachine={setTimeMachineTarget}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
+import { SkeletonSimulation } from "./Skeletons";
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return "0 B";
@@ -38,10 +39,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
         </div>
 
         {loading && (
-          <div style={{ padding: '3rem', textAlign: 'center' }}>
-            <div className="spinner"></div>
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Running simulation...</p>
-          </div>
+          <SkeletonSimulation />
         )}
 
         {error && (

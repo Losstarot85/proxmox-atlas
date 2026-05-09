@@ -1,0 +1,343 @@
+/* ══════════════════════════════════════════════════════════════════════
+   Skeleton Loading Screens — Proxmox Atlas
+   Shimmer animations that mirror real UI layout for reduced perceived latency
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Base shimmer animation ── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-pulse {
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    var(--surface-hover) 37%,
+    var(--surface) 63%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Fade-in transition when content loads ── */
+@keyframes skeleton-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.skeleton-container {
+  animation: skeleton-fade-in 0.3s ease-out;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Full-page Dashboard Skeleton
+   ══════════════════════════════════════════════════════════════════════ */
+.skeleton-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Header bar skeleton ── */
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem;
+}
+
+.skeleton-header-title {
+  width: 200px;
+  height: 28px;
+}
+
+.skeleton-header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.skeleton-header-btn {
+  width: 80px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Summary Cards Skeleton — 4 shimmer cards in grid
+   ══════════════════════════════════════════════════════════════════════ */
+.skeleton-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 100px;
+}
+
+.skeleton-card--wide {
+  grid-column: span 2;
+  min-height: 140px;
+}
+
+.skeleton-card-label {
+  width: 55%;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-card-value {
+  width: 40%;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.skeleton-card-chart {
+  width: 100%;
+  height: 80px;
+  border-radius: 6px;
+  margin-top: auto;
+}
+
+.skeleton-card-sub {
+  width: 70%;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Table Skeleton — 5 rows of shimmer bars
+   ══════════════════════════════════════════════════════════════════════ */
+.skeleton-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.skeleton-table-header {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.skeleton-table-header-cell {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-table-header-cell:nth-child(1) { width: 18%; }
+.skeleton-table-header-cell:nth-child(2) { width: 12%; }
+.skeleton-table-header-cell:nth-child(3) { width: 22%; }
+.skeleton-table-header-cell:nth-child(4) { width: 15%; }
+.skeleton-table-header-cell:nth-child(5) { width: 15%; }
+.skeleton-table-header-cell:nth-child(6) { width: 10%; }
+
+.skeleton-table-row {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.skeleton-table-row:last-child {
+  border-bottom: none;
+}
+
+.skeleton-table-cell {
+  height: 16px;
+  border-radius: 4px;
+}
+
+/* Stagger widths for natural look */
+.skeleton-table-row:nth-child(odd) .skeleton-table-cell:nth-child(1) { width: 20%; }
+.skeleton-table-row:nth-child(odd) .skeleton-table-cell:nth-child(2) { width: 10%; }
+.skeleton-table-row:nth-child(odd) .skeleton-table-cell:nth-child(3) { width: 25%; }
+.skeleton-table-row:nth-child(odd) .skeleton-table-cell:nth-child(4) { width: 14%; }
+.skeleton-table-row:nth-child(odd) .skeleton-table-cell:nth-child(5) { width: 16%; }
+.skeleton-table-row:nth-child(odd) .skeleton-table-cell:nth-child(6) { width: 8%; }
+
+.skeleton-table-row:nth-child(even) .skeleton-table-cell:nth-child(1) { width: 16%; }
+.skeleton-table-row:nth-child(even) .skeleton-table-cell:nth-child(2) { width: 12%; }
+.skeleton-table-row:nth-child(even) .skeleton-table-cell:nth-child(3) { width: 20%; }
+.skeleton-table-row:nth-child(even) .skeleton-table-cell:nth-child(4) { width: 18%; }
+.skeleton-table-row:nth-child(even) .skeleton-table-cell:nth-child(5) { width: 13%; }
+.skeleton-table-row:nth-child(even) .skeleton-table-cell:nth-child(6) { width: 10%; }
+
+/* Stagger animation delays for wave effect */
+.skeleton-table-row:nth-child(1) .skeleton-pulse { animation-delay: 0s; }
+.skeleton-table-row:nth-child(2) .skeleton-pulse { animation-delay: 0.1s; }
+.skeleton-table-row:nth-child(3) .skeleton-pulse { animation-delay: 0.2s; }
+.skeleton-table-row:nth-child(4) .skeleton-pulse { animation-delay: 0.3s; }
+.skeleton-table-row:nth-child(5) .skeleton-pulse { animation-delay: 0.4s; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Chart Skeleton — for Time Machine / topology loading
+   ══════════════════════════════════════════════════════════════════════ */
+.skeleton-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.skeleton-chart-title {
+  width: 180px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.skeleton-chart {
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* SVG-like chart shape overlay */
+.skeleton-chart::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(
+    to top,
+    var(--bg-primary) 0%,
+    transparent 100%
+  );
+  border-radius: 0 0 8px 8px;
+}
+
+.skeleton-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.skeleton-chart-axis-tick {
+  width: 40px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.skeleton-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Alerts Skeleton
+   ══════════════════════════════════════════════════════════════════════ */
+.skeleton-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.skeleton-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.skeleton-alert-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-alert-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-alert-title {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-alert-desc {
+  height: 11px;
+  border-radius: 3px;
+}
+
+/* Stagger items */
+.skeleton-alert-item:nth-child(1) .skeleton-pulse { animation-delay: 0s; }
+.skeleton-alert-item:nth-child(2) .skeleton-pulse { animation-delay: 0.1s; }
+.skeleton-alert-item:nth-child(3) .skeleton-pulse { animation-delay: 0.15s; }
+.skeleton-alert-item:nth-child(4) .skeleton-pulse { animation-delay: 0.2s; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Simulation Skeleton (What-If modal)
+   ══════════════════════════════════════════════════════════════════════ */
+.skeleton-simulation {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.skeleton-sim-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.skeleton-sim-label {
+  width: 100px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.skeleton-sim-progress {
+  flex: 1;
+  height: 20px;
+  border-radius: 10px;
+}
+
+.skeleton-sim-value {
+  width: 50px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Responsive
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .skeleton-card--wide {
+    grid-column: span 1;
+  }
+  .skeleton-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}

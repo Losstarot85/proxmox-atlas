@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { UptimeHeatmap } from "./UptimeHeatmap";
+import { SkeletonChart } from "./Skeletons";
 import "./TimeMachineModal.css";
 
 export function TimeMachineModal({ target, onClose }) {
@@ -69,7 +70,7 @@ export function TimeMachineModal({ target, onClose }) {
             <button className={`tm-btn ${timeRange === "30d" ? "active" : ""}`} onClick={() => setTimeRange("30d")}>30 Days</button>
         </div>
 
-        {loading && <div className="tm-status">Loading historical data from Prometheus...</div>}
+        {loading && <SkeletonChart count={4} />}
         {error && <div className="tm-status tm-error">Error: {error}</div>}
 
         {!loading && !error && data.length === 0 && (

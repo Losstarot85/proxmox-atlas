@@ -1,5 +1,6 @@
 import React from "react";
 import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
+import { SkeletonAlerts } from "./Skeletons";
 
 export function AlertsTab() {
   const { data, isLoading: loading } = useAlerts();
@@ -29,10 +30,7 @@ export function AlertsTab() {
       </div>
 
       {loading ? (
-        <div className="loading-view" style={{ height: "40vh" }}>
-          <div className="spinner"></div>
-          <p>Loading alerts...</p>
-        </div>
+        <SkeletonAlerts count={4} />
       ) : alerts.length === 0 ? (
         <div className="empty-state" style={{ marginTop: "4rem" }}>
           <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>
