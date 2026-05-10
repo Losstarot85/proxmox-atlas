@@ -8,6 +8,7 @@ import { ClusterSection } from "./components/ClusterSection";
 import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
+import { Breadcrumb } from "./components/Breadcrumb";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
@@ -235,6 +236,13 @@ function App() {
               {activeTab === 'alerts' && 'Notification Center'}
               {activeTab === 'settings' && 'Global Configurations'}
             </h2>
+            <Breadcrumb
+              activeTab={activeTab}
+              timeMachineTarget={timeMachineTarget}
+              whatIfTarget={whatIfTarget}
+              onNavigate={handleNavClick}
+              onCloseModals={() => { setTimeMachineTarget(null); setWhatIfTarget(null); }}
+            />
           </div>
           <div className="global-status">
             <div className="status-chip">
