@@ -14,6 +14,7 @@ import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
 import { CommandPalette, useCommandPalette } from "./components/CommandPalette";
 import { useKeyboardShortcuts, ShortcutsCheatSheet } from "./hooks/useKeyboardShortcuts.jsx";
+import { useHashRouter } from "./hooks/useHashRouter";
 import "./App.css";
 
 // Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
@@ -26,31 +27,40 @@ function App() {
   const auth = useAuth();
   const toast = useToast();
   const palette = useCommandPalette();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const router = useHashRouter();
+  const activeTab = router.tab;
+  const timeMachineTarget = router.timeMachine;
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [webhooks, setWebhooks] = useState([]);
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
-  const [timeMachineTarget, setTimeMachineTarget] = useState(null);
   const [whatIfTarget, setWhatIfTarget] = useState(null);
 
   const handleNavClick = (tab) => {
-    setActiveTab(tab);
+    router.navigate(tab);
     setForceCollapse(true);
     setIsSidebarHovered(false);
+  };
+
+  const openTimeMachine = (target) => {
+    router.navigateTimeMachine(target);
+  };
+
+  const closeTimeMachine = () => {
+    router.closeTimeMachine();
   };
 
   const { showCheatSheet, closeCheatSheet, shortcuts } = useKeyboardShortcuts({
     onNavigate: handleNavClick,
     onCloseModals: () => {
-      setTimeMachineTarget(null);
+      closeTimeMachine();
       setWhatIfTarget(null);
       palette.close();
     },
     onFocusSearch: () => {
-      setActiveTab("dashboard");
+      router.navigate("dashboard");
       setTimeout(() => document.getElementById("dashboard-search")?.focus(), 100);
     },
     onToggleTheme: () => setTheme(t => t === 'dark' ? 'light' : 'dark'),
@@ -241,7 +251,7 @@ function App() {
               timeMachineTarget={timeMachineTarget}
               whatIfTarget={whatIfTarget}
               onNavigate={handleNavClick}
-              onCloseModals={() => { setTimeMachineTarget(null); setWhatIfTarget(null); }}
+              onCloseModals={() => { closeTimeMachine(); setWhatIfTarget(null); }}
             />
           </div>
           <div className="global-status">
@@ -309,7 +319,7 @@ function App() {
                 globalHistory={globalHistory} 
                 metricsMap={metricsMap}
                 searchQuery={dashboardSearch}
-                onOpenTimeMachine={setTimeMachineTarget} 
+                onOpenTimeMachine={openTimeMachine} 
               />
             ))}
           </>
@@ -319,7 +329,7 @@ function App() {
           <Suspense fallback={<SkeletonDashboard />}>
             <TopologyTab 
               clusters={clusters} 
-              onOpenTimeMachine={setTimeMachineTarget}
+              onOpenTimeMachine={openTimeMachine}
               onOpenWhatIf={(clusterName, nodeName) => setWhatIfTarget({ cluster: clusterName, node: nodeName })}
             />
           </Suspense>
@@ -345,7 +355,7 @@ function App() {
         {timeMachineTarget && (
           <TimeMachineModal 
             target={timeMachineTarget} 
-            onClose={() => setTimeMachineTarget(null)} 
+            onClose={closeTimeMachine} 
           />
         )}
 
@@ -362,8 +372,8 @@ function App() {
         isOpen={palette.isOpen}
         onClose={palette.close}
         clusters={clusters}
-        onNavigate={(tab) => { setActiveTab(tab); setForceCollapse(true); setIsSidebarHovered(false); }}
-        onOpenTimeMachine={setTimeMachineTarget}
+        onNavigate={(tab) => { handleNavClick(tab); }}
+        onOpenTimeMachine={openTimeMachine}
         onExportJSON={() => exportJSON(clusters)}
         onExportCSV={() => exportCSV(clusters)}
         onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
