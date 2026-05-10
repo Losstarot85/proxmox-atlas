@@ -63,7 +63,7 @@ export function AlertsTab() {
                   <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>{formatTime(alert.timestamp)}</span>
                   <span className="mono-cell" style={{fontSize: '0.85rem'}}>— {alert.cluster} &gt; {alert.node} &gt; {alert.resource}</span>
                 </div>
-                <div style={{fontSize: '1.05rem', fontWeight: 500}}>{alert.message}</div>
+                <div style={{fontSize: '1.05rem', fontWeight: 500, lineHeight: 1.6}}>{alert.message}</div>
               </div>
               
               <div className="alert-actions" style={{display: 'flex', gap: '0.5rem'}}>

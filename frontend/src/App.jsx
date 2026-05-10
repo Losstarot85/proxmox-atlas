@@ -11,6 +11,7 @@ import { SummaryCards } from "./components/SummaryCards";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
+import { CommandPalette, useCommandPalette } from "./components/CommandPalette";
 import "./App.css";
 
 // Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
@@ -22,6 +23,7 @@ const WhatIfModal = lazy(() => import("./components/WhatIfModal").then(m => ({ d
 function App() {
   const auth = useAuth();
   const toast = useToast();
+  const palette = useCommandPalette();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [webhooks, setWebhooks] = useState([]);
@@ -329,6 +331,17 @@ function App() {
           />
         )}
       </Suspense>
+
+      <CommandPalette
+        isOpen={palette.isOpen}
+        onClose={palette.close}
+        clusters={clusters}
+        onNavigate={(tab) => { setActiveTab(tab); setForceCollapse(true); setIsSidebarHovered(false); }}
+        onOpenTimeMachine={setTimeMachineTarget}
+        onExportJSON={() => exportJSON(clusters)}
+        onExportCSV={() => exportCSV(clusters)}
+        onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+      />
     </div>
   );
 }

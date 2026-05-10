@@ -21,10 +21,20 @@
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 15px var(--accent-glow);
   
+  /* Standardized spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-12: 48px;
+
+  /* Typography */
   --sans: 'Inter', system-ui, -apple-system, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  font: 14px/1.5 var(--sans);
+  font: 14px/1.6 var(--sans);
   color-scheme: dark;
   color: var(--text-primary);
   background: var(--bg-primary);
@@ -36,6 +46,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
 }
 
 [data-theme="light"] {
