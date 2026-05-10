@@ -4,7 +4,7 @@ import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad }
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
 
-export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
+export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource }) {
   const term = searchQuery.toLowerCase();
   
   const visibleNodes = useMemo(() => (cluster.nodes || []).filter(n => {
@@ -208,8 +208,8 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
       </>
       )}
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} />
     </section>
   );
 }

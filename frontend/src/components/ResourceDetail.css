@@ -1,0 +1,250 @@
+/* Resource Detail Drawer */
+.rd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 900;
+  display: flex;
+  justify-content: flex-end;
+  animation: rd-overlay-in 0.2s ease-out;
+}
+
+@keyframes rd-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.rd-drawer {
+  width: 550px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: rd-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rd-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* Header */
+.rd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.rd-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.rd-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.rd-type-badge {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.rd-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rd-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.rd-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.rd-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+/* Body */
+.rd-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Sections */
+.rd-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.rd-section-title {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+/* Gauges */
+.rd-gauges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.rd-gauge {
+  display: flex;
+  justify-content: center;
+}
+
+.rd-gauge-svg {
+  width: 90px;
+  height: 90px;
+}
+
+.rd-gauge-value {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+.rd-gauge-label {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Sparklines */
+.rd-sparklines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rd-sparkline-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.rd-sparkline-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  min-width: 36px;
+}
+
+.rd-sparkline-value {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.85rem;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Info Grid */
+.rd-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.rd-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.rd-info-row:last-child {
+  border-bottom: none;
+}
+
+.rd-info-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.rd-info-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.rd-ips {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Actions */
+.rd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rd-actions .btn {
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .rd-drawer {
+    width: 100vw;
+  }
+  .rd-gauges {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

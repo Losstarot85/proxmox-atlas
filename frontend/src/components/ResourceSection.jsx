@@ -5,7 +5,7 @@ import { Sparkline } from "./Sparkline";
 const VIRTUAL_THRESHOLD = 100;
 
 // Sub-component for resources (VM, LXC) with metrics
-export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine }) {
+export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource }) {
   const [showAll, setShowAll] = useState(false);
   const term = searchQuery.toLowerCase();
   const filtered = useMemo(() => {
@@ -72,7 +72,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
                     <React.Fragment key={`${r.type}-${r.vmid}`}>
                       <tr
                         id={`row-${r.type}-${r.vmid}`}
-                        onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
+                        onClick={() => onOpenResource ? onOpenResource(r) : onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
                       style={{ cursor: 'pointer', '--row-index': idx }}
                       className="hoverable-row"
                     >

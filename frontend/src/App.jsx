@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { API_BASE } from "./config";
 import { useAuth } from "./hooks/useAuth";
 import { useClusterData } from "./hooks/useClusterData";
@@ -9,6 +9,7 @@ import { SettingsTab } from "./components/SettingsTab";
 import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
 import { Breadcrumb } from "./components/Breadcrumb";
+import { ResourceDetail } from "./components/ResourceDetail";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
@@ -30,6 +31,7 @@ function App() {
   const router = useHashRouter();
   const activeTab = router.tab;
   const timeMachineTarget = router.timeMachine;
+  const resourceRouteTarget = router.resource;
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [webhooks, setWebhooks] = useState([]);
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
@@ -50,6 +52,14 @@ function App() {
 
   const closeTimeMachine = () => {
     router.closeTimeMachine();
+  };
+
+  const openResource = (resource, clusterName) => {
+    router.navigateResource({ ...resource, id: resource.vmid || resource.name, type: resource.type, _cluster: clusterName });
+  };
+
+  const closeResource = () => {
+    router.closeResource();
   };
 
   const { showCheatSheet, closeCheatSheet, shortcuts } = useKeyboardShortcuts({
@@ -319,7 +329,8 @@ function App() {
                 globalHistory={globalHistory} 
                 metricsMap={metricsMap}
                 searchQuery={dashboardSearch}
-                onOpenTimeMachine={openTimeMachine} 
+                onOpenTimeMachine={openTimeMachine}
+                onOpenResource={(resource) => openResource(resource, cluster.name)}
               />
             ))}
           </>
@@ -367,6 +378,36 @@ function App() {
           />
         )}
       </Suspense>
+
+      {resourceRouteTarget && (() => {
+        let resolvedResource = null;
+        let resolvedCluster = null;
+        for (const c of clusters) {
+          const found = (c.resources || []).find(r =>
+            String(r.vmid) === String(resourceRouteTarget.id) && r.type === resourceRouteTarget.type
+          );
+          if (found) { resolvedResource = found; resolvedCluster = c.name; break; }
+          // Also check nodes
+          if (resourceRouteTarget.type === "NODE") {
+            const node = (c.nodes || []).find(n => n.name === resourceRouteTarget.id);
+            if (node) {
+              resolvedResource = { ...node, vmid: node.name, type: "NODE", name: node.name };
+              resolvedCluster = c.name;
+              break;
+            }
+          }
+        }
+        if (!resolvedResource) return null;
+        return (
+          <ResourceDetail
+            resource={resolvedResource}
+            clusterName={resolvedCluster}
+            metricsMap={metricsMap}
+            onClose={closeResource}
+            onOpenTimeMachine={openTimeMachine}
+          />
+        );
+      })()}
 
       <CommandPalette
         isOpen={palette.isOpen}
