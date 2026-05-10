@@ -59,7 +59,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
               </tr>
             </thead>
             <tbody>
-              {visible.map(r => {
+              {visible.map((r, idx) => {
                 const isRunning = r.status === "running";
                 const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
                 const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
@@ -73,7 +73,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
                       <tr
                         id={`row-${r.type}-${r.vmid}`}
                         onClick={() => onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: 'pointer', '--row-index': idx }}
                       className="hoverable-row"
                     >
                       <td className="mono-cell">{r.vmid}</td>

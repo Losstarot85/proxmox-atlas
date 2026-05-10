@@ -207,7 +207,7 @@ function App() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="main-content">
+      <main className="main-content" key={activeTab}>
         <header className="top-header">
           <div>
             <h2 className="page-title">

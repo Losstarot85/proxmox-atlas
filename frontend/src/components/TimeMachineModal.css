@@ -10,6 +10,12 @@
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    animation: modal-overlay-in 0.25s ease-out;
+}
+
+@keyframes modal-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .tm-modal-content {
@@ -23,6 +29,18 @@
     flex-direction: column;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     overflow: hidden;
+    animation: modal-content-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-content-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .tm-modal-header {

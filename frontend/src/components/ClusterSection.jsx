@@ -106,7 +106,7 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
               {visibleNodes.length === 0 ? (
                 <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
               ) : (
-                [...visibleNodes].map(n => {
+                [...visibleNodes].map((n, i) => {
                   const isOnline = n.status === "online";
                   const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
@@ -124,7 +124,7 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                     <tr 
                       id={`row-NODE-${n.name}`} 
                       onClick={() => onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: 'pointer', '--row-index': i }}
                       className="hoverable-row"
                     >
                       <td style={{ fontWeight: 500 }}>

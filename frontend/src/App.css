@@ -53,6 +53,12 @@
   object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 0 10px var(--accent-glow);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.sidebar:hover .logo-icon-img {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 0 20px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .logo-text-group {
@@ -121,6 +127,12 @@
   background-color: var(--accent-glow);
   color: var(--accent-light);
   border-right: 3px solid var(--accent);
+  animation: nav-active-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes nav-active-in {
+  from { background-color: transparent; border-right-width: 0; }
+  to   { background-color: var(--accent-glow); border-right-width: 3px; }
 }
 
 .nav-icon {
@@ -146,6 +158,18 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  animation: content-fade-in 0.3s ease-out;
+}
+
+@keyframes content-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Header & Global Status */
@@ -229,9 +253,28 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: var(--shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.3s ease;
   position: relative;
   overflow: hidden;
+  animation: card-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--card-delay, 0s);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow), 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: var(--border-accent);
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Summary Cards */
@@ -279,7 +322,12 @@
   height: 100%;
   border-radius: 3px;
   background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
-  transition: width 0.5s ease-out;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: progress-grow 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes progress-grow {
+  from { width: 0% !important; }
 }
 
 .progress-bar-inline {
@@ -379,6 +427,8 @@ td {
 
 tbody tr {
   transition: background-color 0.2s ease;
+  animation: row-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--row-index, 0) * 0.04s);
 }
 
 tbody tr:hover {
@@ -387,6 +437,17 @@ tbody tr:hover {
 
 tbody tr:last-child td {
   border-bottom: none;
+}
+
+@keyframes row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mono-cell {
@@ -411,6 +472,7 @@ tbody tr:last-child td {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .badge-online {
@@ -418,6 +480,7 @@ tbody tr:last-child td {
   color: var(--success);
   border: 1px solid rgba(34, 197, 94, 0.2);
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.1);
+  animation: badge-pulse-green 2s ease-in-out infinite;
 }
 
 .badge-offline {
@@ -425,6 +488,17 @@ tbody tr:last-child td {
   color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.2);
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+  animation: badge-pulse-red 1.5s ease-in-out infinite;
+}
+
+@keyframes badge-pulse-green {
+  0%, 100% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.1); }
+  50%      { box-shadow: 0 0 16px rgba(34, 197, 94, 0.25); }
+}
+
+@keyframes badge-pulse-red {
+  0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.1); }
+  50%      { box-shadow: 0 0 16px rgba(239, 68, 68, 0.3); }
 }
 
 /* Loading & Empty States */
@@ -983,6 +1057,70 @@ tbody tr:last-child td {
 /* ==================================================================
    What-If Engine Modal (F4)
 ================================================================== */
+
+/* Generic modal overlay + content (used by What-If and others) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: modal-overlay-enter 0.25s ease-out;
+}
+
+@keyframes modal-overlay-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: modal-content-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modal-content-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s, background 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
 
 .whatif-modal {
   max-width: 900px;
