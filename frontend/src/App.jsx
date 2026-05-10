@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { API_BASE } from "./config";
 import { useAuth } from "./hooks/useAuth";
 import { useClusterData } from "./hooks/useClusterData";
@@ -10,6 +10,7 @@ import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
+import { useToast } from "./components/Toast";
 import "./App.css";
 
 // Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
@@ -20,6 +21,7 @@ const WhatIfModal = lazy(() => import("./components/WhatIfModal").then(m => ({ d
 
 function App() {
   const auth = useAuth();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [webhooks, setWebhooks] = useState([]);
@@ -66,6 +68,26 @@ function App() {
   // Unread alerts badge — uses the same React Query cache as AlertsTab (no double fetch)
   const { data: alertsData } = useAlerts(auth.isAuthenticated);
   const unreadAlerts = alertsData?.alerts?.filter(a => !a.read).length || 0;
+
+  // Real-time toast for new critical/warning alerts
+  const seenAlertIdsRef = useRef(new Set());
+  useEffect(() => {
+    if (!alertsData?.alerts) return;
+    const alerts = alertsData.alerts;
+    // On first load, seed the seen set without showing toasts
+    if (seenAlertIdsRef.current.size === 0 && alerts.length > 0) {
+      alerts.forEach(a => seenAlertIdsRef.current.add(a.id));
+      return;
+    }
+    alerts.forEach(a => {
+      if (!seenAlertIdsRef.current.has(a.id) && !a.read) {
+        seenAlertIdsRef.current.add(a.id);
+        const severity = a.severity || "warning";
+        const toastType = severity === "critical" ? "error" : "warning";
+        toast[toastType](a.message || `Alert on ${a.node || a.cluster || "cluster"}`);
+      }
+    });
+  }, [alertsData, toast]);
 
   const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.isAuthenticated ? auth.token : null);
 

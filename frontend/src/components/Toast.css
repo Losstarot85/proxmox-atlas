@@ -1,0 +1,287 @@
+/* ══════════════════════════════════════════════════════════════════════
+   Toast Notification System — Proxmox Atlas
+   Stackable bottom-right toasts with progress bars and confirm dialogs
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Animations ── */
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    max-height: 120px;
+    margin-bottom: 0.6rem;
+    padding: 0.85rem 1rem;
+  }
+  to {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    padding: 0;
+  }
+}
+
+@keyframes toast-progress-shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+@keyframes confirm-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes confirm-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Toast Container — bottom-right stack
+   ══════════════════════════════════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 400px;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Individual Toast
+   ══════════════════════════════════════════════════════════════════════ */
+.toast-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: default;
+  max-height: 120px;
+}
+
+.toast-enter {
+  animation: toast-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-exit {
+  animation: toast-slide-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+/* ── Type accent colors ── */
+.toast-success { border-left: 3px solid #10b981; }
+.toast-error   { border-left: 3px solid #ef4444; }
+.toast-warning { border-left: 3px solid #f59e0b; }
+.toast-info    { border-left: 3px solid #3b82f6; }
+
+.toast-success .toast-icon { color: #10b981; }
+.toast-error   .toast-icon { color: #ef4444; }
+.toast-warning .toast-icon { color: #f59e0b; }
+.toast-info    .toast-icon { color: #3b82f6; }
+
+/* ── Icon ── */
+.toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+}
+
+/* ── Message ── */
+.toast-message {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* ── Close button ── */
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+  margin-top: 1px;
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+/* ── Progress bar ── */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+}
+
+.toast-progress-bar {
+  height: 100%;
+  border-radius: 0 0 0 12px;
+  animation: toast-progress-shrink linear forwards;
+}
+
+.toast-success .toast-progress-bar { background: #10b981; }
+.toast-error   .toast-progress-bar { background: #ef4444; }
+.toast-warning .toast-progress-bar { background: #f59e0b; }
+.toast-info    .toast-progress-bar { background: #3b82f6; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Confirm Dialog
+   ══════════════════════════════════════════════════════════════════════ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: confirm-overlay-in 0.2s ease-out;
+}
+
+.confirm-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: confirm-dialog-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.confirm-warning .confirm-icon { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.confirm-error   .confirm-icon { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.confirm-info    .confirm-icon { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+
+.confirm-message {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.confirm-btn {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.confirm-btn-cancel {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+
+.confirm-btn-cancel:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.confirm-btn-confirm {
+  background: #ef4444;
+  color: #fff;
+}
+
+.confirm-btn-confirm:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Responsive — mobile toasts go full-width at bottom
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .toast-container {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    max-width: none;
+  }
+
+  .toast-item {
+    border-radius: 10px;
+  }
+
+  .confirm-dialog {
+    max-width: none;
+    margin: 0 1rem;
+  }
+}

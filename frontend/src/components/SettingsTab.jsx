@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
+import { useToast } from "./Toast";
 
 export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, onUpdateToken, userRole = 'viewer', username = '' }) {
   const canEdit = userRole === 'admin' || userRole === 'editor';
   const isAdmin = userRole === 'admin';
+  const toast = useToast();
   const [intervalVal, setIntervalVal] = useState(globalInterval);
   const [webhooks, setWebhooks] = useState(globalWebhooks || []);
   const [logs, setLogs] = useState([]);
@@ -69,7 +71,8 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
   };
 
   const handleDeleteUser = async (uname) => {
-    if (!confirm(`Delete user '${uname}'?`)) return;
+    const confirmed = await toast.confirm(`Delete user '${uname}'?`, { confirmLabel: "Delete", type: "error" });
+    if (!confirmed) return;
     try {
       const res = await fetch(`${API_BASE}/users/${encodeURIComponent(uname)}`, { method: 'DELETE' });
       const data = await res.json();
@@ -173,7 +176,8 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
   };
 
   const handleDeleteCluster = async (name) => {
-    if (!confirm(`Delete cluster '${name}'? It will be removed from monitoring.`)) return;
+    const confirmed = await toast.confirm(`Delete cluster '${name}'? It will be removed from monitoring.`, { confirmLabel: "Delete", type: "error" });
+    if (!confirmed) return;
     setClusterError(null);
     try {
       const res = await fetch(`${API_BASE}/clusters/${encodeURIComponent(name)}`, { method: "DELETE" });
