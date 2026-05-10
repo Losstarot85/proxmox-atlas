@@ -12,6 +12,7 @@ import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
 import { CommandPalette, useCommandPalette } from "./components/CommandPalette";
+import { useKeyboardShortcuts, ShortcutsCheatSheet } from "./hooks/useKeyboardShortcuts.jsx";
 import "./App.css";
 
 // Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
@@ -33,6 +34,28 @@ function App() {
   const [dashboardSearch, setDashboardSearch] = useState("");
   const [timeMachineTarget, setTimeMachineTarget] = useState(null);
   const [whatIfTarget, setWhatIfTarget] = useState(null);
+
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    setForceCollapse(true);
+    setIsSidebarHovered(false);
+  };
+
+  const { showCheatSheet, closeCheatSheet, shortcuts } = useKeyboardShortcuts({
+    onNavigate: handleNavClick,
+    onCloseModals: () => {
+      setTimeMachineTarget(null);
+      setWhatIfTarget(null);
+      palette.close();
+    },
+    onFocusSearch: () => {
+      setActiveTab("dashboard");
+      setTimeout(() => document.getElementById("dashboard-search")?.focus(), 100);
+    },
+    onToggleTheme: () => setTheme(t => t === 'dark' ? 'light' : 'dark'),
+    onExportJSON: () => exportJSON(clusters),
+    isAuthenticated: auth.isAuthenticated,
+  });
 
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("atlas-theme");
@@ -115,12 +138,6 @@ function App() {
 
   const activeNodes = clusters.reduce((acc, c) => acc + (c.nodes?.filter(n => n.status === "online").length || 0), 0);
   const totalNodes = clusters.reduce((acc, c) => acc + (c.nodes?.length || 0), 0);
-
-  const handleNavClick = (tab) => {
-    setActiveTab(tab);
-    setForceCollapse(true);
-    setIsSidebarHovered(false);
-  };
 
   const isExpanded = isSidebarHovered && !forceCollapse;
 
@@ -268,6 +285,7 @@ function App() {
             <SummaryCards clusters={clusters} globalHistory={globalHistory} />
             <div style={{ marginBottom: '1.5rem', display: 'flex' }}>
               <input
+                id="dashboard-search"
                 type="text"
                 className="search-input"
                 style={{ width: '100%', maxWidth: '400px' }}
@@ -342,6 +360,10 @@ function App() {
         onExportCSV={() => exportCSV(clusters)}
         onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
       />
+
+      {showCheatSheet && (
+        <ShortcutsCheatSheet shortcuts={shortcuts} onClose={closeCheatSheet} />
+      )}
     </div>
   );
 }
