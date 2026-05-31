@@ -10,6 +10,7 @@ import { AlertsTab } from "./components/AlertsTab";
 import { SummaryCards } from "./components/SummaryCards";
 import { Breadcrumb } from "./components/Breadcrumb";
 import { ResourceDetail } from "./components/ResourceDetail";
+import { NodeDetail } from "./components/NodeDetail";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
@@ -380,33 +381,45 @@ function App() {
       </Suspense>
 
       {resourceRouteTarget && (() => {
-        let resolvedResource = null;
         let resolvedCluster = null;
+        let resolvedClusterObj = null;
         for (const c of clusters) {
-          const found = (c.resources || []).find(r =>
-            String(r.vmid) === String(resourceRouteTarget.id) && r.type === resourceRouteTarget.type
-          );
-          if (found) { resolvedResource = found; resolvedCluster = c.name; break; }
-          // Also check nodes
+          // Check nodes
           if (resourceRouteTarget.type === "NODE") {
             const node = (c.nodes || []).find(n => n.name === resourceRouteTarget.id);
             if (node) {
-              resolvedResource = { ...node, vmid: node.name, type: "NODE", name: node.name };
+              resolvedClusterObj = c;
               resolvedCluster = c.name;
-              break;
+              return (
+                <NodeDetail
+                  node={node}
+                  clusterName={resolvedCluster}
+                  metricsMap={metricsMap}
+                  resources={c.resources || []}
+                  onClose={closeResource}
+                  onOpenTimeMachine={openTimeMachine}
+                  onOpenResource={(r) => openResource(r, resolvedCluster)}
+                />
+              );
             }
           }
+          // Check VMs/LXCs
+          const found = (c.resources || []).find(r =>
+            String(r.vmid) === String(resourceRouteTarget.id) && r.type === resourceRouteTarget.type
+          );
+          if (found) {
+            return (
+              <ResourceDetail
+                resource={found}
+                clusterName={c.name}
+                metricsMap={metricsMap}
+                onClose={closeResource}
+                onOpenTimeMachine={openTimeMachine}
+              />
+            );
+          }
         }
-        if (!resolvedResource) return null;
-        return (
-          <ResourceDetail
-            resource={resolvedResource}
-            clusterName={resolvedCluster}
-            metricsMap={metricsMap}
-            onClose={closeResource}
-            onOpenTimeMachine={openTimeMachine}
-          />
-        );
+        return null;
       })()}
 
       <CommandPalette

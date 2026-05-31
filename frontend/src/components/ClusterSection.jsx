@@ -123,7 +123,7 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                     <React.Fragment key={n.name}>
                     <tr 
                       id={`row-NODE-${n.name}`} 
-                      onClick={() => onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
+                      onClick={() => onOpenResource ? onOpenResource({ ...n, vmid: n.name, type: 'NODE', name: n.name }) : onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
                       style={{ cursor: 'pointer', '--row-index': i }}
                       className="hoverable-row"
                     >

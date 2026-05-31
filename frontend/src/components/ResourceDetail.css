@@ -248,3 +248,102 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Node Detail — Storage Pools */
+.nd-storage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nd-storage-pool {
+  padding: 0.6rem 0.75rem;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.nd-storage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.nd-storage-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.nd-storage-pct {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.nd-storage-detail {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+}
+
+/* Node Detail — Guest Inventory */
+.nd-guest-search {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.nd-guest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.nd-guest-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nd-guest-row:hover {
+  background: var(--surface-hover);
+}
+
+.nd-guest-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.nd-guest-id {
+  font-size: 0.8rem;
+  min-width: 40px;
+  color: var(--text-secondary);
+}
+
+.nd-guest-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 5-gauge grid for nodes */
+.rd-gauges-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .rd-gauges-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
