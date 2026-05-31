@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
+import { CollapsibleSection, useCollapsedState } from "./CollapsibleSection";
 
 const VIRTUAL_THRESHOLD = 100;
 
 // Sub-component for resources (VM, LXC) with metrics
-export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource }) {
+export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource, sectionKey }) {
   const [showAll, setShowAll] = useState(false);
+  const [collapsed, toggleCollapsed] = useCollapsedState(sectionKey || `rs-${typeFilter}`, false);
   const term = searchQuery.toLowerCase();
   const filtered = useMemo(() => {
     const list = resources.filter(r => {
@@ -35,12 +37,20 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
     return null;
   }
 
+  const running = filtered.filter(r => r.status === "running").length;
+  const summary = `${running}/${filtered.length} running`;
+
   const needsVirtualization = filtered.length > VIRTUAL_THRESHOLD && !showAll;
   const visible = needsVirtualization ? filtered.slice(0, VIRTUAL_THRESHOLD) : filtered;
 
   return (
-    <>
-      <h3 className="section-title">{title} {filtered.length > VIRTUAL_THRESHOLD && <span style={{fontWeight: 400, fontSize: '0.85rem', opacity: 0.7}}>({filtered.length} total)</span>}</h3>
+    <CollapsibleSection
+      collapsed={collapsed}
+      onToggle={toggleCollapsed}
+      title={`${title}${filtered.length > VIRTUAL_THRESHOLD ? ` (${filtered.length} total)` : ""}`}
+      summary={summary}
+      variant="section"
+    >
       <div className="table-wrapper">
         <div className="responsive-table">
           <table style={{ tableLayout: "fixed", width: "100%" }}>
@@ -142,6 +152,6 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
           </button>
         </div>
       )}
-    </>
+    </CollapsibleSection>
   );
 }
