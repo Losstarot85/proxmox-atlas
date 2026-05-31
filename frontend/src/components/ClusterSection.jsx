@@ -1,10 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { ResourceSection } from "./ResourceSection";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
+import { ClusterHealthBar, classifyNode, classifyResource } from "./ClusterHealthBar";
 
 export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource }) {
+  const [healthFilter, setHealthFilter] = useState(null);
   const term = searchQuery.toLowerCase();
   
   const visibleNodes = useMemo(() => (cluster.nodes || []).filter(n => {
@@ -36,6 +38,17 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
            (r.ips || []).some(ip => ip.includes(term));
   }), [cluster.resources, term]);
 
+  // Apply health filter on top of search
+  const filteredNodes = useMemo(() => {
+    if (!healthFilter) return visibleNodes;
+    return visibleNodes.filter(n => classifyNode(n) === healthFilter);
+  }, [visibleNodes, healthFilter]);
+
+  const filteredResources = useMemo(() => {
+    if (!healthFilter) return visibleResources;
+    return visibleResources.filter(r => classifyResource(r) === healthFilter);
+  }, [visibleResources, healthFilter]);
+
   // Pre-compute VM/LXC counts per node in a single pass (O(R) instead of O(N×R))
   const countsByNode = useMemo(() => {
     const map = {};
@@ -66,6 +79,13 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
         </span>
       </div>
 
+      <ClusterHealthBar
+        nodes={cluster.nodes}
+        resources={cluster.resources}
+        activeFilter={healthFilter}
+        onFilterChange={setHealthFilter}
+      />
+
       {cluster.error && (
         <div className="global-error" style={{ marginBottom: "1.5rem" }}>
           <span>⚠️</span>
@@ -80,7 +100,7 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
         </div>
       )}
 
-      {visibleNodes.length > 0 && (
+      {filteredNodes.length > 0 && (
         <>
           <h3 className="section-title">Physical Nodes</h3>
       
@@ -103,10 +123,10 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
               </tr>
             </thead>
             <tbody>
-              {visibleNodes.length === 0 ? (
+              {filteredNodes.length === 0 ? (
                 <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
               ) : (
-                [...visibleNodes].map((n, i) => {
+                [...filteredNodes].map((n, i) => {
                   const isOnline = n.status === "online";
                   const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                   const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
@@ -208,8 +228,8 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
       </>
       )}
 
-      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} />
-      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={cluster.resources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} />
+      <ResourceSection title="Virtual Machines" typeFilter="VM" resources={filteredResources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} />
+      <ResourceSection title="LXC Containers" typeFilter="LXC" resources={filteredResources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} />
     </section>
   );
 }

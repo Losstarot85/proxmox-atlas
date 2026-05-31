@@ -1,0 +1,102 @@
+/* ClusterHealthBar — Horizontal segmented health bar */
+
+.chb-container {
+  margin-bottom: 1.25rem;
+}
+
+/* Segmented bar */
+.chb-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 0.6rem;
+}
+
+.chb-segment {
+  height: 100%;
+  cursor: pointer;
+  transition: opacity 0.2s, filter 0.2s, height 0.2s;
+  position: relative;
+}
+
+.chb-segment:hover {
+  filter: brightness(1.2);
+}
+
+.chb-segment.chb-active {
+  height: 100%;
+  filter: brightness(1.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+/* When a filter is active, dim non-active segments */
+.chb-bar:has(.chb-active) .chb-segment:not(.chb-active) {
+  opacity: 0.3;
+}
+
+/* Labels row */
+.chb-labels {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.chb-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.chb-label:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.chb-label-active {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--tier-color);
+  color: var(--text-primary);
+}
+
+.chb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chb-count {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.chb-tier-name {
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .chb-labels {
+    gap: 0.15rem;
+  }
+  .chb-label {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.72rem;
+  }
+}

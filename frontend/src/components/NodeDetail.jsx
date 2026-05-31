@@ -10,40 +10,10 @@ import React, { useState, useMemo } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
+import { RadialGauge } from "./RadialGauge";
 import "./ResourceDetail.css";
 
-/**
- * Radial gauge — SVG circle showing percentage (identical to ResourceDetail).
- */
-function RadialGauge({ value, max, label, color, unit = "%" }) {
-  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (pct / 100) * circumference;
 
-  return (
-    <div className="rd-gauge">
-      <svg viewBox="0 0 100 100" className="rd-gauge-svg">
-        <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--border)" strokeWidth="6" />
-        <circle
-          cx="50" cy="50" r={radius} fill="none"
-          stroke={color} strokeWidth="6"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform="rotate(-90 50 50)"
-          style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)" }}
-        />
-        <text x="50" y="46" textAnchor="middle" className="rd-gauge-value" fill="var(--text-primary)">
-          {pct.toFixed(1)}{unit}
-        </text>
-        <text x="50" y="62" textAnchor="middle" className="rd-gauge-label" fill="var(--text-secondary)">
-          {label}
-        </text>
-      </svg>
-    </div>
-  );
-}
 
 function InfoRow({ label, value, mono = false }) {
   if (value == null || value === "" || value === undefined) return null;

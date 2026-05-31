@@ -1,0 +1,56 @@
+/* RadialGauge — Shared circular gauge styles */
+
+.rg-gauge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.rg-gauge-svg {
+  display: block;
+}
+
+/* Track (background ring) */
+.rg-track {
+  opacity: 0.4;
+}
+
+/* Fill arc — animated transition */
+.rg-fill {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              stroke 0.5s ease;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+
+/* Subtle outer glow */
+.rg-glow {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+/* Center value text */
+.rg-value {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bottom label text */
+.rg-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Size variants */
+.rg-sm {
+  min-width: 64px;
+}
+
+.rg-md {
+  min-width: 90px;
+}
+
+.rg-lg {
+  min-width: 120px;
+}
