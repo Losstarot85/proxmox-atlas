@@ -311,7 +311,12 @@ function App() {
 
         {activeTab === "dashboard" && (
           <>
-            <SummaryCards clusters={clusters} globalHistory={globalHistory} />
+            <SummaryCards
+              clusters={clusters}
+              globalHistory={globalHistory}
+              alerts={alertsData?.alerts || []}
+              onNavigateToAlerts={() => handleNavClick("alerts")}
+            />
             <div style={{ marginBottom: '1.5rem', display: 'flex' }}>
               <input
                 id="dashboard-search"

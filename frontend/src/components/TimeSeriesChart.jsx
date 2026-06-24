@@ -52,6 +52,21 @@ export const TimeSeriesChart = ({ data, dataKey, color = "#3b82f6", title, value
   const currentVal = values[values.length - 1];
   const displayVal = valueFormatter ? valueFormatter(currentVal) : `${currentVal}%`;
 
+  // Calculate trend comparing to 10 ticks ago
+  const compareIndex = Math.max(0, values.length - 11);
+  const compareVal = values[compareIndex] ?? 0;
+  let trendText = "";
+  let trendColor = "var(--text-secondary)";
+  if (values.length >= 2) {
+    const diff = currentVal - compareVal;
+    if (Math.abs(diff) >= 0.05) {
+      const isUp = diff > 0;
+      const sign = isUp ? "+" : "";
+      trendText = `${isUp ? "↑" : "↓"} ${sign}${diff.toFixed(1)}%`;
+      trendColor = isUp ? "#ef4444" : "#10b981";
+    }
+  }
+
   // Build polyline points
   const pts = values.map((val, i) => {
     const x = (i / Math.max(values.length - 1, 1)) * width;
@@ -65,11 +80,18 @@ export const TimeSeriesChart = ({ data, dataKey, color = "#3b82f6", title, value
 
   return (
     <div className="time-series-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, position: 'relative' }}>
-      <div className="ts-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+      <div className="ts-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <span className="ts-title" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{title}</span>
-        <span className="ts-current" style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
-          {displayVal}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {trendText && (
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: trendColor }} title="vs previous period">
+              {trendText}
+            </span>
+          )}
+          <span className="ts-current" style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
+            {displayVal}
+          </span>
+        </div>
       </div>
       <div style={{ width: '100%', flex: 1, minHeight: 80, position: 'relative' }}>
         <svg
