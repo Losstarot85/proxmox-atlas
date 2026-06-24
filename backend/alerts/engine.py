@@ -32,7 +32,13 @@ def _load_alert_state():
             active_alerts = data.get("active_alerts", {})
             previous_states = data.get("previous_states", {})
             # Convert string keys back to float values (JSON serializes them fine, but be safe)
-            active_alerts = {k: float(v) for k, v in active_alerts.items()}
+            active_alerts_parsed = {}
+            for k, v in active_alerts.items():
+                try:
+                    active_alerts_parsed[k] = float(v) if v is not None else 0.0
+                except (ValueError, TypeError):
+                    active_alerts_parsed[k] = 0.0
+            active_alerts = active_alerts_parsed
             log.info("alert_state_loaded", keys=len(active_alerts))
     except (json.JSONDecodeError, Exception) as e:
         log.warning("alert_state_load_failed", error=str(e))

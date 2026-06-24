@@ -53,7 +53,11 @@ async def get_uptime_history(
             if results and len(results) > 0:
                 values = results[0].get("values", [])
                 for pt in values:
-                    t, val = pt[0], float(pt[1])
+                    t = pt[0]
+                    try:
+                        val = float(pt[1]) if pt[1] is not None else 0.0
+                    except (ValueError, TypeError):
+                        val = 0.0
                     is_up = val > 0
                     heatmap.append({"time": t, "up": is_up})
 
@@ -122,7 +126,11 @@ async def get_time_machine_data(
         metric_name = metric["name"]
         for serie in metric["data"]:
             for point in serie.get("values", []):
-                t, val = point[0], float(point[1])
+                t = point[0]
+                try:
+                    val = float(point[1]) if point[1] is not None else 0.0
+                except (ValueError, TypeError):
+                    val = 0.0
                 if t not in timeline:
                     timeline[t] = {"time": t}
                 timeline[t][metric_name] = round(val, 2)

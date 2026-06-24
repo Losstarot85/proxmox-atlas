@@ -31,7 +31,11 @@ async def check_anomalies():
                 data = res.json().get("data", {}).get("result", [])
                 for item in data:
                     metric = item.get("metric", {})
-                    val = float(item.get("value", [0, 0])[1])
+                    val_str = item.get("value", [0, 0])[1]
+                    try:
+                        val = float(val_str) if val_str is not None else 0.0
+                    except (ValueError, TypeError):
+                        val = 0.0
                     cluster = metric.get("cluster", "unknown")
                     node = metric.get("node", "unknown")
 
