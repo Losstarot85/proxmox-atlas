@@ -64,9 +64,22 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
     return Object.values(visibleColumns).filter(Boolean).length;
   }, [visibleColumns]);
 
+  // Sorting State
+  const [sortKey, setSortKey] = useState("id");
+  const [sortDirection, setSortDirection] = useState("asc");
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
+
   const term = searchQuery.toLowerCase();
   const filtered = useMemo(() => {
-    const list = resources.filter(r => {
+    return resources.filter(r => {
       if (r.type !== typeFilter) return false;
       if (!term) return true;
       const cpuStr = r.maxcpu ? `${r.maxcpu}c` : "";
@@ -84,19 +97,63 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
         (r.ips || []).some(ip => ip.includes(term))
       );
     });
-    list.sort((a, b) => a.vmid - b.vmid);
-    return list;
   }, [resources, typeFilter, term]);
 
-  if (filtered.length === 0) {
+  const sortedResources = useMemo(() => {
+    const list = [...filtered];
+    list.sort((a, b) => {
+      let valA, valB;
+      if (sortKey === "id") {
+        valA = a.vmid;
+        valB = b.vmid;
+      } else if (sortKey === "name") {
+        valA = a.name || "";
+        valB = b.name || "";
+      } else if (sortKey === "status") {
+        valA = a.status || "";
+        valB = b.status || "";
+      } else if (sortKey === "cpu") {
+        valA = a.status === "running" && a.maxcpu > 0 ? (a.cpu || 0) : -1;
+        valB = b.status === "running" && b.maxcpu > 0 ? (b.cpu || 0) : -1;
+      } else if (sortKey === "ram") {
+        valA = a.status === "running" && a.maxmem > 0 ? (a.mem || 0) / a.maxmem : -1;
+        valB = b.status === "running" && b.maxmem > 0 ? (b.mem || 0) / b.maxmem : -1;
+      } else if (sortKey === "net") {
+        valA = a.status === "running" ? (a.netin || 0) + (a.netout || 0) : -1;
+        valB = b.status === "running" ? (b.netin || 0) + (b.netout || 0) : -1;
+      } else if (sortKey === "disk") {
+        valA = a.status === "running" ? (a.diskread || 0) + (a.diskwrite || 0) : -1;
+        valB = b.status === "running" ? (b.diskread || 0) + (b.diskwrite || 0) : -1;
+      } else if (sortKey.startsWith("pressure_")) {
+        valA = a.status === "running" && a[sortKey] !== undefined ? a[sortKey] : -1;
+        valB = b.status === "running" && b[sortKey] !== undefined ? b[sortKey] : -1;
+      } else {
+        valA = a.vmid;
+        valB = b.vmid;
+      }
+
+      if (valA === valB) {
+        return a.vmid - b.vmid;
+      }
+
+      if (typeof valA === "string") {
+        return sortDirection === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      } else {
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      }
+    });
+    return list;
+  }, [filtered, sortKey, sortDirection]);
+
+  if (sortedResources.length === 0) {
     return null;
   }
 
-  const running = filtered.filter(r => r.status === "running").length;
-  const summary = `${running}/${filtered.length} running`;
+  const running = sortedResources.filter(r => r.status === "running").length;
+  const summary = `${running}/${sortedResources.length} running`;
 
-  const needsVirtualization = filtered.length > VIRTUAL_THRESHOLD && !showAll;
-  const visible = needsVirtualization ? filtered.slice(0, VIRTUAL_THRESHOLD) : filtered;
+  const needsVirtualization = sortedResources.length > VIRTUAL_THRESHOLD && !showAll;
+  const visible = needsVirtualization ? sortedResources.slice(0, VIRTUAL_THRESHOLD) : sortedResources;
 
   return (
     <CollapsibleSection
@@ -120,7 +177,22 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
             <thead>
               <tr>
                 {RESOURCE_COLUMNS.map(col => visibleColumns[col.id] && (
-                  <th key={col.id} style={{ width: col.width }}>{col.label}</th>
+                  <th 
+                    key={col.id} 
+                    style={{ width: col.width }}
+                    onClick={() => handleSort(col.id)}
+                    className="sortable-header"
+                    title={`Sort by ${col.label}`}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{col.label}</span>
+                      {sortKey === col.id && (
+                        <span className="sort-icon">
+                          {sortDirection === 'asc' ? '▲' : '▼'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
                 ))}
               </tr>
             </thead>

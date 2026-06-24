@@ -65,6 +65,19 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
     return Object.values(visibleColumns).filter(Boolean).length;
   }, [visibleColumns]);
 
+  // Sorting State
+  const [sortKey, setSortKey] = useState("node");
+  const [sortDirection, setSortDirection] = useState("asc");
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
+
   const term = searchQuery.toLowerCase();
   
   const visibleNodes = useMemo(() => (cluster.nodes || []).filter(n => {
@@ -79,7 +92,7 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
            ramStr.includes(term) ||
            storageMatches ||
            (n.ips || []).some(ip => ip.includes(term));
-  }).sort((a, b) => (a.name || "").localeCompare(b.name || "")), [cluster.nodes, term]);
+  }), [cluster.nodes, term]);
 
   const visibleResources = useMemo(() => (cluster.resources || []).filter(r => {
     if (!term) return true;
@@ -101,6 +114,57 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
     if (!healthFilter) return visibleNodes;
     return visibleNodes.filter(n => classifyNode(n) === healthFilter);
   }, [visibleNodes, healthFilter]);
+
+  const sortedNodes = useMemo(() => {
+    const list = [...filteredNodes];
+    list.sort((a, b) => {
+      let valA, valB;
+      if (sortKey === "node") {
+        valA = a.name || "";
+        valB = b.name || "";
+      } else if (sortKey === "status") {
+        valA = a.status || "";
+        valB = b.status || "";
+      } else if (sortKey === "cpu") {
+        valA = a.status === "online" && a.maxcpu > 0 ? (a.cpu || 0) : -1;
+        valB = b.status === "online" && b.maxcpu > 0 ? (b.cpu || 0) : -1;
+      } else if (sortKey === "ram") {
+        valA = a.status === "online" && a.maxmem > 0 ? (a.mem || 0) / a.maxmem : -1;
+        valB = b.status === "online" && b.maxmem > 0 ? (b.mem || 0) / b.maxmem : -1;
+      } else if (sortKey === "net") {
+        valA = a.status === "online" ? (a.netin || 0) + (a.netout || 0) : -1;
+        valB = b.status === "online" ? (b.netin || 0) + (b.netout || 0) : -1;
+      } else if (sortKey === "storage") {
+        const maxSpA = a.storage_pools?.reduce((max, sp) => Math.max(max, sp.total > 0 ? sp.used / sp.total : 0), 0) || 0;
+        const maxSpB = b.storage_pools?.reduce((max, sp) => Math.max(max, sp.total > 0 ? sp.used / sp.total : 0), 0) || 0;
+        valA = a.status === "online" ? maxSpA : -1;
+        valB = b.status === "online" ? maxSpB : -1;
+      } else if (sortKey === "load") {
+        valA = a.status === "online" && a.loadavg && a.loadavg[0] !== undefined ? a.loadavg[0] : -1;
+        valB = b.status === "online" && b.loadavg && b.loadavg[0] !== undefined ? b.loadavg[0] : -1;
+      } else if (sortKey === "iowait") {
+        valA = a.status === "online" && a.iowait !== undefined ? a.iowait : -1;
+        valB = b.status === "online" && b.iowait !== undefined ? b.iowait : -1;
+      } else if (sortKey.startsWith("pressure_")) {
+        valA = a.status === "online" && a[sortKey] !== undefined ? a[sortKey] : -1;
+        valB = b.status === "online" && b[sortKey] !== undefined ? b[sortKey] : -1;
+      } else {
+        valA = a.name || "";
+        valB = b.name || "";
+      }
+
+      if (valA === valB) {
+        return (a.name || "").localeCompare(b.name || "");
+      }
+
+      if (typeof valA === "string") {
+        return sortDirection === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      } else {
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      }
+    });
+    return list;
+  }, [filteredNodes, sortKey, sortDirection]);
 
   const filteredResources = useMemo(() => {
     if (!healthFilter) return visibleResources;
@@ -204,15 +268,30 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                     <thead>
                       <tr>
                         {NODE_COLUMNS.map(col => visibleColumns[col.id] && (
-                          <th key={col.id} style={{ width: col.width }}>{col.label}</th>
+                          <th 
+                            key={col.id} 
+                            style={{ width: col.width }}
+                            onClick={() => handleSort(col.id)}
+                            className="sortable-header"
+                            title={`Sort by ${col.label}`}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{col.label}</span>
+                              {sortKey === col.id && (
+                                <span className="sort-icon">
+                                  {sortDirection === 'asc' ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </div>
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredNodes.length === 0 ? (
+                      {sortedNodes.length === 0 ? (
                         <tr><td colSpan={activeColsCount} className="empty-state">No nodes found</td></tr>
                       ) : (
-                        [...filteredNodes].map((n, i) => {
+                        sortedNodes.map((n, i) => {
                           const isOnline = n.status === "online";
                           const cpuPercent = isOnline && n.maxcpu > 0 ? ((n.cpu || 0) * 100).toFixed(1) : 0;
                           const ramPercent = isOnline && n.maxmem > 0 ? ((n.mem || 0) / n.maxmem * 100).toFixed(1) : 0;
