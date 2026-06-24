@@ -2,13 +2,68 @@ import React, { useMemo, useState } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { CollapsibleSection, useCollapsedState } from "./CollapsibleSection";
+import { ColumnPicker } from "./ColumnPicker";
 
 const VIRTUAL_THRESHOLD = 100;
+
+const RESOURCE_COLUMNS = [
+  { id: "id", label: "ID", width: "5%" },
+  { id: "name", label: "Name", width: "8%" },
+  { id: "status", label: "Status", width: "6%" },
+  { id: "cpu", label: "CPU Usage", width: "10%" },
+  { id: "ram", label: "RAM Usage", width: "10%" },
+  { id: "net", label: "Network", width: "10%" },
+  { id: "disk", label: "Disk IO", width: "10%" },
+  { id: "pressure_cpu", label: "CPU Stall", width: "5%", isPressure: true },
+  { id: "pressure_ram", label: "RAM Stall", width: "5%", isPressure: true },
+  { id: "pressure_io", label: "IO Stall", width: "5%", isPressure: true }
+];
+
+const RESOURCE_PRESETS = {
+  Minimal: ["id", "name", "status", "cpu", "ram"],
+  Full: ["id", "name", "status", "cpu", "ram", "net", "disk", "pressure_cpu", "pressure_ram", "pressure_io"],
+  "Network Focus": ["id", "name", "status", "cpu", "ram", "net"]
+};
+
+const getInitialResourceColumns = (typeFilter) => {
+  const storageKey = `atlas-columns-${typeFilter.toLowerCase()}s`;
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error(`Error reading ${typeFilter} columns from localStorage`, e);
+  }
+  const isLargeScreen = window.innerWidth >= 1400;
+  return RESOURCE_COLUMNS.reduce((acc, col) => {
+    acc[col.id] = col.isPressure ? isLargeScreen : true;
+    return acc;
+  }, {});
+};
 
 // Sub-component for resources (VM, LXC) with metrics
 export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource, sectionKey }) {
   const [showAll, setShowAll] = useState(false);
   const [collapsed, toggleCollapsed] = useCollapsedState(sectionKey || `rs-${typeFilter}`, false);
+  
+  // Columns Visibility State
+  const [visibleColumns, setVisibleColumns] = useState(() => getInitialResourceColumns(typeFilter));
+
+  const handleColumnsChange = (updated) => {
+    setVisibleColumns(updated);
+    const storageKey = `atlas-columns-${typeFilter.toLowerCase()}s`;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch (e) {
+      console.error(`Error saving ${typeFilter} columns to localStorage`, e);
+    }
+  };
+
+  const activeColsCount = useMemo(() => {
+    return Object.values(visibleColumns).filter(Boolean).length;
+  }, [visibleColumns]);
+
   const term = searchQuery.toLowerCase();
   const filtered = useMemo(() => {
     const list = resources.filter(r => {
@@ -51,21 +106,22 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
       summary={summary}
       variant="section"
     >
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+        <ColumnPicker
+          columns={RESOURCE_COLUMNS}
+          visibleColumns={visibleColumns}
+          onChange={handleColumnsChange}
+          presets={RESOURCE_PRESETS}
+        />
+      </div>
       <div className="table-wrapper">
         <div className="responsive-table">
           <table style={{ tableLayout: "fixed", width: "100%" }}>
             <thead>
               <tr>
-                <th style={{ width: "5%" }}>ID</th>
-                <th style={{ width: "8%" }}>Name</th>
-                <th style={{ width: "6%" }}>Status</th>
-                <th style={{ width: "10%" }}>CPU Usage</th>
-                <th style={{ width: "10%" }}>RAM Usage</th>
-                <th style={{ width: "10%" }}>Network (In/Out)</th>
-                <th style={{ width: "10%" }}>Disk IO</th>
-                <th style={{ width: "5%" }}>CPU Stall</th>
-                <th style={{ width: "5%" }}>RAM Stall</th>
-                <th style={{ width: "5%" }}>IO Stall</th>
+                {RESOURCE_COLUMNS.map(col => visibleColumns[col.id] && (
+                  <th key={col.id} style={{ width: col.width }}>{col.label}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -86,45 +142,61 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
                       style={{ cursor: 'pointer', '--row-index': idx }}
                       className="hoverable-row"
                     >
-                      <td className="mono-cell">{r.vmid}</td>
-                      <td style={{ fontWeight: 500 }}>{r.name}</td>
-                      <td>
-                        {isRunning
-                          ? <span className="badge badge-online">🟢 Running</span>
-                          : <span className="badge badge-offline">🔴 Stopped</span>
-                        }
-                      </td>
-                      <td>
-                        {isRunning ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Sparkline data={cpuHistory} color="#3b82f6" />
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                              <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
-                              <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
+                      {visibleColumns.id && <td className="mono-cell">{r.vmid}</td>}
+                      {visibleColumns.name && <td style={{ fontWeight: 500 }}>{r.name}</td>}
+                      {visibleColumns.status && (
+                        <td>
+                          {isRunning
+                            ? <span className="badge badge-online">🟢 Running</span>
+                            : <span className="badge badge-offline">🔴 Stopped</span>
+                          }
+                        </td>
+                      )}
+                      {visibleColumns.cpu && (
+                        <td>
+                          {isRunning ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <Sparkline data={cpuHistory} color="#3b82f6" />
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
+                                <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
+                              </div>
                             </div>
-                          </div>
-                        ) : "-"}
-                      </td>
-                      <td>
-                        {isRunning ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Sparkline data={ramHistory} color="#8b5cf6" />
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                              <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
-                              <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>
+                          ) : "-"}
+                        </td>
+                      )}
+                      {visibleColumns.ram && (
+                        <td>
+                          {isRunning ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <Sparkline data={ramHistory} color="#8b5cf6" />
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
+                                <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>
+                              </div>
                             </div>
-                          </div>
-                        ) : "-"}
-                      </td>
-                      <td className="mono-cell">{isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}</td>
-                      <td className="mono-cell">{isRunning ? formatIO(r.diskread, r.diskwrite) : "-"}</td>
-                      <td className="mono-cell" style={{ color: r.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_cpu) : "-"}</td>
-                      <td className="mono-cell" style={{ color: r.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_ram) : "-"}</td>
-                      <td className="mono-cell" style={{ color: r.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_io) : "-"}</td>
+                          ) : "-"}
+                        </td>
+                      )}
+                      {visibleColumns.net && (
+                        <td className="mono-cell">{isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}</td>
+                      )}
+                      {visibleColumns.disk && (
+                        <td className="mono-cell">{isRunning ? formatIO(r.diskread, r.diskwrite) : "-"}</td>
+                      )}
+                      {visibleColumns.pressure_cpu && (
+                        <td className="mono-cell" style={{ color: r.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_cpu) : "-"}</td>
+                      )}
+                      {visibleColumns.pressure_ram && (
+                        <td className="mono-cell" style={{ color: r.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_ram) : "-"}</td>
+                      )}
+                      {visibleColumns.pressure_io && (
+                        <td className="mono-cell" style={{ color: r.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_io) : "-"}</td>
+                      )}
                     </tr>
                     {(r.pool || r.node || r.tags || (r.ips && r.ips.length > 0)) && (
                       <tr style={{ backgroundColor: 'transparent' }}>
-                        <td colSpan="10" style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem' }}>
+                        <td colSpan={activeColsCount} style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem' }}>
                           <div className="tags-container" style={{ margin: 0 }}>
                             {r.node && <span className="resource-tag node-tag">node: {r.node}</span>}
                             {r.pool && <span className="resource-tag pool-tag">pool: {r.pool}</span>}

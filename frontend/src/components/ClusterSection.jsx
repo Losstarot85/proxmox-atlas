@@ -5,11 +5,65 @@ import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
 import { ClusterHealthBar, classifyNode, classifyResource } from "./ClusterHealthBar";
 import { CollapsibleSection, useCollapsedState } from "./CollapsibleSection";
+import { ColumnPicker } from "./ColumnPicker";
+
+const NODE_COLUMNS = [
+  { id: "node", label: "Node", width: "15%" },
+  { id: "status", label: "Status", width: "6%" },
+  { id: "cpu", label: "CPU Usage", width: "15%" },
+  { id: "ram", label: "RAM Usage", width: "15%" },
+  { id: "net", label: "Network", width: "15%" },
+  { id: "storage", label: "Storage", width: "15%" },
+  { id: "load", label: "Load", width: "5%" },
+  { id: "iowait", label: "IO Wait", width: "5%" },
+  { id: "pressure_cpu", label: "CPU Stall", width: "5%", isPressure: true },
+  { id: "pressure_ram", label: "RAM Stall", width: "5%", isPressure: true },
+  { id: "pressure_io", label: "IO Stall", width: "5%", isPressure: true }
+];
+
+const NODE_PRESETS = {
+  Minimal: ["node", "status", "cpu", "ram"],
+  Full: ["node", "status", "cpu", "ram", "net", "storage", "load", "iowait", "pressure_cpu", "pressure_ram", "pressure_io"],
+  "Network Focus": ["node", "status", "cpu", "ram", "net"]
+};
+
+const getInitialNodeColumns = () => {
+  try {
+    const saved = localStorage.getItem("atlas-columns-nodes");
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error reading nodes columns from localStorage", e);
+  }
+  const isLargeScreen = window.innerWidth >= 1400;
+  return NODE_COLUMNS.reduce((acc, col) => {
+    acc[col.id] = col.isPressure ? isLargeScreen : true;
+    return acc;
+  }, {});
+};
 
 export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource }) {
   const [healthFilter, setHealthFilter] = useState(null);
   const [clusterCollapsed, toggleCluster] = useCollapsedState(`cluster-${cluster.name}`, false);
   const [nodesCollapsed, toggleNodes] = useCollapsedState(`nodes-${cluster.name}`, false);
+  
+  // Column Visibility State
+  const [visibleColumns, setVisibleColumns] = useState(getInitialNodeColumns);
+
+  // Save to localStorage when columns visibility changes
+  const handleColumnsChange = (updated) => {
+    setVisibleColumns(updated);
+    try {
+      localStorage.setItem("atlas-columns-nodes", JSON.stringify(updated));
+    } catch (e) {
+      console.error("Error saving nodes columns to localStorage", e);
+    }
+  };
+
+  const activeColsCount = useMemo(() => {
+    return Object.values(visibleColumns).filter(Boolean).length;
+  }, [visibleColumns]);
 
   const term = searchQuery.toLowerCase();
   
@@ -136,27 +190,27 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
               summary={nodesSummary}
               variant="section"
             >
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                <ColumnPicker
+                  columns={NODE_COLUMNS}
+                  visibleColumns={visibleColumns}
+                  onChange={handleColumnsChange}
+                  presets={NODE_PRESETS}
+                />
+              </div>
               <div className="table-wrapper">
                 <div className="responsive-table">
                   <table style={{ tableLayout: "fixed", width: "100%" }}>
                     <thead>
                       <tr>
-                        <th style={{ width: "15%" }}>Node</th>
-                        <th style={{ width: "6%" }}>Status</th>
-                        <th style={{ width: "15%" }}>CPU USAGE</th>
-                        <th style={{ width: "15%" }}>RAM USAGE</th>
-                        <th style={{ width: "15%" }}>Network (In/Out)</th>
-                        <th style={{ width: "15%" }}>Storage</th>
-                        <th style={{ width: "5%" }}>Load</th>
-                        <th style={{ width: "5%" }}>IO Wait</th>
-                        <th style={{ width: "5%" }}>CPU Stall</th>
-                        <th style={{ width: "5%" }}>RAM Stall</th>
-                        <th style={{ width: "5%" }}>IO Stall</th>
+                        {NODE_COLUMNS.map(col => visibleColumns[col.id] && (
+                          <th key={col.id} style={{ width: col.width }}>{col.label}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredNodes.length === 0 ? (
-                        <tr><td colSpan="11" className="empty-state">No nodes found</td></tr>
+                        <tr><td colSpan={activeColsCount} className="empty-state">No nodes found</td></tr>
                       ) : (
                         [...filteredNodes].map((n, i) => {
                           const isOnline = n.status === "online";
@@ -179,67 +233,89 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                               style={{ cursor: 'pointer', '--row-index': i }}
                               className="hoverable-row"
                             >
-                              <td style={{ fontWeight: 500 }}>
-                                {n.name}
-                                <UptimePulse historyBlocks={nodeHistoryBlocks} />
-                              </td>
-                              <td>
-                                {isOnline 
-                                  ? <span className="badge badge-online">🟢 Online</span> 
-                                  : <span className="badge badge-offline">🔴 Offline</span>}
-                              </td>
-                              <td>
-                                {isOnline ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <Sparkline data={cpuHistory} color="#3b82f6" />
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                      <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
-                                      <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{n.maxcpu}C</span>
+                              {visibleColumns.node && (
+                                <td style={{ fontWeight: 500 }}>
+                                  {n.name}
+                                  <UptimePulse historyBlocks={nodeHistoryBlocks} />
+                                </td>
+                              )}
+                              {visibleColumns.status && (
+                                <td>
+                                  {isOnline 
+                                    ? <span className="badge badge-online">🟢 Online</span> 
+                                    : <span className="badge badge-offline">🔴 Offline</span>}
+                                </td>
+                              )}
+                              {visibleColumns.cpu && (
+                                <td>
+                                  {isOnline ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <Sparkline data={cpuHistory} color="#3b82f6" />
+                                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                        <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
+                                        <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{n.maxcpu}C</span>
+                                      </div>
                                     </div>
-                                  </div>
-                                ) : "-"}
-                              </td>
-                              <td>
-                                {isOnline ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <Sparkline data={ramHistory} color="#8b5cf6" />
-                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                      <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
-                                      <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(n.maxmem)}</span>
+                                  ) : "-"}
+                                </td>
+                              )}
+                              {visibleColumns.ram && (
+                                <td>
+                                  {isOnline ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <Sparkline data={ramHistory} color="#8b5cf6" />
+                                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                        <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
+                                        <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(n.maxmem)}</span>
+                                      </div>
                                     </div>
-                                  </div>
-                                ) : "-"}
-                              </td>
-                              <td className="mono-cell">{isOnline ? `⬇ ${formatNetwork(n.netin)} / ⬆ ${formatNetwork(n.netout)}` : "-"}</td>
-                              <td>
-                                {isOnline && n.storage_pools && n.storage_pools.length > 0 ? (
-                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                     {[...n.storage_pools]
-                                       .filter(sp => sp.active === 1)
-                                       .sort((a, b) => a.storage.localeCompare(b.storage))
-                                       .map(sp => {
-                                       const poolPercent = sp.total > 0 ? ((sp.used / sp.total) * 100).toFixed(1) : 0;
-                                       return (
-                                         <div key={sp.storage} className="progress-bar-inline" style={{fontSize: '0.8rem'}}>
-                                           <span style={{width: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={sp.storage}>{sp.storage}</span>
-                                           <div className="progress-bar-container" style={{flex: 1, minWidth: '50px'}}>
-                                             <div className="progress-bar-fill" style={{width: `${poolPercent}%`, background: poolPercent > 85 ? 'var(--danger)' : poolPercent > 70 ? 'var(--warning)' : 'var(--accent)'}}></div>
+                                  ) : "-"}
+                                </td>
+                              )}
+                              {visibleColumns.net && (
+                                <td className="mono-cell">{isOnline ? `⬇ ${formatNetwork(n.netin)} / ⬆ ${formatNetwork(n.netout)}` : "-"}</td>
+                              )}
+                              {visibleColumns.storage && (
+                                <td>
+                                  {isOnline && n.storage_pools && n.storage_pools.length > 0 ? (
+                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                       {[...n.storage_pools]
+                                         .filter(sp => sp.active === 1)
+                                         .sort((a, b) => a.storage.localeCompare(b.storage))
+                                         .map(sp => {
+                                         const poolPercent = sp.total > 0 ? ((sp.used / sp.total) * 100).toFixed(1) : 0;
+                                         return (
+                                           <div key={sp.storage} className="progress-bar-inline" style={{fontSize: '0.8rem'}}>
+                                             <span style={{width: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={sp.storage}>{sp.storage}</span>
+                                             <div className="progress-bar-container" style={{flex: 1, minWidth: '50px'}}>
+                                               <div className="progress-bar-fill" style={{width: `${poolPercent}%`, background: poolPercent > 85 ? 'var(--danger)' : poolPercent > 70 ? 'var(--warning)' : 'var(--accent)'}}></div>
+                                             </div>
+                                             <span className="mono-cell">{poolPercent}%</span>
                                            </div>
-                                           <span className="mono-cell">{poolPercent}%</span>
-                                         </div>
-                                       );
-                                     })}
-                                   </div>
-                                 ) : "-"}
-                              </td>
-                              <td className="mono-cell">{isOnline ? formatLoad(n.loadavg) : "-"}</td>
-                              <td className="mono-cell">{isOnline ? formatPressure(n.iowait) : "-"}</td>
-                              <td className="mono-cell" style={{ color: n.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_cpu) : "-"}</td>
-                              <td className="mono-cell" style={{ color: n.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_ram) : "-"}</td>
-                              <td className="mono-cell" style={{ color: n.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_io) : "-"}</td>
+                                         );
+                                       })}
+                                     </div>
+                                   ) : "-"}
+                                </td>
+                              )}
+                              {visibleColumns.load && (
+                                <td className="mono-cell">{isOnline ? formatLoad(n.loadavg) : "-"}</td>
+                              )}
+                              {visibleColumns.iowait && (
+                                <td className="mono-cell">{isOnline ? formatPressure(n.iowait) : "-"}</td>
+                              )}
+                              {visibleColumns.pressure_cpu && (
+                                <td className="mono-cell" style={{ color: n.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_cpu) : "-"}</td>
+                              )}
+                              {visibleColumns.pressure_ram && (
+                                <td className="mono-cell" style={{ color: n.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_ram) : "-"}</td>
+                              )}
+                              {visibleColumns.pressure_io && (
+                                <td className="mono-cell" style={{ color: n.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isOnline ? formatPressure(n.pressure_io) : "-"}</td>
+                              )}
                             </tr>
                             <tr style={{ backgroundColor: 'transparent' }}>
-                              <td colSpan="11" style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                              <td colSpan={activeColsCount} style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem', borderTop: '1px solid var(--border)' }}>
                                 <div className="tags-container" style={{ margin: 0 }}>
                                   {totalVMs > 0 && <span className="resource-tag pool-tag">active/total VMs: {activeVMs}/{totalVMs}</span>}
                                   {totalLXCs > 0 && <span className="resource-tag pool-tag">active/total LXCs: {activeLXCs}/{totalLXCs}</span>}
