@@ -194,3 +194,65 @@ def test_migrate_success_mocked(mock_post, mock_add_task, client, auth_headers):
     called_data = mock_post.call_args[1]["data"]
     assert "https://pve-mock:8006/api2/json/nodes/node1/qemu/100/migrate" in called_url
     assert called_data == {"target": "node2", "online": 1}
+
+
+@patch("fastapi.BackgroundTasks.add_task")
+@patch("httpx.AsyncClient.post")
+def test_migrate_lxc_success_mocked(mock_post, mock_add_task, client, auth_headers):
+    from cache import cache
+
+    # 1. Configure test cluster
+    client.post(
+        "/clusters",
+        json={
+            "name": "test-cluster",
+            "host": "https://pve-mock:8006",
+            "token_id": "root@pam!token",
+            "token_secret": "my-secret-key-12345678",
+            "verify_ssl": False,
+        },
+        headers=auth_headers,
+    )
+
+    # 2. Setup mock resources in cache
+    cache["test-cluster"] = {
+        "nodes": [
+            {"name": "node1", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+            {"name": "node2", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+        ],
+        "resources": [
+            {
+                "vmid": 200,
+                "name": "test-ct",
+                "node": "node1",
+                "cluster": "test-cluster",
+                "type": "LXC",
+                "status": "running",
+            }
+        ],
+        "network": [],
+        "last_update": None,
+        "failed_nodes": [],
+    }
+
+    # 2. Mock Proxmox migration response
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"data": "UPID:node1:0000:0000:0000:lxc-migrate:200:root@pam:"}
+    mock_post.return_value = mock_response
+
+    # 3. Trigger migration for lxc
+    res = client.post(
+        "/actions/test-cluster/node1/lxc/200/migrate",
+        json={"target_node": "node2"},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    assert res.json()["status"] == "success"
+
+    # Verify that the mocked post was called with correct Proxmox URL and data parameters (no online parameter for LXC)
+    mock_post.assert_called_once()
+    called_url = mock_post.call_args[0][0]
+    called_data = mock_post.call_args[1]["data"]
+    assert "https://pve-mock:8006/api2/json/nodes/node1/lxc/200/migrate" in called_url
+    assert called_data == {"target": "node2"}

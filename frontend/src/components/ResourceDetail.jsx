@@ -238,9 +238,9 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
             </button>
             <button 
               className="btn btn-migrate" 
-              disabled={resource.type !== "VM" || (userRole !== "admin" && userRole !== "editor") || actionLoading}
+              disabled={(resource.type !== "VM" && resource.type !== "LXC") || (userRole !== "admin" && userRole !== "editor") || actionLoading}
               onClick={() => setShowMigrateModal(true)}
-              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : (resource.type !== "VM" ? "Only VMs can be migrated" : "")}
+              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ((resource.type !== "VM" && resource.type !== "LXC") ? "Only VMs and LXC containers can be migrated" : "")}
             >
               📦 Migrate
             </button>
@@ -300,6 +300,8 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
   const [isMigrating, setIsMigrating] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  const resourcePathType = resource.type === "VM" ? "qemu" : "lxc";
+  const typeLabel = resource.type === "VM" ? "VM" : "Container";
   const currentContainerNodeName = resource.node;
 
   // Filter to online nodes excluding the current node
@@ -368,7 +370,7 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
   useEffect(() => {
     if (isMigrating && resource.node === targetNode) {
       setIsMigrating(false);
-      toast.success(`VM ${resource.name} has migrated successfully to ${targetNode}!`);
+      toast.success(`${typeLabel} ${resource.name} has migrated successfully to ${targetNode}!`);
       onClose();
     }
   }, [resource.node, isMigrating, targetNode, resource.name, toast, onClose]);
@@ -387,7 +389,7 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
     setActionLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/actions/${encodeURIComponent(cluster.name)}/${encodeURIComponent(resource.node)}/qemu/${resource.vmid}/migrate`,
+        `${API_BASE}/actions/${encodeURIComponent(cluster.name)}/${encodeURIComponent(resource.node)}/${resourcePathType}/${resource.vmid}/migrate`,
         {
           method: "POST",
           headers: {
@@ -414,23 +416,23 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
     <div className="action-confirm-overlay" onClick={() => !actionLoading && !isMigrating && onClose()}>
       <div className="action-confirm-modal migrate-modal" onClick={(e) => e.stopPropagation()}>
         <div className="action-confirm-header">
-          <h3>📦 Migrate VM {resource.name}</h3>
+          <h3>📦 Migrate {typeLabel} {resource.name}</h3>
         </div>
         <div className="action-confirm-body">
           {isMigrating ? (
             <div className="migration-progress-container">
               <div className="migration-spinner"></div>
-              <p>Migrating VM to <strong>{targetNode}</strong>...</p>
+              <p>Migrating {typeLabel} to <strong>{targetNode}</strong>...</p>
               <div className="migration-timer">Elapsed time: {elapsedTime}s</div>
               <div className="progress-bar-container" style={{ marginTop: "1rem" }}>
                 <div className="progress-bar-fill animated-stripes" style={{ width: "100%" }}></div>
               </div>
-              <p className="migration-note">Waiting for Proxmox Live Migration task to complete (tracked via SSE).</p>
+              <p className="migration-note">Waiting for Proxmox Migration task to complete (tracked via SSE).</p>
             </div>
           ) : (
             <>
               <p>
-                Migrate VM ID <strong>{resource.vmid}</strong> from <strong>{resource.node}</strong> to:
+                Migrate {typeLabel} ID <strong>{resource.vmid}</strong> from <strong>{resource.node}</strong> to:
               </p>
               
               <div className="form-group" style={{ margin: "1rem 0" }}>

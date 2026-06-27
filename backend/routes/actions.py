@@ -65,24 +65,34 @@ class MigratePayload(BaseModel):
     target_node: str
 
 
-@router.post("/actions/{cluster}/{node}/qemu/{vmid}/migrate")
-async def migrate_vm(
+@router.post("/actions/{cluster}/{node}/{type}/{vmid}/migrate")
+async def migrate_resource(
     cluster: str,
     node: str,
+    type: str,
     vmid: int,
     payload: MigratePayload,
     background_tasks: BackgroundTasks,
     user: dict = Depends(require_role("admin", "editor")),
 ):
-    """Execute live VM migration to a target node in the same cluster."""
+    """Execute live VM or LXC container migration to a target node in the same cluster."""
     target_node = payload.target_node
 
-    # 1. Retrieve cluster config
+    # 1. Normalize and validate type
+    type_lower = type.lower()
+    if type_lower in ("vm", "qemu"):
+        pve_type = "qemu"
+    elif type_lower in ("lxc",):
+        pve_type = "lxc"
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid resource type: '{type}'")
+
+    # 2. Retrieve cluster config
     cluster_config = next((c for c in CLUSTERS if c["name"] == cluster), None)
     if not cluster_config:
         raise HTTPException(status_code=404, detail=f"Cluster '{cluster}' not found")
 
-    # 2. Verify target node exists and is online
+    # 3. Verify target node exists and is online
     cluster_cache = cache.get(cluster)
     if not cluster_cache:
         raise HTTPException(status_code=404, detail=f"Cluster cache for '{cluster}' is empty")
@@ -94,13 +104,13 @@ async def migrate_vm(
     if target["status"] != "online":
         raise HTTPException(status_code=400, detail=f"Target node '{target_node}' is offline")
 
-    # 3. Resolve secrets (token, host)
+    # 4. Resolve secrets (token, host)
     resolved = resolve_cluster_secrets(cluster_config)
     host = resolved["host"].rstrip("/")
     headers = {"Authorization": f"PVEAPIToken={resolved['token_id']}={resolved['token_secret']}"}
     verify_ssl = resolved.get("verify_ssl", False)
 
-    # 4. Check if VM is running to request live migration
+    # 5. Check if VM/LXC is running
     is_running = False
     resources = cluster_cache.get("resources", [])
     vm = next((r for r in resources if str(r["vmid"]) == str(vmid)), None)
@@ -110,13 +120,13 @@ async def migrate_vm(
     params = {
         "target": target_node,
     }
-    if is_running:
+    if pve_type == "qemu" and is_running:
         params["online"] = 1
 
-    # 5. Post migration request to Proxmox VE API
+    # 6. Post migration request to Proxmox VE API
     try:
         async with httpx.AsyncClient(verify=verify_ssl, timeout=12.0) as client:
-            proxmox_url = f"{host}/api2/json/nodes/{node}/qemu/{vmid}/migrate"
+            proxmox_url = f"{host}/api2/json/nodes/{node}/{pve_type}/{vmid}/migrate"
             res = await client.post(proxmox_url, headers=headers, data=params)
             if res.status_code != 200:
                 error_detail = res.text
@@ -125,10 +135,11 @@ async def migrate_vm(
                 except Exception:
                     pass
                 log.error(
-                    "vm_migration_failed",
+                    "resource_migration_failed",
                     cluster=cluster,
                     node=node,
                     vmid=vmid,
+                    type=pve_type,
                     target_node=target_node,
                     status_code=res.status_code,
                     error=error_detail,
@@ -137,24 +148,26 @@ async def migrate_vm(
                 raise HTTPException(status_code=res.status_code, detail=f"Proxmox API error: {error_detail}")
     except httpx.RequestError as e:
         log.error(
-            "vm_migration_network_error",
+            "resource_migration_network_error",
             cluster=cluster,
             node=node,
             vmid=vmid,
+            type=pve_type,
             target_node=target_node,
             error=str(e),
             user=user["username"],
         )
         raise HTTPException(status_code=502, detail=f"Failed to reach Proxmox host: {str(e)}") from e
 
-    # 6. Audit log event
+    # 7. Audit log event
     log.info(
-        "audit_vm_migration",
+        "audit_resource_migration",
         user=user["username"],
         role=user["role"],
         cluster=cluster,
         node=node,
         vmid=vmid,
+        type=pve_type,
         target_node=target_node,
         status="success",
     )
