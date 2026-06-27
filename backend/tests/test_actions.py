@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, patch
 
+
 def test_action_no_auth(client):
     """Actions route should require authentication."""
     res = client.post("/actions/test-cluster/node1/VM/100/start")
