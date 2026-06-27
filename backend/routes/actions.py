@@ -19,6 +19,7 @@ async def refresh_resource_status(cluster_name: str):
     if cluster_config:
         from polling.resources import fetch_resources_from_proxmox
         from sse import broker
+
         try:
             await fetch_resources_from_proxmox(cluster_config)
             await broker.broadcast_cache()
@@ -34,7 +35,7 @@ async def execute_guest_action(
     vmid: int,
     action: str,
     background_tasks: BackgroundTasks,
-    user: dict = Depends(require_role("admin", "editor"))
+    user: dict = Depends(require_role("admin", "editor")),
 ):
     """Execute VM/LXC guest power actions (start, stop, shutdown, reboot)."""
     # 1. Validate action
@@ -74,6 +75,7 @@ async def execute_guest_action(
                 resource["status"] = "stopped"
             # Broadcast the updated status immediately
             from sse import broker
+
             await broker.broadcast_cache()
 
     # 6. Post action to Proxmox VE API
@@ -96,7 +98,7 @@ async def execute_guest_action(
                     action=action,
                     status_code=res.status_code,
                     error=error_detail,
-                    user=user["username"]
+                    user=user["username"],
                 )
                 raise HTTPException(status_code=res.status_code, detail=f"Proxmox API error: {error_detail}")
     except httpx.RequestError as e:
@@ -107,7 +109,7 @@ async def execute_guest_action(
             vmid=vmid,
             action=action,
             error=str(e),
-            user=user["username"]
+            user=user["username"],
         )
         raise HTTPException(status_code=502, detail=f"Failed to reach Proxmox host: {str(e)}") from e
 
@@ -121,7 +123,7 @@ async def execute_guest_action(
         vmid=vmid,
         type=type,
         action=action,
-        status="success"
+        status="success",
     )
 
     # 8. Queue background re-poll to fetch confirmed status from Proxmox

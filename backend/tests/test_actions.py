@@ -50,6 +50,7 @@ def test_action_nonexistent_cluster(client, auth_headers):
 @patch("httpx.AsyncClient.post")
 def test_action_success_mocked(mock_post, mock_add_task, client, auth_headers):
     from cache import cache
+
     """Action call should pass validation, fetch configuration, make mock POST, and return 200."""
     # 1. Configure test cluster
     client.post(
