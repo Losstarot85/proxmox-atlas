@@ -5,7 +5,7 @@
  * configuration, network info, and action buttons placeholder.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { RadialGauge } from "./RadialGauge";
@@ -28,10 +28,11 @@ function InfoRow({ label, value, mono = false }) {
   );
 }
 
-export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onOpenTimeMachine, userRole }) {
+export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onClose, onOpenTimeMachine, userRole }) {
   if (!resource) return null;
 
   const [confirmModal, setConfirmModal] = useState(null);
+  const [showMigrateModal, setShowMigrateModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const toast = useToast();
 
@@ -235,7 +236,12 @@ export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onO
             >
               ⏹ Force Stop
             </button>
-            <button className="btn" disabled title="Coming in Phase 5">
+            <button 
+              className="btn btn-migrate" 
+              disabled={resource.type !== "VM" || (userRole !== "admin" && userRole !== "editor") || actionLoading}
+              onClick={() => setShowMigrateModal(true)}
+              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : (resource.type !== "VM" ? "Only VMs can be migrated" : "")}
+            >
               📦 Migrate
             </button>
           </section>
@@ -275,6 +281,236 @@ export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onO
           </div>
         </div>
       )}
+
+      {showMigrateModal && (
+        <MigrateModal
+          resource={resource}
+          cluster={cluster}
+          onClose={() => setShowMigrateModal(false)}
+          toast={toast}
+        />
+      )}
+    </div>
+  );
+}
+
+function MigrateModal({ resource, cluster, onClose, toast }) {
+  const [targetNode, setTargetNode] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  const currentContainerNodeName = resource.node;
+
+  // Filter to online nodes excluding the current node
+  const onlineNodes = (cluster?.nodes || []).filter(
+    (n) => n.status === "online" && n.name !== currentContainerNodeName
+  );
+
+  // Suggested best node (highest free memory)
+  const suggestedNode = useMemo(() => {
+    if (!onlineNodes.length) return null;
+    return [...onlineNodes].sort((a, b) => {
+      const freeA = a.maxmem - a.mem;
+      const freeB = b.maxmem - b.mem;
+      return freeB - freeA;
+    })[0];
+  }, [onlineNodes]);
+
+  // Selected target node capacity calculations
+  const selectedNodeObj = onlineNodes.find((n) => n.name === targetNode);
+  const vmRequiredMem = resource.maxmem || 0;
+
+  let hasEnoughCapacity = true;
+  let capacityError = "";
+  let isCongested = false;
+  let congestionWarning = "";
+  let postMemPercent = 0;
+
+  if (selectedNodeObj) {
+    const freeMem = selectedNodeObj.maxmem - selectedNodeObj.mem;
+    if (freeMem < vmRequiredMem) {
+      hasEnoughCapacity = false;
+      capacityError = `Insufficient memory on target node. Required: ${(vmRequiredMem / 1e9).toFixed(1)} GB, Available: ${(freeMem / 1e9).toFixed(1)} GB.`;
+    } else {
+      const postMemUsed = selectedNodeObj.mem + vmRequiredMem;
+      postMemPercent = (postMemUsed / selectedNodeObj.maxmem) * 100;
+      if (postMemPercent > 85) {
+        isCongested = true;
+        congestionWarning = `Target node will become congested after migration (Memory Usage: ${postMemPercent.toFixed(1)}%).`;
+      }
+    }
+  }
+
+  // Effect to set target to suggested node on open
+  useEffect(() => {
+    if (suggestedNode && !targetNode) {
+      setTargetNode(suggestedNode.name);
+    }
+  }, [suggestedNode, targetNode]);
+
+  // Effect to track elapsed time during migration
+  useEffect(() => {
+    let interval = null;
+    if (isMigrating) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isMigrating]);
+
+  // Effect to watch SSE updates for completion
+  useEffect(() => {
+    if (isMigrating && resource.node === targetNode) {
+      setIsMigrating(false);
+      toast.success(`VM ${resource.name} has migrated successfully to ${targetNode}!`);
+      onClose();
+    }
+  }, [resource.node, isMigrating, targetNode, resource.name, toast, onClose]);
+
+  // Auto timeout after 60 seconds
+  useEffect(() => {
+    if (isMigrating && elapsedTime >= 60) {
+      setIsMigrating(false);
+      toast.warning("Migration is taking longer than expected. Please check task logs on Proxmox.");
+      onClose();
+    }
+  }, [isMigrating, elapsedTime, toast, onClose]);
+
+  const handleMigrateSubmit = async () => {
+    if (!targetNode || !hasEnoughCapacity) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/actions/${encodeURIComponent(cluster.name)}/${encodeURIComponent(resource.node)}/qemu/${resource.vmid}/migrate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ target_node: targetNode }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        toast.info("Migration initiated. Waiting for node transition...");
+        setIsMigrating(true);
+      } else {
+        toast.error(`Migration failed: ${data.detail || "Unknown error"}`);
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  return (
+    <div className="action-confirm-overlay" onClick={() => !actionLoading && !isMigrating && onClose()}>
+      <div className="action-confirm-modal migrate-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="action-confirm-header">
+          <h3>📦 Migrate VM {resource.name}</h3>
+        </div>
+        <div className="action-confirm-body">
+          {isMigrating ? (
+            <div className="migration-progress-container">
+              <div className="migration-spinner"></div>
+              <p>Migrating VM to <strong>{targetNode}</strong>...</p>
+              <div className="migration-timer">Elapsed time: {elapsedTime}s</div>
+              <div className="progress-bar-container" style={{ marginTop: "1rem" }}>
+                <div className="progress-bar-fill animated-stripes" style={{ width: "100%" }}></div>
+              </div>
+              <p className="migration-note">Waiting for Proxmox Live Migration task to complete (tracked via SSE).</p>
+            </div>
+          ) : (
+            <>
+              <p>
+                Migrate VM ID <strong>{resource.vmid}</strong> from <strong>{resource.node}</strong> to:
+              </p>
+              
+              <div className="form-group" style={{ margin: "1rem 0" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.9rem" }}>Target Node</label>
+                <select 
+                  className="form-select" 
+                  value={targetNode} 
+                  onChange={(e) => setTargetNode(e.target.value)}
+                  disabled={actionLoading}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    borderRadius: "4px",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    color: "var(--text-primary)",
+                    border: "1px solid rgba(255, 255, 255, 0.15)"
+                  }}
+                >
+                  <option value="" disabled style={{ background: "#1f1f1f" }}>Select Target Node...</option>
+                  {onlineNodes.map((n) => (
+                    <option key={n.name} value={n.name} style={{ background: "#1f1f1f" }}>
+                      {n.name} (RAM: {((n.maxmem - n.mem) / 1e9).toFixed(1)} GB free)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {suggestedNode && (
+                <div className="migration-suggestion">
+                  ⚡ Suggested by What-If: <strong>{suggestedNode.name}</strong> (Best fit: {((suggestedNode.maxmem - suggestedNode.mem) / 1e9).toFixed(1)} GB free RAM)
+                </div>
+              )}
+
+              {selectedNodeObj && (
+                <div className="capacity-check-results">
+                  <h4>Target Capacity Analysis</h4>
+                  <div className="capacity-metric">
+                    <span>Target Memory Usage:</span>
+                    <strong>{((selectedNodeObj.mem) / 1e9).toFixed(1)} GB / {((selectedNodeObj.maxmem) / 1e9).toFixed(1)} GB ({((selectedNodeObj.mem / selectedNodeObj.maxmem)*100).toFixed(1)}%)</strong>
+                  </div>
+                  {hasEnoughCapacity && (
+                    <div className="capacity-metric">
+                      <span>Post-Migration Memory:</span>
+                      <strong style={{ color: isCongested ? "var(--warning)" : "var(--accent)" }}>
+                        {((selectedNodeObj.mem + vmRequiredMem) / 1e9).toFixed(1)} GB ({postMemPercent.toFixed(1)}%)
+                      </strong>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {capacityError && (
+                <div className="action-confirm-warning blocker-error">
+                  ❌ {capacityError}
+                </div>
+              )}
+
+              {congestionWarning && (
+                <div className="action-confirm-warning">
+                  ⚠️ {congestionWarning}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        {!isMigrating && (
+          <div className="action-confirm-footer">
+            <button className="btn btn-cancel" disabled={actionLoading} onClick={onClose}>
+              Cancel
+            </button>
+            <button
+              className="btn btn-confirm btn-start"
+              disabled={actionLoading || !targetNode || !hasEnoughCapacity}
+              onClick={handleMigrateSubmit}
+            >
+              {actionLoading ? "Starting..." : "Confirm"}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

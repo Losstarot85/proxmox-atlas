@@ -101,3 +101,96 @@ def test_action_success_mocked(mock_post, mock_add_task, client, auth_headers):
     mock_post.assert_called_once()
     called_url = mock_post.call_args[0][0]
     assert "https://pve-mock:8006/api2/json/nodes/node1/qemu/100/status/start" in called_url
+
+
+def test_migrate_no_auth(client):
+    """Migration route should require authentication."""
+    res = client.post("/actions/test-cluster/node1/qemu/100/migrate", json={"target_node": "node2"})
+    assert res.status_code == 401
+
+
+def test_migrate_viewer_forbidden(client, auth_headers):
+    """A viewer user should be forbidden (403) from triggering migrations."""
+    # 1. Create a viewer user
+    res = client.post(
+        "/users",
+        json={"username": "test_viewer2", "password": "password123", "role": "viewer"},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+
+    # 2. Login as the viewer
+    res = client.post("/auth/login", json={"username": "test_viewer2", "password": "password123"})
+    assert res.status_code == 200
+    viewer_token = res.json()["token"]
+    viewer_headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    # 3. Request migration
+    res = client.post(
+        "/actions/test-cluster/node1/qemu/100/migrate",
+        json={"target_node": "node2"},
+        headers=viewer_headers,
+    )
+    assert res.status_code == 403
+
+
+@patch("fastapi.BackgroundTasks.add_task")
+@patch("httpx.AsyncClient.post")
+def test_migrate_success_mocked(mock_post, mock_add_task, client, auth_headers):
+    from cache import cache
+
+    # 1. Configure test cluster
+    client.post(
+        "/clusters",
+        json={
+            "name": "test-cluster",
+            "host": "https://pve-mock:8006",
+            "token_id": "root@pam!token",
+            "token_secret": "my-secret-key-12345678",
+            "verify_ssl": False,
+        },
+        headers=auth_headers,
+    )
+
+    # 2. Setup mock resources in cache
+    cache["test-cluster"] = {
+        "nodes": [
+            {"name": "node1", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+            {"name": "node2", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+        ],
+        "resources": [
+            {
+                "vmid": 100,
+                "name": "test-vm",
+                "node": "node1",
+                "cluster": "test-cluster",
+                "type": "VM",
+                "status": "running",
+            }
+        ],
+        "network": [],
+        "last_update": None,
+        "failed_nodes": [],
+    }
+
+    # 3. Mock Proxmox migration response
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"data": "UPID:node1:0000:0000:0000:qmigrate:100:root@pam:"}
+    mock_post.return_value = mock_response
+
+    # 4. Trigger migration
+    res = client.post(
+        "/actions/test-cluster/node1/qemu/100/migrate",
+        json={"target_node": "node2"},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    assert res.json()["status"] == "success"
+
+    # Verify that the mocked post was called with correct Proxmox URL and data parameters
+    mock_post.assert_called_once()
+    called_url = mock_post.call_args[0][0]
+    called_data = mock_post.call_args[1]["data"]
+    assert "https://pve-mock:8006/api2/json/nodes/node1/qemu/100/migrate" in called_url
+    assert called_data == {"target": "node2", "online": 1}

@@ -387,24 +387,25 @@ function App() {
       </Suspense>
 
       {resourceRouteTarget && (() => {
-        let resolvedCluster = null;
-        let resolvedClusterObj = null;
         for (const c of clusters) {
+          // If _cluster is provided, skip clusters with mismatching names
+          if (resourceRouteTarget._cluster && c.name !== resourceRouteTarget._cluster) {
+            continue;
+          }
+
           // Check nodes
           if (resourceRouteTarget.type === "NODE") {
             const node = (c.nodes || []).find(n => n.name === resourceRouteTarget.id);
             if (node) {
-              resolvedClusterObj = c;
-              resolvedCluster = c.name;
               return (
                 <NodeDetail
                   node={node}
-                  clusterName={resolvedCluster}
+                  clusterName={c.name}
                   metricsMap={metricsMap}
                   resources={c.resources || []}
                   onClose={closeResource}
                   onOpenTimeMachine={openTimeMachine}
-                  onOpenResource={(r) => openResource(r, resolvedCluster)}
+                  onOpenResource={(r) => openResource(r, c.name)}
                 />
               );
             }
@@ -418,6 +419,7 @@ function App() {
               <ResourceDetail
                 resource={found}
                 clusterName={c.name}
+                cluster={c}
                 metricsMap={metricsMap}
                 onClose={closeResource}
                 onOpenTimeMachine={openTimeMachine}
