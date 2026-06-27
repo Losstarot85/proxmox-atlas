@@ -53,6 +53,8 @@ def app(isolated_data_dir):
         "routes.whatif",
         "routes.clusters",
         "routes.health",
+        "routes.users",
+        "routes.actions",
     ]
     for mod in modules_to_clear:
         if mod in sys.modules:

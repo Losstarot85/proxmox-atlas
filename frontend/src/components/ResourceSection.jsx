@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { CollapsibleSection, useCollapsedState } from "./CollapsibleSection";
 import { ColumnPicker } from "./ColumnPicker";
+import { API_BASE } from "../config";
+import { useToast } from "./Toast";
 
 const VIRTUAL_THRESHOLD = 100;
 
@@ -56,9 +58,75 @@ const getInitialResourceColumns = (typeFilter) => {
 };
 
 // Sub-component for resources (VM, LXC) with metrics
-export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource, sectionKey }) {
+export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource, sectionKey, userRole }) {
   const [showAll, setShowAll] = useState(false);
   const [collapsed, toggleCollapsed] = useCollapsedState(sectionKey || `rs-${typeFilter}`, false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    const handleWindowClick = () => {
+      setContextMenu(null);
+    };
+    window.addEventListener("click", handleWindowClick);
+    return () => {
+      window.removeEventListener("click", handleWindowClick);
+    };
+  }, []);
+
+  const handleRowContextMenu = (e, resource) => {
+    if (userRole !== "admin" && userRole !== "editor") return;
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      resource
+    });
+  };
+
+  const handleContextMenuAction = (action) => {
+    if (!contextMenu) return;
+    const { resource } = contextMenu;
+    setContextMenu(null);
+
+    let warning = "";
+    if (action === "stop" || action === "shutdown") {
+      warning = "Warning: Stopping or shutting down this resource may cause data corruption in active databases or interrupt running processes.";
+    } else if (action === "reboot") {
+      warning = "Warning: Rebooting this resource will temporarily disrupt all hosted services and active connections.";
+    }
+
+    setConfirmModal({
+      resource,
+      action,
+      warning
+    });
+  };
+
+  const executeAction = async () => {
+    if (!confirmModal) return;
+    const { resource, action } = confirmModal;
+    setActionLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/actions/${encodeURIComponent(clusterName)}/${encodeURIComponent(resource.node)}/${encodeURIComponent(resource.type)}/${resource.vmid}/${action}`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Power action '${action}' initiated successfully on ${resource.name}`);
+      } else {
+        toast.error(`Action failed: ${data.detail || "Unknown error"}`);
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+      setConfirmModal(null);
+    }
+  };
   
   // Columns Visibility State
   const [visibleColumns, setVisibleColumns] = useState(() => getInitialResourceColumns(typeFilter));
@@ -239,6 +307,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
         <tr
           id={`row-${r.type}-${r.vmid}`}
           onClick={() => onOpenResource ? onOpenResource(r) : onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
+          onContextMenu={(e) => handleRowContextMenu(e, r)}
           style={{ cursor: 'pointer', '--row-index': idx }}
           className="hoverable-row"
         >
@@ -477,6 +546,66 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
           <button className="btn" onClick={() => setShowAll(true)}>
             Show all {sortedResources.length} items ({sortedResources.length - VIRTUAL_THRESHOLD} hidden)
           </button>
+        </div>
+      )}
+
+      {contextMenu && (
+        <div 
+          className="context-menu" 
+          style={{ 
+            position: 'fixed', 
+            top: contextMenu.y, 
+            left: contextMenu.x, 
+            zIndex: 1000 
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="context-menu-header">
+            ID {contextMenu.resource.vmid} ({contextMenu.resource.name})
+          </div>
+          {contextMenu.resource.status === "running" ? (
+            <>
+              <button onClick={() => handleContextMenuAction("shutdown")}>🔌 Shutdown</button>
+              <button onClick={() => handleContextMenuAction("reboot")}>🔄 Reboot</button>
+              <button onClick={() => handleContextMenuAction("stop")} className="destructive">⏹ Force Stop</button>
+            </>
+          ) : (
+            <button onClick={() => handleContextMenuAction("start")}>▶️ Start</button>
+          )}
+        </div>
+      )}
+
+      {confirmModal && (
+        <div className="action-confirm-overlay" onClick={() => !actionLoading && setConfirmModal(null)}>
+          <div className="action-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="action-confirm-header">
+              <h3>Confirm Power Action</h3>
+            </div>
+            <div className="action-confirm-body">
+              <p>Are you sure you want to <strong>{confirmModal.action.toUpperCase()}</strong> the resource <strong>{confirmModal.resource.name}</strong> (ID {confirmModal.resource.vmid})?</p>
+              {confirmModal.warning && (
+                <div className="action-confirm-warning">
+                  ⚠️ {confirmModal.warning}
+                </div>
+              )}
+            </div>
+            <div className="action-confirm-footer">
+              <button 
+                className="btn btn-cancel" 
+                disabled={actionLoading} 
+                onClick={() => setConfirmModal(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className={`btn btn-confirm ${confirmModal.action === "start" ? "btn-start" : "btn-stop"}`}
+                disabled={actionLoading}
+                onClick={executeAction}
+              >
+                {actionLoading ? "Executing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </CollapsibleSection>

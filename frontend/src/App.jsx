@@ -337,6 +337,7 @@ function App() {
                 searchQuery={dashboardSearch}
                 onOpenTimeMachine={openTimeMachine}
                 onOpenResource={(resource) => openResource(resource, cluster.name)}
+                userRole={auth.userRole}
               />
             ))}
           </>
@@ -420,6 +421,7 @@ function App() {
                 metricsMap={metricsMap}
                 onClose={closeResource}
                 onOpenTimeMachine={openTimeMachine}
+                userRole={auth.userRole}
               />
             );
           }

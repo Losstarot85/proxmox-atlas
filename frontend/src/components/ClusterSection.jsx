@@ -43,7 +43,7 @@ const getInitialNodeColumns = () => {
   }, {});
 };
 
-export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource }) {
+export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource, userRole }) {
   const [healthFilter, setHealthFilter] = useState(null);
   const [clusterCollapsed, toggleCluster] = useCollapsedState(`cluster-${cluster.name}`, false);
   const [nodesCollapsed, toggleNodes] = useCollapsedState(`nodes-${cluster.name}`, false);
@@ -415,8 +415,8 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
             </CollapsibleSection>
           )}
 
-          <ResourceSection title="Virtual Machines" typeFilter="VM" resources={filteredResources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} sectionKey={`vms-${cluster.name}`} />
-          <ResourceSection title="LXC Containers" typeFilter="LXC" resources={filteredResources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} sectionKey={`lxcs-${cluster.name}`} />
+          <ResourceSection title="Virtual Machines" typeFilter="VM" resources={filteredResources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} sectionKey={`vms-${cluster.name}`} userRole={userRole} />
+          <ResourceSection title="LXC Containers" typeFilter="LXC" resources={filteredResources} clusterName={cluster.name} globalHistory={globalHistory} metricsMap={metricsMap} searchQuery={searchQuery} onOpenTimeMachine={onOpenTimeMachine} onOpenResource={onOpenResource} sectionKey={`lxcs-${cluster.name}`} userRole={userRole} />
         </CollapsibleSection>
     </section>
   );

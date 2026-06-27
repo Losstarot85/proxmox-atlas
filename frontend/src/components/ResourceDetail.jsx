@@ -5,10 +5,12 @@
  * configuration, network info, and action buttons placeholder.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { RadialGauge } from "./RadialGauge";
+import { API_BASE } from "../config";
+import { useToast } from "./Toast";
 import "./ResourceDetail.css";
 
 
@@ -26,8 +28,12 @@ function InfoRow({ label, value, mono = false }) {
   );
 }
 
-export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onOpenTimeMachine }) {
+export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onOpenTimeMachine, userRole }) {
   if (!resource) return null;
+
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const toast = useToast();
 
   const isRunning = resource.status === "running";
   const cpuPct = isRunning && resource.maxcpu > 0 ? resource.cpu * 100 : 0;
@@ -38,6 +44,43 @@ export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onO
   // Metrics history
   const metricKey = `${clusterName}-${resource.type}-${resource.vmid}`;
   const cm = metricsMap?.[metricKey] || { cpu: [], ram: [] };
+
+  const handleDetailAction = (action) => {
+    let warning = "";
+    if (action === "stop" || action === "shutdown") {
+      warning = "Warning: Stopping or shutting down this resource may cause data corruption in active databases or interrupt running processes.";
+    } else if (action === "reboot") {
+      warning = "Warning: Rebooting this resource will temporarily disrupt all hosted services and active connections.";
+    }
+
+    setConfirmModal({
+      action,
+      warning
+    });
+  };
+
+  const executeAction = async () => {
+    if (!confirmModal) return;
+    const { action } = confirmModal;
+    setActionLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/actions/${encodeURIComponent(clusterName)}/${encodeURIComponent(resource.node)}/${encodeURIComponent(resource.type)}/${resource.vmid}/${action}`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Power action '${action}' initiated successfully on ${resource.name}`);
+      } else {
+        toast.error(`Action failed: ${data.detail || "Unknown error"}`);
+      }
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+      setConfirmModal(null);
+    }
+  };
 
   return (
     <div className="rd-overlay" onClick={onClose}>
@@ -160,14 +203,37 @@ export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onO
             <button className="btn" onClick={() => { onOpenTimeMachine({ id: resource.vmid, type: resource.type, name: resource.name }); }}>
               ⏱ Open Time Machine
             </button>
-            <button className="btn" disabled title="Coming in Phase 5">
+            <button 
+              className="btn btn-start" 
+              disabled={isRunning || (userRole !== "admin" && userRole !== "editor") || actionLoading}
+              onClick={() => handleDetailAction("start")}
+              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
+            >
               ▶️ Start
             </button>
-            <button className="btn" disabled title="Coming in Phase 5">
-              ⏹ Stop
+            <button 
+              className="btn btn-shutdown" 
+              disabled={!isRunning || (userRole !== "admin" && userRole !== "editor") || actionLoading}
+              onClick={() => handleDetailAction("shutdown")}
+              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
+            >
+              🔌 Shutdown
             </button>
-            <button className="btn" disabled title="Coming in Phase 5">
-              🔄 Restart
+            <button 
+              className="btn btn-reboot" 
+              disabled={!isRunning || (userRole !== "admin" && userRole !== "editor") || actionLoading}
+              onClick={() => handleDetailAction("reboot")}
+              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
+            >
+              🔄 Reboot
+            </button>
+            <button 
+              className="btn btn-stop destructive" 
+              disabled={!isRunning || (userRole !== "admin" && userRole !== "editor") || actionLoading}
+              onClick={() => handleDetailAction("stop")}
+              title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
+            >
+              ⏹ Force Stop
             </button>
             <button className="btn" disabled title="Coming in Phase 5">
               📦 Migrate
@@ -175,6 +241,40 @@ export function ResourceDetail({ resource, clusterName, metricsMap, onClose, onO
           </section>
         </div>
       </div>
+
+      {confirmModal && (
+        <div className="action-confirm-overlay" onClick={() => !actionLoading && setConfirmModal(null)}>
+          <div className="action-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="action-confirm-header">
+              <h3>Confirm Power Action</h3>
+            </div>
+            <div className="action-confirm-body">
+              <p>Are you sure you want to <strong>{confirmModal.action.toUpperCase()}</strong> the resource <strong>{resource.name}</strong> (ID {resource.vmid})?</p>
+              {confirmModal.warning && (
+                <div className="action-confirm-warning">
+                  ⚠️ {confirmModal.warning}
+                </div>
+              )}
+            </div>
+            <div className="action-confirm-footer">
+              <button 
+                className="btn btn-cancel" 
+                disabled={actionLoading} 
+                onClick={() => setConfirmModal(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className={`btn btn-confirm ${confirmModal.action === "start" ? "btn-start" : "btn-stop"}`}
+                disabled={actionLoading}
+                onClick={executeAction}
+              >
+                {actionLoading ? "Executing..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
