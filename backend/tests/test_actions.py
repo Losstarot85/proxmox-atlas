@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
 def test_action_no_auth(client):
     """Actions route should require authentication."""
@@ -95,7 +94,7 @@ def test_action_success_mocked(mock_post, mock_add_task, client, auth_headers):
 
     # Verify optimistic update worked: cache status changed to running
     assert cache["test-cluster"]["resources"][0]["status"] == "running"
-    
+
     # Verify that the mocked post was called with correct Proxmox URL
     mock_post.assert_called_once()
     called_url = mock_post.call_args[0][0]

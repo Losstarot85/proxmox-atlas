@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from auth import get_current_user
 
+from .actions import router as actions_router
 from .alerts import router as alerts_router
 from .auth import router as auth_router
 from .clusters import router as clusters_router
@@ -12,7 +13,6 @@ from .stream import router as stream_router
 from .time_machine import router as time_machine_router
 from .users import router as users_router
 from .whatif import router as whatif_router
-from .actions import router as actions_router
 
 # Auth routes are public (no token required)
 auth_public_router = APIRouter()

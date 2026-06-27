@@ -1,10 +1,11 @@
 import asyncio
+
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from auth import require_role
-from config import CLUSTERS, resolve_cluster_secrets
 from cache import cache
+from config import CLUSTERS, resolve_cluster_secrets
 from logger import get_logger
 
 log = get_logger("routes.actions")
@@ -108,7 +109,7 @@ async def execute_guest_action(
             error=str(e),
             user=user["username"]
         )
-        raise HTTPException(status_code=502, detail=f"Failed to reach Proxmox host: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Failed to reach Proxmox host: {str(e)}") from e
 
     # 7. Audit log event
     log.info(
