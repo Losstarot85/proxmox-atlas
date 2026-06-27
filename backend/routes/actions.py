@@ -1,4 +1,5 @@
 import asyncio
+import urllib.parse
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -176,6 +177,79 @@ async def migrate_resource(
     background_tasks.add_task(poll_migration_status, cluster, vmid, target_node)
 
     return {"status": "success", "detail": f"Migration of VM '{vmid}' to '{target_node}' initiated"}
+
+
+@router.get("/actions/{cluster}/{node}/{type}/{vmid}/console")
+async def get_console_url(
+    cluster: str,
+    node: str,
+    type: str,
+    vmid: int,
+    user: dict = Depends(require_role("admin", "editor")),
+):
+    """Generate a Proxmox noVNC (QEMU) or xterm.js (LXC) console URL."""
+    # 1. Normalize and validate type
+    type_lower = type.lower()
+    if type_lower in ("vm", "qemu"):
+        pve_type = "qemu"
+    elif type_lower in ("lxc",):
+        pve_type = "lxc"
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid resource type: '{type}'")
+
+    # 2. Retrieve cluster config
+    cluster_config = next((c for c in CLUSTERS if c["name"] == cluster), None)
+    if not cluster_config:
+        raise HTTPException(status_code=404, detail=f"Cluster '{cluster}' not found")
+
+    # 3. Verify resource exists and is running
+    cluster_cache = cache.get(cluster)
+    resource_name = str(vmid)
+    if cluster_cache:
+        resources = cluster_cache.get("resources", [])
+        resource = next((r for r in resources if str(r["vmid"]) == str(vmid)), None)
+        if resource:
+            if resource.get("status") != "running":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Console is only available for running resources",
+                )
+            resource_name = resource.get("name", str(vmid))
+
+    # 4. Resolve host URL
+    resolved = resolve_cluster_secrets(cluster_config)
+    host = resolved["host"].rstrip("/")
+
+    # 5. Construct native Proxmox Web UI console URL
+    if pve_type == "qemu":
+        console_url = (
+            f"{host}/?console=kvm&novnc=1"
+            f"&vmid={vmid}&vmname={urllib.parse.quote(resource_name)}"
+            f"&node={node}&resize=off&cmd="
+        )
+    else:
+        console_url = (
+            f"{host}/?console=lxc&xtermjs=1"
+            f"&vmid={vmid}&vmname={urllib.parse.quote(resource_name)}"
+            f"&node={node}&resize=off&cmd="
+        )
+
+    # 6. Audit log
+    log.info(
+        "audit_console_access",
+        user=user["username"],
+        role=user["role"],
+        cluster=cluster,
+        node=node,
+        vmid=vmid,
+        type=pve_type,
+        status="success",
+    )
+
+    return {
+        "status": "success",
+        "console_url": console_url,
+    }
 
 
 @router.post("/actions/{cluster}/{node}/{type}/{vmid}/{action}")

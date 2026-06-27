@@ -34,6 +34,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
   const [confirmModal, setConfirmModal] = useState(null);
   const [showMigrateModal, setShowMigrateModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showConsoleModal, setShowConsoleModal] = useState(false);
   const toast = useToast();
 
   const isRunning = resource.status === "running";
@@ -82,6 +83,8 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
       setConfirmModal(null);
     }
   };
+
+
 
   return (
     <div className="rd-overlay" onClick={onClose}>
@@ -244,6 +247,14 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
             >
               📦 Migrate
             </button>
+            <button 
+              className="btn btn-console" 
+              disabled={!isRunning || (userRole !== "admin" && userRole !== "editor")}
+              onClick={() => setShowConsoleModal(true)}
+              title={!isRunning ? "Console is only available for running resources" : (userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : "Open noVNC/xterm.js console in new tab")}
+            >
+              🖥️ Console
+            </button>
           </section>
         </div>
       </div>
@@ -287,6 +298,15 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
           resource={resource}
           cluster={cluster}
           onClose={() => setShowMigrateModal(false)}
+          toast={toast}
+        />
+      )}
+
+      {showConsoleModal && (
+        <ConsoleModal
+          resource={resource}
+          clusterName={clusterName}
+          onClose={() => setShowConsoleModal(false)}
           toast={toast}
         />
       )}
@@ -512,6 +532,120 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ConsoleModal({ resource, clusterName, onClose, toast }) {
+  const [consoleUrl, setConsoleUrl] = useState(null);
+  const [proxmoxHost, setProxmoxHost] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const typeLabel = resource.type === "VM" ? "VM" : "Container";
+  const consoleType = resource.type === "VM" ? "noVNC" : "xterm.js";
+
+  useEffect(() => {
+    const fetchConsoleUrl = async () => {
+      const resourcePathType = resource.type === "VM" ? "qemu" : "lxc";
+      try {
+        const res = await fetch(
+          `${API_BASE}/actions/${encodeURIComponent(clusterName)}/${encodeURIComponent(resource.node)}/${resourcePathType}/${resource.vmid}/console`
+        );
+        const data = await res.json();
+        if (res.ok && data.console_url) {
+          setConsoleUrl(data.console_url);
+          try {
+            const url = new URL(data.console_url);
+            setProxmoxHost(`${url.protocol}//${url.host}`);
+          } catch {
+            setProxmoxHost("");
+          }
+        } else {
+          setError(data.detail || "Failed to generate console URL");
+        }
+      } catch (err) {
+        setError(`Network error: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConsoleUrl();
+  }, [resource, clusterName]);
+
+  const handleOpenLogin = () => {
+    if (proxmoxHost) {
+      window.open(proxmoxHost, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const handleOpenConsole = () => {
+    if (consoleUrl) {
+      window.open(consoleUrl, "_blank", "noopener,noreferrer");
+      toast.info(`Console opened for ${resource.name}`);
+      onClose();
+    }
+  };
+
+  return (
+    <div className="action-confirm-overlay" onClick={onClose}>
+      <div className="action-confirm-modal console-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="action-confirm-header">
+          <h3>🖥️ Console — {typeLabel} {resource.name}</h3>
+        </div>
+        <div className="action-confirm-body">
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "1.5rem" }}>
+              <div className="migration-spinner"></div>
+              <p>Generating console URL...</p>
+            </div>
+          ) : error ? (
+            <div className="action-confirm-warning blocker-error">
+              ❌ {error}
+            </div>
+          ) : (
+            <>
+              <div className="console-info-box">
+                <p style={{ marginBottom: "0.75rem", color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+                  The {consoleType} console requires an active session on the Proxmox Web UI.
+                </p>
+                <div className="console-steps">
+                  <div className="console-step">
+                    <span className="console-step-number">1</span>
+                    <div className="console-step-content">
+                      <strong>Login to Proxmox</strong>
+                      <p>Open the Proxmox Web UI and log in (if not already).</p>
+                      <button className="btn btn-small" onClick={handleOpenLogin} style={{ marginTop: "0.5rem" }}>
+                        🔗 Open Proxmox UI
+                      </button>
+                    </div>
+                  </div>
+                  <div className="console-step">
+                    <span className="console-step-number">2</span>
+                    <div className="console-step-content">
+                      <strong>Open Console</strong>
+                      <p>Once logged in, click below to open the {consoleType} console.</p>
+                      <button className="btn btn-console" onClick={handleOpenConsole} style={{ marginTop: "0.5rem" }}>
+                        🖥️ Open {consoleType} Console
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="console-details">
+                <div className="capacity-metric"><span>Resource:</span> <strong>{resource.name} (ID {resource.vmid})</strong></div>
+                <div className="capacity-metric"><span>Node:</span> <strong>{resource.node}</strong></div>
+                <div className="capacity-metric"><span>Console Type:</span> <strong>{consoleType}</strong></div>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="action-confirm-footer">
+          <button className="btn btn-cancel" onClick={onClose}>
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );

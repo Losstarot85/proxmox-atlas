@@ -1939,3 +1939,93 @@ tbody tr:last-child td {
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
 
+.btn-console {
+  background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.btn-console:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0f766e, #0d9488) !important;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.4);
+}
+
+.btn-console:disabled {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Console Modal */
+.console-modal {
+  max-width: 480px;
+}
+
+.console-info-box {
+  background: rgba(20, 184, 166, 0.06);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.console-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.console-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.console-step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.console-step-content {
+  flex: 1;
+}
+
+.console-step-content strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.console-step-content p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.btn-small {
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.8rem !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.btn-small:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.console-details {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

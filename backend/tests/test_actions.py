@@ -256,3 +256,175 @@ def test_migrate_lxc_success_mocked(mock_post, mock_add_task, client, auth_heade
     called_data = mock_post.call_args[1]["data"]
     assert "https://pve-mock:8006/api2/json/nodes/node1/lxc/200/migrate" in called_url
     assert called_data == {"target": "node2"}
+
+
+# --- Console Access Tests ---
+
+
+def test_console_no_auth(client):
+    res = client.get("/actions/test-cluster/node1/qemu/100/console")
+    assert res.status_code == 401
+
+
+def test_console_viewer_forbidden(client, auth_headers):
+    # 1. Create a viewer user
+    client.post(
+        "/users",
+        json={"username": "console_viewer", "password": "password123", "role": "viewer"},
+        headers=auth_headers,
+    )
+    # 2. Login as the viewer
+    res = client.post("/auth/login", json={"username": "console_viewer", "password": "password123"})
+    viewer_token = res.json()["token"]
+    viewer_headers = {"Authorization": f"Bearer {viewer_token}"}
+
+    # 3. Request console
+    res = client.get(
+        "/actions/test-cluster/node1/qemu/100/console",
+        headers=viewer_headers,
+    )
+    assert res.status_code == 403
+
+
+def test_console_stopped_resource(client, auth_headers):
+    from cache import cache
+
+    # Configure test cluster
+    client.post(
+        "/clusters",
+        json={
+            "name": "test-cluster",
+            "host": "https://pve-mock:8006",
+            "token_id": "root@pam!token",
+            "token_secret": "my-secret-key-12345678",
+            "verify_ssl": False,
+        },
+        headers=auth_headers,
+    )
+
+    cache["test-cluster"] = {
+        "nodes": [
+            {"name": "node1", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+        ],
+        "resources": [
+            {
+                "vmid": 100,
+                "name": "test-vm",
+                "node": "node1",
+                "cluster": "test-cluster",
+                "type": "VM",
+                "status": "stopped",
+            }
+        ],
+        "network": [],
+        "last_update": None,
+        "failed_nodes": [],
+    }
+
+    res = client.get(
+        "/actions/test-cluster/node1/qemu/100/console",
+        headers=auth_headers,
+    )
+    assert res.status_code == 400
+    assert "running" in res.json()["detail"].lower()
+
+
+@patch("httpx.AsyncClient.post")
+def test_console_qemu_success(mock_post, client, auth_headers):
+    from cache import cache
+
+    # Configure test cluster
+    client.post(
+        "/clusters",
+        json={
+            "name": "test-cluster",
+            "host": "https://pve-mock:8006",
+            "token_id": "root@pam!token",
+            "token_secret": "my-secret-key-12345678",
+            "verify_ssl": False,
+        },
+        headers=auth_headers,
+    )
+
+    cache["test-cluster"] = {
+        "nodes": [
+            {"name": "node1", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+        ],
+        "resources": [
+            {
+                "vmid": 100,
+                "name": "test-vm",
+                "node": "node1",
+                "cluster": "test-cluster",
+                "type": "VM",
+                "status": "running",
+            }
+        ],
+        "network": [],
+        "last_update": None,
+        "failed_nodes": [],
+    }
+
+    res = client.get(
+        "/actions/test-cluster/node1/qemu/100/console",
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert "console_url" in data
+    assert "console=kvm" in data["console_url"]
+    assert "novnc=1" in data["console_url"]
+    assert "vmname=test-vm" in data["console_url"]
+    assert "node=node1" in data["console_url"]
+    # Endpoint no longer calls Proxmox API directly
+    mock_post.assert_not_called()
+
+
+def test_console_lxc_success(client, auth_headers):
+    from cache import cache
+
+    # Configure test cluster
+    client.post(
+        "/clusters",
+        json={
+            "name": "test-cluster",
+            "host": "https://pve-mock:8006",
+            "token_id": "root@pam!token",
+            "token_secret": "my-secret-key-12345678",
+            "verify_ssl": False,
+        },
+        headers=auth_headers,
+    )
+
+    cache["test-cluster"] = {
+        "nodes": [
+            {"name": "node1", "status": "online", "maxcpu": 8, "maxmem": 16000000000, "cpu": 0.1, "mem": 4000000000},
+        ],
+        "resources": [
+            {
+                "vmid": 200,
+                "name": "test-ct",
+                "node": "node1",
+                "cluster": "test-cluster",
+                "type": "LXC",
+                "status": "running",
+            }
+        ],
+        "network": [],
+        "last_update": None,
+        "failed_nodes": [],
+    }
+
+    res = client.get(
+        "/actions/test-cluster/node1/lxc/200/console",
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert "console_url" in data
+    assert "console=lxc" in data["console_url"]
+    assert "xtermjs=1" in data["console_url"]
+    assert "vmname=test-ct" in data["console_url"]
+    assert "node=node1" in data["console_url"]
