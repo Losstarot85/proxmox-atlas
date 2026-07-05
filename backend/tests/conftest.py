@@ -55,6 +55,8 @@ def app(isolated_data_dir):
         "routes.health",
         "routes.users",
         "routes.actions",
+        "routes.backups",
+        "polling.backups",
     ]
     for mod in modules_to_clear:
         if mod in sys.modules:

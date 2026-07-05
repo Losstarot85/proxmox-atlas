@@ -5,6 +5,7 @@ from auth import get_current_user
 from .actions import router as actions_router
 from .alerts import router as alerts_router
 from .auth import router as auth_router
+from .backups import router as backups_router
 from .clusters import router as clusters_router
 from .nodes import router as nodes_router
 from .resources import router as resources_router
@@ -33,3 +34,4 @@ router.include_router(whatif_router)
 router.include_router(clusters_router)
 router.include_router(users_router)
 router.include_router(actions_router)
+router.include_router(backups_router)

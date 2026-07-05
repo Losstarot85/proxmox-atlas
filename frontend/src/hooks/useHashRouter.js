@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const VALID_TABS = ["dashboard", "topology", "alerts", "settings"];
+const VALID_TABS = ["dashboard", "topology", "alerts", "settings", "backups"];
 
 /**
  * Parse location.hash into { tab, timeMachine, resource }.

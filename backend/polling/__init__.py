@@ -44,3 +44,8 @@ async def poll_cluster(cluster: dict):
     from polling.network import update_network_ips_for_cluster
 
     await update_network_ips_for_cluster(cluster)
+
+    from polling.backups import fetch_backups_from_proxmox
+
+    await fetch_backups_from_proxmox(cluster)
+

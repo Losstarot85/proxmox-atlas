@@ -77,6 +77,7 @@ def load_rules():
         "io_stall_threshold_percent": 15,
         "network_threshold_mbps": 800,
         "ram_pressure_threshold_percent": 15,
+        "backup_max_days": 7,
     }
     try:
         with open(RULES_PATH) as f:
@@ -104,6 +105,14 @@ async def evaluate_alerts():
         del active_alerts[k]
 
     for cluster_name, data in cache.items():
+        vmid_to_latest_backup = {}
+        for b in data.get("backups", []):
+            b_vmid = b.get("vmid")
+            b_ctime = b.get("ctime", 0)
+            if b_vmid is not None:
+                if b_vmid not in vmid_to_latest_backup or b_ctime > vmid_to_latest_backup[b_vmid]:
+                    vmid_to_latest_backup[b_vmid] = b_ctime
+
         # Check nodes
         for node in data.get("nodes", []):
             n_name = node.get("name", "Unknown")
@@ -250,6 +259,43 @@ async def evaluate_alerts():
             vmid = res["vmid"]
             r_name = res["name"]
             base_key = f"{cluster_name}:{vmid}:vm"
+
+            # 5.4 Backup Status Monitoring Alert Rule
+            latest_ctime = vmid_to_latest_backup.get(vmid)
+            backup_max_days = rules.get("backup_max_days", 7)
+            silenced = get_silenced()
+
+            if latest_ctime is None:
+                ak = f"{base_key}:backup_never"
+                if ak not in active_alerts and base_key not in silenced:
+                    add_alert(
+                        {
+                            "cluster": cluster_name,
+                            "node": res.get("node", "unknown"),
+                            "resource": f"{res.get('type', 'VM')} {vmid} ({r_name})",
+                            "severity": "warning",
+                            "message": f"VM {r_name} has no backup in {backup_max_days} days (never backed up)",
+                        }
+                    )
+                    active_alerts[ak] = current_time
+            else:
+                days_since = (current_time - latest_ctime) / 86400.0
+                if days_since > backup_max_days:
+                    ak = f"{base_key}:backup_old"
+                    if ak not in active_alerts and base_key not in silenced:
+                        from datetime import datetime
+
+                        last_backup_str = datetime.fromtimestamp(latest_ctime).strftime("%Y-%m-%d")
+                        add_alert(
+                            {
+                                "cluster": cluster_name,
+                                "node": res.get("node", "unknown"),
+                                "resource": f"{res.get('type', 'VM')} {vmid} ({r_name})",
+                                "severity": "warning",
+                                "message": f"VM {r_name} has no backup in {int(days_since)} days (last backup: {last_backup_str})",
+                            }
+                        )
+                        active_alerts[ak] = current_time
 
             # Crash / Shutdown Tracker
             prev_status = previous_states.get(base_key, res.get("status"))

@@ -11,6 +11,7 @@ import { SummaryCards } from "./components/SummaryCards";
 import { Breadcrumb } from "./components/Breadcrumb";
 import { ResourceDetail } from "./components/ResourceDetail";
 import { NodeDetail } from "./components/NodeDetail";
+import { BackupStatus } from "./components/BackupStatus";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
@@ -225,6 +226,14 @@ function App() {
             <span className="nav-text">Alerts</span>
           </button>
           <button
+            className={`nav-item ${activeTab === "backups" ? "active" : ""}`}
+            onClick={() => handleNavClick("backups")}
+            title={!isExpanded ? "Backups" : ""}
+          >
+            <span className="nav-icon">💾</span>
+            <span className="nav-text">Backups</span>
+          </button>
+          <button
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
             onClick={() => handleNavClick("settings")}
             title={!isExpanded ? "Settings" : ""}
@@ -255,6 +264,7 @@ function App() {
               {activeTab === 'dashboard' && 'Dashboard Overview'}
               {activeTab === 'topology' && 'Cluster Topology'}
               {activeTab === 'alerts' && 'Notification Center'}
+              {activeTab === 'backups' && 'Backup Status Monitoring'}
               {activeTab === 'settings' && 'Global Configurations'}
             </h2>
             <Breadcrumb
@@ -353,6 +363,7 @@ function App() {
           </Suspense>
         )}
         {activeTab === "alerts" && <AlertsTab />}
+        {activeTab === "backups" && <BackupStatus clusters={clusters} />}
 
         {activeTab === "settings" && (
           <SettingsTab
