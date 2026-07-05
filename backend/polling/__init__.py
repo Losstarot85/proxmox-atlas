@@ -48,4 +48,3 @@ async def poll_cluster(cluster: dict):
     from polling.backups import fetch_backups_from_proxmox
 
     await fetch_backups_from_proxmox(cluster)
-

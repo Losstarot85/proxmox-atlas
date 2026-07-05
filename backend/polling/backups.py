@@ -64,15 +64,17 @@ async def fetch_backups_from_proxmox(cluster: dict):
                     continue
                 seen_volids.add(volid)
 
-                all_backups.append({
-                    "volid": volid,
-                    "vmid": int(vmid),
-                    "ctime": int(item.get("ctime", 0)),
-                    "size": int(item.get("size", 0)),
-                    "format": item.get("format", ""),
-                    "node": node_name,
-                    "storage": storage_name,
-                })
+                all_backups.append(
+                    {
+                        "volid": volid,
+                        "vmid": int(vmid),
+                        "ctime": int(item.get("ctime", 0)),
+                        "size": int(item.get("size", 0)),
+                        "format": item.get("format", ""),
+                        "node": node_name,
+                        "storage": storage_name,
+                    }
+                )
 
     # Sort backups by ctime descending (most recent first)
     all_backups.sort(key=lambda x: x.get("ctime", 0), reverse=True)
