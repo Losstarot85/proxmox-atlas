@@ -1,5 +1,5 @@
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 
 def test_get_backups_empty(client, auth_headers):
@@ -96,10 +96,9 @@ def test_fetch_backups_polling(mock_get, client, auth_headers):
     }
     mock_get.return_value = mock_res
 
-    from polling.backups import fetch_backups_from_proxmox
-
-    # Run the backups polling
     import asyncio
+
+    from polling.backups import fetch_backups_from_proxmox
 
     asyncio.run(fetch_backups_from_proxmox(cluster_cfg))
 
@@ -177,9 +176,9 @@ def test_backup_alert_rules(client, auth_headers):
         "last_update": None,
     }
 
-    from alerts.engine import evaluate_alerts
-
     import asyncio
+
+    from alerts.engine import evaluate_alerts
 
     asyncio.run(evaluate_alerts())
 

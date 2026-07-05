@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+
 import httpx
 
 from cache import cache
@@ -54,7 +54,7 @@ async def fetch_backups_from_proxmox(cluster: dict):
 
     # Parse and aggregate backup items
     seen_volids = set()
-    for (node_name, storage_name), items in zip(tasks, results):
+    for (node_name, storage_name), items in zip(tasks, results, strict=True):
         for item in items:
             vmid = item.get("vmid")
             volid = item.get("volid")
