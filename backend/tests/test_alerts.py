@@ -100,11 +100,7 @@ def test_alert_rules_endpoints(client, auth_headers):
     # Modify rules
     rules["cpu_threshold_percent"] = 77
     rules["enabled_rules"]["cpu"] = False
-    rules["overrides"] = {
-        "test-cl:100": {
-            "cpu_threshold_percent": 99
-        }
-    }
+    rules["overrides"] = {"test-cl:100": {"cpu_threshold_percent": 99}}
 
     # Save rules
     res = client.post("/alerts/rules", json=rules, headers=auth_headers)
@@ -141,9 +137,33 @@ def test_smart_alert_grouping(client, auth_headers):
     cache["group-cluster"] = {
         "nodes": [{"name": "node1", "status": "online"}],
         "resources": [
-            {"vmid": 100, "name": "vm-100", "node": "node1", "cluster": "group-cluster", "type": "VM", "status": "running", "cpu": 0.99},
-            {"vmid": 101, "name": "vm-101", "node": "node1", "cluster": "group-cluster", "type": "VM", "status": "running", "cpu": 0.95},
-            {"vmid": 102, "name": "vm-102", "node": "node1", "cluster": "group-cluster", "type": "VM", "status": "running", "cpu": 0.92},
+            {
+                "vmid": 100,
+                "name": "vm-100",
+                "node": "node1",
+                "cluster": "group-cluster",
+                "type": "VM",
+                "status": "running",
+                "cpu": 0.99,
+            },
+            {
+                "vmid": 101,
+                "name": "vm-101",
+                "node": "node1",
+                "cluster": "group-cluster",
+                "type": "VM",
+                "status": "running",
+                "cpu": 0.95,
+            },
+            {
+                "vmid": 102,
+                "name": "vm-102",
+                "node": "node1",
+                "cluster": "group-cluster",
+                "type": "VM",
+                "status": "running",
+                "cpu": 0.92,
+            },
         ],
         "backups": [],
         "network": [],
@@ -186,8 +206,22 @@ def test_node_down_suppression(client, auth_headers):
     cache["suppress-cluster"] = {
         "nodes": [{"name": "node1", "status": "offline"}],
         "resources": [
-            {"vmid": 100, "name": "vm-100", "node": "node1", "cluster": "suppress-cluster", "type": "VM", "status": "stopped"},
-            {"vmid": 101, "name": "vm-101", "node": "node1", "cluster": "suppress-cluster", "type": "VM", "status": "stopped"},
+            {
+                "vmid": 100,
+                "name": "vm-100",
+                "node": "node1",
+                "cluster": "suppress-cluster",
+                "type": "VM",
+                "status": "stopped",
+            },
+            {
+                "vmid": 101,
+                "name": "vm-101",
+                "node": "node1",
+                "cluster": "suppress-cluster",
+                "type": "VM",
+                "status": "stopped",
+            },
         ],
         "backups": [],
         "network": [],
@@ -259,5 +293,3 @@ def test_alert_flap_detection(client, auth_headers):
     cache["flap-cluster"]["nodes"][0]["cpu"] = 0.95
     asyncio.run(evaluate_alerts())
     assert len(alerts_store) == 0  # Suppressed!
-
-

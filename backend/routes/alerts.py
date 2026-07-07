@@ -57,4 +57,3 @@ def update_alert_rules(rules: dict):
         return {"status": "ok"}
     else:
         return {"status": "error", "message": "Failed to save rules"}
-

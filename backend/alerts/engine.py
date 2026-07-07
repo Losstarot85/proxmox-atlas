@@ -79,7 +79,7 @@ def get_effective_rule(rules, rule_key, cluster_name, identifier, rule_type):
     """
     enabled_rules = rules.get("enabled_rules", {})
     if not enabled_rules.get(rule_type, True):
-        return float('inf')
+        return float("inf")
 
     overrides = rules.get("overrides", {})
     res_key = f"{cluster_name}:{identifier}"
@@ -88,7 +88,7 @@ def get_effective_rule(rules, rule_key, cluster_name, identifier, rule_type):
         if rule_key in res_override:
             return res_override[rule_key]
 
-    return rules.get(rule_key, float('inf'))
+    return rules.get(rule_key, float("inf"))
 
 
 # Flap detection memory containers
@@ -132,9 +132,9 @@ def load_rules():
             "iowait": True,
             "network": True,
             "ram_pressure": True,
-            "backup": True
+            "backup": True,
         },
-        "overrides": {}
+        "overrides": {},
     }
     path_to_load = RULES_PATH
     if not os.path.exists(path_to_load) and os.path.exists(DEFAULT_RULES_PATH):
@@ -244,7 +244,9 @@ async def evaluate_alerts():
             # RAM Node
             if node.get("maxmem", 0) > 0:
                 ram_p = (node.get("mem", 0) / node["maxmem"]) * 100
-                is_violating_ram = ram_p > get_effective_rule(rules, "ram_threshold_percent", cluster_name, n_name, "ram")
+                is_violating_ram = ram_p > get_effective_rule(
+                    rules, "ram_threshold_percent", cluster_name, n_name, "ram"
+                )
                 ak_ram = f"{base_key}:ram"
                 if not is_flapping_and_register(ak_ram, is_violating_ram) and is_violating_ram:
                     if ak_ram not in active_alerts and base_key not in silenced:
@@ -263,7 +265,9 @@ async def evaluate_alerts():
             for sp in node.get("storage_pools", []):
                 if sp.get("active", 0) == 1 and sp.get("total", 0) > 0:
                     disk_p = (sp["used"] / sp["total"]) * 100
-                    is_violating_disk = disk_p > get_effective_rule(rules, "disk_usage_threshold_percent", cluster_name, n_name, "disk")
+                    is_violating_disk = disk_p > get_effective_rule(
+                        rules, "disk_usage_threshold_percent", cluster_name, n_name, "disk"
+                    )
                     pool_name = sp["storage"]
                     ak_disk = f"{base_key}:storage:{pool_name}"
                     if not is_flapping_and_register(ak_disk, is_violating_disk) and is_violating_disk:
@@ -280,7 +284,9 @@ async def evaluate_alerts():
                             active_alerts[ak_disk] = current_time
 
             # IO Stall
-            is_violating_io = node.get("pressure_io", 0) > get_effective_rule(rules, "io_stall_threshold_percent", cluster_name, n_name, "iowait")
+            is_violating_io = node.get("pressure_io", 0) > get_effective_rule(
+                rules, "io_stall_threshold_percent", cluster_name, n_name, "iowait"
+            )
             ak_io = f"{base_key}:iostall"
             if not is_flapping_and_register(ak_io, is_violating_io) and is_violating_io:
                 if ak_io not in active_alerts and base_key not in silenced:
@@ -296,7 +302,9 @@ async def evaluate_alerts():
                     active_alerts[ak_io] = current_time
 
             # RAM Pressure Stall (Thrashing)
-            is_violating_ramp = node.get("pressure_ram", 0) > get_effective_rule(rules, "ram_pressure_threshold_percent", cluster_name, n_name, "ram_pressure")
+            is_violating_ramp = node.get("pressure_ram", 0) > get_effective_rule(
+                rules, "ram_pressure_threshold_percent", cluster_name, n_name, "ram_pressure"
+            )
             ak_ramp = f"{base_key}:ramstall"
             if not is_flapping_and_register(ak_ramp, is_violating_ramp) and is_violating_ramp:
                 if ak_ramp not in active_alerts and base_key not in silenced:
@@ -330,7 +338,9 @@ async def evaluate_alerts():
 
             # Network Saturation
             mbps = ((node.get("netin", 0) + node.get("netout", 0)) * 8) / 1000000
-            is_violating_net = mbps > get_effective_rule(rules, "network_threshold_mbps", cluster_name, n_name, "network")
+            is_violating_net = mbps > get_effective_rule(
+                rules, "network_threshold_mbps", cluster_name, n_name, "network"
+            )
             ak_net = f"{base_key}:network"
             if not is_flapping_and_register(ak_net, is_violating_net) and is_violating_net:
                 if ak_net not in active_alerts and base_key not in silenced:
@@ -363,36 +373,43 @@ async def evaluate_alerts():
             silenced = get_silenced()
 
             if backup_max_days != float("inf"):
-                is_violating_backup = latest_ctime is None or ((current_time - latest_ctime) / 86400.0) > backup_max_days
+                is_violating_backup = (
+                    latest_ctime is None or ((current_time - latest_ctime) / 86400.0) > backup_max_days
+                )
                 ak_backup = f"{base_key}:backup"
                 if not is_flapping_and_register(ak_backup, is_violating_backup) and is_violating_backup:
                     if latest_ctime is None:
                         msg = f"VM {r_name} has no backup in {backup_max_days} days (never backed up)"
-                        pending_vm_alerts.append({
-                            "type": "backup",
-                            "cluster": cluster_name,
-                            "node": node_name,
-                            "vmid": vmid,
-                            "name": r_name,
-                            "severity": "warning",
-                            "ak": f"{base_key}:backup_never",
-                            "message": msg
-                        })
+                        pending_vm_alerts.append(
+                            {
+                                "type": "backup",
+                                "cluster": cluster_name,
+                                "node": node_name,
+                                "vmid": vmid,
+                                "name": r_name,
+                                "severity": "warning",
+                                "ak": f"{base_key}:backup_never",
+                                "message": msg,
+                            }
+                        )
                     else:
                         days_since = (current_time - latest_ctime) / 86400.0
                         from datetime import datetime
+
                         last_backup_str = datetime.fromtimestamp(latest_ctime).strftime("%Y-%m-%d")
                         msg = f"VM {r_name} has no backup in {int(days_since)} days (last backup: {last_backup_str})"
-                        pending_vm_alerts.append({
-                            "type": "backup",
-                            "cluster": cluster_name,
-                            "node": node_name,
-                            "vmid": vmid,
-                            "name": r_name,
-                            "severity": "warning",
-                            "ak": f"{base_key}:backup_old",
-                            "message": msg
-                        })
+                        pending_vm_alerts.append(
+                            {
+                                "type": "backup",
+                                "cluster": cluster_name,
+                                "node": node_name,
+                                "vmid": vmid,
+                                "name": r_name,
+                                "severity": "warning",
+                                "ak": f"{base_key}:backup_old",
+                                "message": msg,
+                            }
+                        )
 
             # Crash / Shutdown Tracker
             prev_status = previous_states.get(base_key, res.get("status"))
@@ -421,16 +438,18 @@ async def evaluate_alerts():
             is_violating_cpu = cpu_p > get_effective_rule(rules, "cpu_threshold_percent", cluster_name, vmid, "cpu")
             ak_cpu = f"{base_key}:cpu"
             if not is_flapping_and_register(ak_cpu, is_violating_cpu) and is_violating_cpu:
-                pending_vm_alerts.append({
-                    "type": "cpu",
-                    "cluster": cluster_name,
-                    "node": node_name,
-                    "vmid": vmid,
-                    "name": r_name,
-                    "severity": "warning",
-                    "ak": ak_cpu,
-                    "message": f"High CPU usage on {res['type']} {r_name}: {cpu_p:.1f}%"
-                })
+                pending_vm_alerts.append(
+                    {
+                        "type": "cpu",
+                        "cluster": cluster_name,
+                        "node": node_name,
+                        "vmid": vmid,
+                        "name": r_name,
+                        "severity": "warning",
+                        "ak": ak_cpu,
+                        "message": f"High CPU usage on {res['type']} {r_name}: {cpu_p:.1f}%",
+                    }
+                )
 
             # RAM VM
             if res.get("maxmem", 0) > 0:
@@ -438,16 +457,18 @@ async def evaluate_alerts():
                 is_violating_ram = ram_p > get_effective_rule(rules, "ram_threshold_percent", cluster_name, vmid, "ram")
                 ak_ram = f"{base_key}:ram"
                 if not is_flapping_and_register(ak_ram, is_violating_ram) and is_violating_ram:
-                    pending_vm_alerts.append({
-                        "type": "ram",
-                        "cluster": cluster_name,
-                        "node": node_name,
-                        "vmid": vmid,
-                        "name": r_name,
-                        "severity": "warning",
-                        "ak": ak_ram,
-                        "message": f"High RAM usage on {res['type']} {r_name}: {ram_p:.1f}%"
-                    })
+                    pending_vm_alerts.append(
+                        {
+                            "type": "ram",
+                            "cluster": cluster_name,
+                            "node": node_name,
+                            "vmid": vmid,
+                            "name": r_name,
+                            "severity": "warning",
+                            "ak": ak_ram,
+                            "message": f"High RAM usage on {res['type']} {r_name}: {ram_p:.1f}%",
+                        }
+                    )
 
     # Group related VM alerts by (cluster, node, alert_type)
     grouped_buckets = {}
@@ -461,22 +482,28 @@ async def evaluate_alerts():
         # If there are 3 or more alerts of the same type on the same node, group them
         if len(items) >= 3:
             vm_names = [x["name"] for x in items]
-            grouped_message = f"{len(items)} VMs on node {node_name} have high {alert_type.upper()}: {', '.join(vm_names)}"
+            grouped_message = (
+                f"{len(items)} VMs on node {node_name} have high {alert_type.upper()}: {', '.join(vm_names)}"
+            )
             if alert_type == "backup":
-                grouped_message = f"{len(items)} VMs on node {node_name} have stale/missing backups: {', '.join(vm_names)}"
+                grouped_message = (
+                    f"{len(items)} VMs on node {node_name} have stale/missing backups: {', '.join(vm_names)}"
+                )
 
             grouped_ak = f"{cluster_name}:{node_name}:grouped_{alert_type}"
             silenced = get_silenced()
 
             # Trigger the grouped alert
             if grouped_ak not in active_alerts and f"{cluster_name}:{node_name}:node" not in silenced:
-                add_alert({
-                    "cluster": cluster_name,
-                    "node": node_name,
-                    "resource": "VM GROUP",
-                    "severity": "warning",
-                    "message": grouped_message
-                })
+                add_alert(
+                    {
+                        "cluster": cluster_name,
+                        "node": node_name,
+                        "resource": "VM GROUP",
+                        "severity": "warning",
+                        "message": grouped_message,
+                    }
+                )
                 active_alerts[grouped_ak] = current_time
 
             # Prevent individual alerts from firing by placing them in active_alerts cooldown
@@ -487,13 +514,15 @@ async def evaluate_alerts():
             silenced = get_silenced()
             for x in items:
                 if x["ak"] not in active_alerts and f"{cluster_name}:{x['node']}:node" not in silenced:
-                    add_alert({
-                        "cluster": x["cluster"],
-                        "node": x["node"],
-                        "resource": f"VM {x['vmid']} ({x['name']})",
-                        "severity": x["severity"],
-                        "message": x["message"]
-                    })
+                    add_alert(
+                        {
+                            "cluster": x["cluster"],
+                            "node": x["node"],
+                            "resource": f"VM {x['vmid']} ({x['name']})",
+                            "severity": x["severity"],
+                            "message": x["message"],
+                        }
+                    )
                     active_alerts[x["ak"]] = current_time
 
     # ANOMALY DETECTION
