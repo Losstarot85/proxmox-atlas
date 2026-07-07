@@ -2220,3 +2220,211 @@ tbody tr:last-child td {
   }
 }
 
+/* Card Layout for Responsive Nodes/Resources (< 1024px) */
+.responsive-cards {
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.responsive-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.responsive-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-accent);
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.card-vmid {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.card-progress-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.card-progress-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.card-progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.card-expand-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  margin-left: auto;
+}
+
+.card-expand-btn:hover {
+  color: var(--accent-light);
+}
+
+.card-details-expanded {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  animation: slide-down 0.2s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-detail-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.card-detail-label {
+  color: var(--text-secondary);
+}
+
+.card-detail-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.card-actions-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.card-action-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem !important;
+  font-size: 0.75rem !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Hide table and show cards on small viewports */
+@media (max-width: 1023px) {
+  .table-wrapper {
+    display: none !important;
+  }
+  .responsive-cards {
+    display: flex !important;
+  }
+}
+
+/* Swipe to Dismiss Alert Card Transition */
+.alert-card-swipeable {
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+  touch-action: pan-y; /* Prevent browser swipe triggers, handle custom touch gestures */
+}
+
+/* Summary Cards Grid responsive scaling system */
+.summary-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card-wide {
+  grid-column: span 2;
+}
+
+.stat-card-standard {
+  grid-column: span 1;
+}
+
+/* Tablet (768px - 1024px): Stack to 2 columns */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .summary-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .stat-card-wide {
+    grid-column: span 2 !important; /* wide card takes full row of 2 cols */
+  }
+  .stat-card-standard {
+    grid-column: span 1 !important; /* standard card takes 1 col */
+  }
+}
+
+/* Phone (< 768px): Stack to 1 column */
+@media (max-width: 767px) {
+  .summary-container {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+  .stat-card-wide,
+  .stat-card-standard {
+    grid-column: span 1 !important; /* all cards take full width */
+  }
+  
+  /* Shrink text sizing inside small cards slightly for scannability */
+  .stat-value {
+    font-size: 1.8rem !important;
+  }
+}
+
+
+

@@ -2,6 +2,90 @@ import React from "react";
 import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
 import { SkeletonAlerts } from "./Skeletons";
 
+function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, handleDelete }) {
+  const [touchStartX, setTouchStartX] = React.useState(0);
+  const [currentTranslateX, setCurrentTranslateX] = React.useState(0);
+  const [isSwiping, setIsSwiping] = React.useState(false);
+
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isSwiping) return;
+    const currentX = e.targetTouches[0].clientX;
+    const diffX = currentX - touchStartX;
+    setCurrentTranslateX(diffX);
+  };
+
+  const handleTouchEnd = () => {
+    setIsSwiping(false);
+    if (Math.abs(currentTranslateX) > 120) {
+      setCurrentTranslateX(currentTranslateX > 0 ? 500 : -500);
+      setTimeout(() => {
+        handleDelete(alert.id);
+      }, 150);
+    } else {
+      setCurrentTranslateX(0);
+    }
+  };
+
+  const transformStyle = currentTranslateX !== 0 
+    ? `translateX(${currentTranslateX}px)` 
+    : 'none';
+  const opacityStyle = currentTranslateX !== 0 
+    ? Math.max(0.2, 1 - Math.abs(currentTranslateX) / 300) 
+    : (alert.read ? 0.7 : 1);
+
+  return (
+    <div 
+      className={`glass-card alert-card alert-card-swipeable ${!alert.read ? 'unread' : ''}`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        borderLeft: `4px solid ${alert.severity === 'critical' ? 'var(--danger)' : 'var(--warning)'}`,
+        transform: transformStyle,
+        opacity: opacityStyle,
+        padding: '1rem 1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}
+    >
+      <div className="alert-content">
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap'}}>
+          <span className={`badge ${alert.severity === 'critical' ? 'badge-offline' : ''}`} style={{
+            backgroundColor: alert.severity === 'critical' ? 'var(--danger-bg)' : 'var(--warning-bg)',
+            color: alert.severity === 'critical' ? 'var(--danger)' : 'var(--warning)',
+            border: 'none'
+          }}>
+            {alert.severity.toUpperCase()}
+          </span>
+          <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>{formatTime(alert.timestamp)}</span>
+          <span className="mono-cell" style={{fontSize: '0.85rem'}}>— {alert.cluster} &gt; {alert.node} &gt; {alert.resource}</span>
+        </div>
+        <div style={{fontSize: '1.05rem', fontWeight: 500, lineHeight: 1.6}}>{alert.message}</div>
+      </div>
+      
+      <div className="alert-actions" style={{display: 'flex', gap: '0.5rem'}}>
+        <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleSilence(alert.id)}>
+          🔕 Silence 1h
+        </button>
+        {!alert.read && (
+          <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleMarkRead(alert.id)}>
+            Mark Read
+          </button>
+        )}
+        <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleDelete(alert.id)}>
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AlertsTab() {
   const { data, isLoading: loading } = useAlerts();
   const alerts = data?.alerts || [];
@@ -39,50 +123,18 @@ export function AlertsTab() {
       ) : (
         <div className="alerts-list" style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
           {alerts.map(alert => (
-            <div 
-              key={alert.id} 
-              className={`glass-card alert-card ${!alert.read ? 'unread' : ''}`}
-              style={{
-                borderLeft: `4px solid ${alert.severity === 'critical' ? 'var(--danger)' : 'var(--warning)'}`,
-                opacity: alert.read ? 0.7 : 1,
-                padding: '1rem 1.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <div className="alert-content">
-                <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem'}}>
-                  <span className={`badge ${alert.severity === 'critical' ? 'badge-offline' : ''}`} style={{
-                    backgroundColor: alert.severity === 'critical' ? 'var(--danger-bg)' : 'var(--warning-bg)',
-                    color: alert.severity === 'critical' ? 'var(--danger)' : 'var(--warning)',
-                    border: 'none'
-                  }}>
-                    {alert.severity.toUpperCase()}
-                  </span>
-                  <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>{formatTime(alert.timestamp)}</span>
-                  <span className="mono-cell" style={{fontSize: '0.85rem'}}>— {alert.cluster} &gt; {alert.node} &gt; {alert.resource}</span>
-                </div>
-                <div style={{fontSize: '1.05rem', fontWeight: 500, lineHeight: 1.6}}>{alert.message}</div>
-              </div>
-              
-              <div className="alert-actions" style={{display: 'flex', gap: '0.5rem'}}>
-                <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleSilence(alert.id)}>
-                  🔕 Silence 1h
-                </button>
-                {!alert.read && (
-                  <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleMarkRead(alert.id)}>
-                    Mark Read
-                  </button>
-                )}
-                <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleDelete(alert.id)}>
-                  Dismiss
-                </button>
-              </div>
-            </div>
+            <SwipeableAlertCard 
+              key={alert.id}
+              alert={alert}
+              formatTime={formatTime}
+              handleSilence={handleSilence}
+              handleMarkRead={handleMarkRead}
+              handleDelete={handleDelete}
+            />
           ))}
         </div>
       )}
     </div>
   );
 }
+

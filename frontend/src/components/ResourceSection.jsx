@@ -64,6 +64,14 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
   const [contextMenu, setContextMenu] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedCards, setExpandedCards] = useState({});
+
+  const toggleCardExpanded = (vmid) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [vmid]: !prev[vmid]
+    }));
+  };
   const toast = useToast();
 
   useEffect(() => {
@@ -397,6 +405,195 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
     );
   };
 
+  const renderCard = (r) => {
+    const isOnline = r.status === "running";
+    const cpuPercent = isOnline && r.maxcpu > 0 ? parseFloat(((r.cpu || 0) * 100).toFixed(1)) : 0;
+    const ramPercent = isOnline && r.maxmem > 0 ? parseFloat(((r.mem || 0) / r.maxmem * 100).toFixed(1)) : 0;
+    const isExpanded = !!expandedCards[r.vmid];
+
+    const tagsList = r.tags ? r.tags.split(/[,;\s]+/).filter(Boolean) : [];
+
+    return (
+      <div 
+        key={r.vmid}
+        className="responsive-card"
+        onClick={() => onOpenResource ? onOpenResource({ ...r, cluster: clusterName }) : onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
+        style={{ cursor: 'pointer' }}
+      >
+        <div className="card-header-flex">
+          <div className="card-title-group">
+            <span className="card-name">{r.name}</span>
+            <span className="card-vmid">({r.vmid})</span>
+            <span className="resource-type-pill" style={{
+              fontSize: '0.65rem',
+              backgroundColor: r.type === "VM" ? 'var(--accent-glow)' : 'rgba(16, 185, 129, 0.15)',
+              color: r.type === "VM" ? 'var(--accent-light)' : 'rgb(52, 211, 153)',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontWeight: '600'
+            }}>
+              {r.type}
+            </span>
+          </div>
+          {isOnline ? (
+            <span className="badge badge-online">🟢 Running</span>
+          ) : (
+            <span className="badge badge-offline">🔴 Stopped</span>
+          )}
+        </div>
+
+        <div className="card-progress-group">
+          <div className="card-progress-item">
+            <div className="card-progress-label">
+              <span>CPU Usage</span>
+              <span>{isOnline ? `${cpuPercent}% of ${r.maxcpu}C` : "—"}</span>
+            </div>
+            <div className="card-progress-bar-bg">
+              <div 
+                className="card-progress-bar-fill" 
+                style={{ 
+                  width: `${cpuPercent}%`, 
+                  backgroundColor: cpuPercent > 85 ? 'var(--danger)' : cpuPercent > 70 ? 'var(--warning)' : 'var(--success)' 
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="card-progress-item">
+            <div className="card-progress-label">
+              <span>RAM Usage</span>
+              <span>{isOnline ? `${ramPercent}% of ${formatBytesToGB(r.maxmem)}` : "—"}</span>
+            </div>
+            <div className="card-progress-bar-bg">
+              <div 
+                className="card-progress-bar-fill" 
+                style={{ 
+                  width: `${ramPercent}%`, 
+                  backgroundColor: ramPercent > 90 ? 'var(--danger)' : ramPercent > 75 ? 'var(--warning)' : '#8b5cf6' 
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          className="card-expand-btn"
+          onClick={(e) => {
+            e.stopPropagation(); // prevent opening resource modal
+            toggleCardExpanded(r.vmid);
+          }}
+        >
+          {isExpanded ? "▲ Collapse Details" : "▼ Expand Details"}
+        </button>
+
+        {isExpanded && (
+          <div className="card-details-expanded" onClick={(e) => e.stopPropagation()}>
+            <div className="card-detail-row">
+              <span className="card-detail-label">Network</span>
+              <span className="card-detail-value">{isOnline ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "—"}</span>
+            </div>
+            
+            <div className="card-detail-row">
+              <span className="card-detail-label">Disk IO</span>
+              <span className="card-detail-value">{isOnline ? `⬇ ${formatIO(r.diskread)} / ⬆ ${formatIO(r.diskwrite)}` : "—"}</span>
+            </div>
+
+            <div className="card-detail-row">
+              <span className="card-detail-label">Node Location</span>
+              <span className="card-detail-value">{r.node}</span>
+            </div>
+
+            <div className="card-detail-row">
+              <span className="card-detail-label">Pool Name</span>
+              <span className="card-detail-value">{r.pool || "—"}</span>
+            </div>
+
+            {r.pressure_cpu !== undefined && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Pressure CPU Stall</span>
+                <span className="card-detail-value">{isOnline ? formatPressure(r.pressure_cpu) : "—"}</span>
+              </div>
+            )}
+
+            {r.pressure_ram !== undefined && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Pressure Memory Stall</span>
+                <span className="card-detail-value">{isOnline ? formatPressure(r.pressure_ram) : "—"}</span>
+              </div>
+            )}
+
+            {r.pressure_io !== undefined && (
+              <div className="card-detail-row">
+                <span className="card-detail-label">Pressure IO Stall</span>
+                <span className="card-detail-value">{isOnline ? formatPressure(r.pressure_io) : "—"}</span>
+              </div>
+            )}
+
+            {tagsList.length > 0 && (
+              <div className="card-detail-row" style={{ flexDirection: 'column', gap: '0.25rem' }}>
+                <span className="card-detail-label">Tags</span>
+                <div className="tags-container" style={{ margin: 0, flexWrap: 'wrap', gap: '4px' }}>
+                  {tagsList.map(tag => {
+                    const colors = getTagColor(tag);
+                    return (
+                      <span 
+                        key={tag} 
+                        className="resource-tag" 
+                        style={{
+                          backgroundColor: colors.bg,
+                          color: colors.text,
+                          borderColor: colors.border
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Power Actions inside Card for Manager/Admin Roles */}
+            {(userRole === "admin" || userRole === "editor") && (
+              <div className="card-actions-group">
+                {isOnline ? (
+                  <>
+                    <button 
+                      className="btn btn-sm card-action-btn"
+                      onClick={() => setConfirmModal({ resource: r, action: "shutdown", warning: "Warning: Shutting down this resource may interrupt active connections." })}
+                    >
+                      🔌 Shutdown
+                    </button>
+                    <button 
+                      className="btn btn-sm card-action-btn"
+                      onClick={() => setConfirmModal({ resource: r, action: "reboot", warning: "Warning: Rebooting this resource will temporarily disrupt all hosted services." })}
+                    >
+                      🔄 Reboot
+                    </button>
+                    <button 
+                      className="btn btn-sm card-action-btn btn-stop"
+                      onClick={() => setConfirmModal({ resource: r, action: "stop", warning: "Warning: Force stopping this resource may cause data corruption in active database processes." })}
+                    >
+                      ⏹ Stop
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    className="btn btn-sm card-action-btn btn-start"
+                    onClick={() => setConfirmModal({ resource: r, action: "start" })}
+                  >
+                    ▶️ Start
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+
   return (
     <CollapsibleSection
       collapsed={collapsed}
@@ -541,6 +738,32 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
           </table>
         </div>
       </div>
+
+      {/* Responsive Card Layout for Mobile (< 1024px) */}
+      <div className="responsive-cards">
+        {sortedResources.length === 0 ? (
+          <div className="empty-state" style={{ padding: '2rem', textAlign: 'center' }}>No resources found</div>
+        ) : groupBy === "none" ? (
+          visible.map((r) => renderCard(r))
+        ) : (
+          Object.keys(groupedResources).map(groupKey => {
+            const groupItems = groupedResources[groupKey];
+            return (
+              <React.Fragment key={groupKey}>
+                <div className="group-header-row" style={{ padding: '0.75rem 0.5rem', fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)', marginTop: '0.75rem' }}>
+                  {groupBy === "node" && `📍 Node: ${groupKey}`}
+                  {groupBy === "pool" && `📦 Pool: ${groupKey}`}
+                  {groupBy === "status" && `⚡ Status: ${groupKey}`}
+                  {groupBy === "tag" && `🏷️ Tag: ${groupKey}`}
+                  {` (${groupItems.length})`}
+                </div>
+                {groupItems.map((r) => renderCard(r))}
+              </React.Fragment>
+            );
+          })
+        )}
+      </div>
+
       {needsVirtualization && (
         <div style={{ textAlign: 'center', padding: '1rem' }}>
           <button className="btn" onClick={() => setShowAll(true)}>

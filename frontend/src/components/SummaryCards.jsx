@@ -214,9 +214,9 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
   const lxcColor = '#f59e0b';
 
   return (
-    <div className="summary-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+    <div className="summary-container">
       {/* CPU Usage Card */}
-      <div className="glass-card stat-card" style={{ padding: '1rem', display: 'flex', gridColumn: 'span 2', '--card-delay': '0s' }}>
+      <div className="glass-card stat-card stat-card-wide" style={{ padding: '1rem', display: 'flex', '--card-delay': '0s' }}>
         <TimeSeriesChart 
           data={globalHistory || []} 
           dataKey="cpuPercent" 
@@ -226,7 +226,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
       </div>
 
       {/* RAM Usage Card */}
-      <div className="glass-card stat-card" style={{ padding: '1rem', display: 'flex', gridColumn: 'span 2', '--card-delay': '0.06s' }}>
+      <div className="glass-card stat-card stat-card-wide" style={{ padding: '1rem', display: 'flex', '--card-delay': '0.06s' }}>
         <TimeSeriesChart 
           data={globalHistory || []} 
           dataKey="memPercent" 
@@ -236,7 +236,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
       </div>
 
       {/* Cluster Health Score Card */}
-      <div className="glass-card stat-card" style={{ borderLeft: `4px solid ${healthColor}`, '--card-delay': '0.12s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
+      <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${healthColor}`, '--card-delay': '0.12s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🛡️</span>
@@ -264,7 +264,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
       </div>
 
       {/* Total Storage Card */}
-      <div className="glass-card stat-card" style={{ borderLeft: `4px solid ${storageColor}`, '--card-delay': '0.18s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
+      <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${storageColor}`, '--card-delay': '0.18s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>💾</span>
@@ -292,7 +292,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
       </div>
 
       {/* Virtual Machines Card */}
-      <div className="glass-card stat-card" style={{ borderLeft: `4px solid ${vmColor}`, '--card-delay': '0.24s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
+      <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${vmColor}`, '--card-delay': '0.24s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🖥️</span>
@@ -321,7 +321,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
       </div>
 
       {/* LXC Containers Card */}
-      <div className="glass-card stat-card" style={{ borderLeft: `4px solid ${lxcColor}`, '--card-delay': '0.3s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
+      <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${lxcColor}`, '--card-delay': '0.3s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>📦</span>
@@ -351,7 +351,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
 
       {/* Active Alerts Count Card */}
       <div 
-        className="glass-card stat-card" 
+        className="glass-card stat-card stat-card-standard" 
         onClick={onNavigateToAlerts}
         style={{ 
           borderLeft: `4px solid ${alertsColor}`, 

@@ -47,6 +47,14 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
   const [healthFilter, setHealthFilter] = useState(null);
   const [clusterCollapsed, toggleCluster] = useCollapsedState(`cluster-${cluster.name}`, false);
   const [nodesCollapsed, toggleNodes] = useCollapsedState(`nodes-${cluster.name}`, false);
+  const [expandedNodes, setExpandedNodes] = useState({});
+
+  const toggleNodeExpanded = (nodeName) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [nodeName]: !prev[nodeName]
+    }));
+  };
   
   // Column Visibility State
   const [visibleColumns, setVisibleColumns] = useState(getInitialNodeColumns);
@@ -411,6 +419,150 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Responsive Card Layout for Mobile (< 1024px) */}
+              <div className="responsive-cards">
+                {sortedNodes.map((n) => {
+                  const isOnline = n.status === "online";
+                  const cpuPercent = isOnline && n.maxcpu > 0 ? parseFloat(((n.cpu || 0) * 100).toFixed(1)) : 0;
+                  const ramPercent = isOnline && n.maxmem > 0 ? parseFloat(((n.mem || 0) / n.maxmem * 100).toFixed(1)) : 0;
+                  const nc = countsByNode[n.name] || { activeVMs: 0, totalVMs: 0, activeLXCs: 0, totalLXCs: 0 };
+                  const { activeVMs, totalVMs, activeLXCs, totalLXCs } = nc;
+
+                  const isExpanded = !!expandedNodes[n.name];
+
+                  return (
+                    <div 
+                      key={n.name}
+                      className="responsive-card"
+                      onClick={() => onOpenResource ? onOpenResource({ ...n, vmid: n.name, type: 'NODE', name: n.name }) : onOpenTimeMachine({ id: n.name, type: 'NODE', name: n.name })}
+                    >
+                      <div className="card-header-flex">
+                        <div className="card-title-group">
+                          <span className="card-name">{n.name}</span>
+                        </div>
+                        {isOnline ? (
+                          <span className="badge badge-online">🟢 Online</span>
+                        ) : (
+                          <span className="badge badge-offline">🔴 Offline</span>
+                        )}
+                      </div>
+
+                      <div className="card-progress-group">
+                        <div className="card-progress-item">
+                          <div className="card-progress-label">
+                            <span>CPU Usage</span>
+                            <span>{isOnline ? `${cpuPercent}% of ${n.maxcpu}C` : "—"}</span>
+                          </div>
+                          <div className="card-progress-bar-bg">
+                            <div 
+                              className="card-progress-bar-fill" 
+                              style={{ 
+                                width: `${cpuPercent}%`, 
+                                backgroundColor: cpuPercent > 85 ? 'var(--danger)' : cpuPercent > 70 ? 'var(--warning)' : 'var(--success)' 
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="card-progress-item">
+                          <div className="card-progress-label">
+                            <span>RAM Usage</span>
+                            <span>{isOnline ? `${ramPercent}% of ${formatBytesToGB(n.maxmem)}` : "—"}</span>
+                          </div>
+                          <div className="card-progress-bar-bg">
+                            <div 
+                              className="card-progress-bar-fill" 
+                              style={{ 
+                                width: `${ramPercent}%`, 
+                                backgroundColor: ramPercent > 90 ? 'var(--danger)' : ramPercent > 75 ? 'var(--warning)' : '#8b5cf6' 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        className="card-expand-btn"
+                        onClick={(e) => {
+                          e.stopPropagation(); // prevent opening resource
+                          toggleNodeExpanded(n.name);
+                        }}
+                      >
+                        {isExpanded ? "▲ Collapse Details" : "▼ Expand Details"}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="card-details-expanded" onClick={(e) => e.stopPropagation()}>
+                          <div className="card-detail-row">
+                            <span className="card-detail-label">Network</span>
+                            <span className="card-detail-value">{isOnline ? `⬇ ${formatNetwork(n.netin)} / ⬆ ${formatNetwork(n.netout)}` : "—"}</span>
+                          </div>
+                          
+                          <div className="card-detail-row">
+                            <span className="card-detail-label">Load Average</span>
+                            <span className="card-detail-value">{isOnline ? formatLoad(n.loadavg) : "—"}</span>
+                          </div>
+
+                          <div className="card-detail-row">
+                            <span className="card-detail-label">IO Wait</span>
+                            <span className="card-detail-value">{isOnline ? formatPressure(n.iowait) : "—"}</span>
+                          </div>
+
+                          <div className="card-detail-row" style={{ flexDirection: 'column', gap: '0.25rem' }}>
+                            <span className="card-detail-label" style={{ marginBottom: '0.25rem' }}>Storage Pools</span>
+                            {isOnline && n.storage_pools && n.storage_pools.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                                {[...n.storage_pools]
+                                  .filter(sp => sp.active === 1)
+                                  .sort((a, b) => a.storage.localeCompare(b.storage))
+                                  .map(sp => {
+                                    const poolPercent = sp.total > 0 ? ((sp.used / sp.total) * 100).toFixed(1) : 0;
+                                    return (
+                                      <div key={sp.storage} className="progress-bar-inline" style={{ fontSize: '0.8rem', display: 'flex', width: '100%' }}>
+                                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.storage}</span>
+                                        <div className="progress-bar-container" style={{ width: '100px', margin: '0 8px' }}>
+                                          <div className="progress-bar-fill" style={{ width: `${poolPercent}%`, background: poolPercent > 85 ? 'var(--danger)' : poolPercent > 70 ? 'var(--warning)' : 'var(--accent)' }}></div>
+                                        </div>
+                                        <span className="mono-cell" style={{ width: '40px', textAlign: 'right' }}>{poolPercent}%</span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            ) : "—"}
+                          </div>
+
+                          <div className="card-detail-row">
+                            <span className="card-detail-label">Pressure CPU Stall</span>
+                            <span className="card-detail-value">{isOnline ? formatPressure(n.pressure_cpu) : "—"}</span>
+                          </div>
+
+                          <div className="card-detail-row">
+                            <span className="card-detail-label">Pressure Memory Stall</span>
+                            <span className="card-detail-value">{isOnline ? formatPressure(n.pressure_ram) : "—"}</span>
+                          </div>
+
+                          <div className="card-detail-row">
+                            <span className="card-detail-label">Pressure IO Stall</span>
+                            <span className="card-detail-value">{isOnline ? formatPressure(n.pressure_io) : "—"}</span>
+                          </div>
+
+                          <div className="card-detail-row" style={{ flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
+                            <span className="card-detail-label">Tags & IPs</span>
+                            <div className="tags-container" style={{ margin: 0, flexWrap: 'wrap', gap: '4px' }}>
+                              {totalVMs > 0 && <span className="resource-tag pool-tag">VMs: {activeVMs}/{totalVMs}</span>}
+                              {totalLXCs > 0 && <span className="resource-tag pool-tag">LXCs: {activeLXCs}/{totalLXCs}</span>}
+                              {n.ips && n.ips.map(ip => (
+                                <span key={ip} className="resource-tag ip-tag">{ip}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CollapsibleSection>
           )}
