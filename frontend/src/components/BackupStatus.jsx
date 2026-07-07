@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { API_BASE } from "../config";
 import { SkeletonTable } from "./Skeletons";
+import { useI18n } from "../i18n";
 
 export function BackupStatus({ clusters }) {
+  const { t } = useI18n();
   const [backupsData, setBackupsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -158,7 +160,7 @@ export function BackupStatus({ clusters }) {
     <div className="backups-tab">
       <div className="network-toolbar" style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <h2 style={{ margin: 0 }}>Backup Protection Center</h2>
+          <h2 style={{ margin: 0 }}>{t('header.backups')}</h2>
           <button className="btn" onClick={fetchBackups} disabled={loading} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             🔄 Refresh
           </button>
@@ -169,7 +171,7 @@ export function BackupStatus({ clusters }) {
             type="text"
             className="search-input"
             style={{ width: "250px", margin: 0 }}
-            placeholder="Search resources..."
+            placeholder={t('backup.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -203,19 +205,19 @@ export function BackupStatus({ clusters }) {
       {/* Stats Summary Cards */}
       <div className="summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
         <div className="glass-card" style={{ padding: "1.25rem" }}>
-          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Total Backup Files</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>{t('backup.all_backups')}</div>
           <div style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--accent)" }}>{backupAnalysis.totalBackupsCount}</div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>vzdump archives found</div>
         </div>
 
         <div className="glass-card" style={{ padding: "1.25rem" }}>
-          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Total Backup Size</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>{t('backup.total_size')}</div>
           <div style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--success)" }}>{formatBytes(backupAnalysis.totalBackupBytes)}</div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>Aggregate storage usage</div>
         </div>
 
         <div className="glass-card" style={{ padding: "1.25rem" }}>
-          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Protected Resources</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>{t('backup.total_protected')}</div>
           <div style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--text-primary)" }}>
             {backupAnalysis.resources.length - staleResources.length} <span style={{ fontSize: "1rem", fontWeight: "normal", color: "var(--text-secondary)" }}>/ {backupAnalysis.resources.length}</span>
           </div>
@@ -223,7 +225,7 @@ export function BackupStatus({ clusters }) {
         </div>
 
         <div className="glass-card" style={{ padding: "1.25rem", borderLeft: staleResources.length > 0 ? "3px solid var(--danger)" : "none" }}>
-          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Unprotected Resources</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>{t('backup.total_unprotected')}</div>
           <div style={{ fontSize: "1.8rem", fontWeight: "700", color: staleResources.length > 0 ? "var(--danger)" : "var(--success)" }}>
             {staleResources.length}
           </div>

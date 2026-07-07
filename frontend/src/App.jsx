@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { API_BASE } from "./config";
+import { useI18n } from "./i18n";
 import { useAuth } from "./hooks/useAuth";
 import { useClusterData } from "./hooks/useClusterData";
 import { useAlerts } from "./hooks/useApiQueries";
@@ -69,6 +70,7 @@ function triggerBrowserPushNotification(alert) {
 function App() {
   const auth = useAuth();
   const toast = useToast();
+  const { t } = useI18n();
   const palette = useCommandPalette();
   const router = useHashRouter();
   const activeTab = router.tab;
@@ -254,8 +256,8 @@ function App() {
         <div className="logo-container">
           <img src="/logo.png" alt="Proxmox Atlas Logo" className="logo-icon-img" />
           <div className="logo-text-group">
-            <h1 className="logo-title">Proxmox Atlas</h1>
-            <span className="logo-subtitle">Monitoring Hub</span>
+            <h1 className="logo-title">{t('app.title')}</h1>
+            <span className="logo-subtitle">{t('app.subtitle')}</span>
           </div>
         </div>
         
@@ -263,23 +265,23 @@ function App() {
           <button
             className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
             onClick={() => handleNavClick("dashboard")}
-            title={!isExpanded ? "Dashboard" : ""}
+            title={!isExpanded ? t('nav.dashboard') : ""}
           >
             <span className="nav-icon">📊</span>
-            <span className="nav-text">Dashboard</span>
+            <span className="nav-text">{t('nav.dashboard')}</span>
           </button>
           <button
             className={`nav-item ${activeTab === "topology" ? "active" : ""}`}
             onClick={() => handleNavClick("topology")}
-            title={!isExpanded ? "Topology" : ""}
+            title={!isExpanded ? t('nav.topology') : ""}
           >
             <span className="nav-icon">🌍</span>
-            <span className="nav-text">Topology</span>
+            <span className="nav-text">{t('nav.topology')}</span>
           </button>
           <button
             className={`nav-item ${activeTab === "alerts" ? "active" : ""}`}
             onClick={() => handleNavClick("alerts")}
-            title={!isExpanded ? `Alerts ${unreadAlerts > 0 ? `(${unreadAlerts})` : ''}` : ""}
+            title={!isExpanded ? `${t('nav.alerts')} ${unreadAlerts > 0 ? `(${unreadAlerts})` : ''}` : ""}
             style={{ position: 'relative' }}
           >
             <span className="nav-icon">
@@ -302,23 +304,23 @@ function App() {
                 </span>
               )}
             </span>
-            <span className="nav-text">Alerts</span>
+            <span className="nav-text">{t('nav.alerts')}</span>
           </button>
           <button
             className={`nav-item ${activeTab === "backups" ? "active" : ""}`}
             onClick={() => handleNavClick("backups")}
-            title={!isExpanded ? "Backups" : ""}
+            title={!isExpanded ? t('nav.backups') : ""}
           >
             <span className="nav-icon">💾</span>
-            <span className="nav-text">Backups</span>
+            <span className="nav-text">{t('nav.backups')}</span>
           </button>
           <button
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
             onClick={() => handleNavClick("settings")}
-            title={!isExpanded ? "Settings" : ""}
+            title={!isExpanded ? t('nav.settings') : ""}
           >
             <span className="nav-icon">⚙️</span>
-            <span className="nav-text">Settings</span>
+            <span className="nav-text">{t('nav.settings')}</span>
           </button>
         </nav>
 
@@ -326,11 +328,11 @@ function App() {
           <button
             className="nav-item"
             onClick={auth.logout}
-            title={!isExpanded ? "Logout" : ""}
+            title={!isExpanded ? t('nav.logout') : ""}
             style={{ color: 'var(--danger)', opacity: 0.8 }}
           >
             <span className="nav-icon">🚪</span>
-            <span className="nav-text">Logout</span>
+            <span className="nav-text">{t('nav.logout')}</span>
           </button>
         </div>
       </aside>
@@ -342,21 +344,21 @@ function App() {
           onClick={() => handleNavClick("dashboard")}
         >
           <span className="mobile-tab-icon">📊</span>
-          <span className="mobile-tab-label">Dashboard</span>
+          <span className="mobile-tab-label">{t('nav.dashboard')}</span>
         </button>
         <button
           className={`mobile-tab-item ${activeTab === "topology" ? "active" : ""}`}
           onClick={() => handleNavClick("topology")}
         >
           <span className="mobile-tab-icon">🌍</span>
-          <span className="mobile-tab-label">Topology</span>
+          <span className="mobile-tab-label">{t('nav.topology')}</span>
         </button>
         <button
           className={`mobile-tab-item ${activeTab === "backups" ? "active" : ""}`}
           onClick={() => handleNavClick("backups")}
         >
           <span className="mobile-tab-icon">💾</span>
-          <span className="mobile-tab-label">Backups</span>
+          <span className="mobile-tab-label">{t('nav.backups')}</span>
         </button>
         <button
           className={`mobile-tab-item ${activeTab === "alerts" ? "active" : ""}`}
@@ -371,14 +373,14 @@ function App() {
               </span>
             )}
           </span>
-          <span className="mobile-tab-label">Alerts</span>
+          <span className="mobile-tab-label">{t('nav.alerts')}</span>
         </button>
         <button
           className={`mobile-tab-item ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => handleNavClick("settings")}
         >
           <span className="mobile-tab-icon">⚙️</span>
-          <span className="mobile-tab-label">Settings</span>
+          <span className="mobile-tab-label">{t('nav.settings')}</span>
         </button>
       </nav>
 
@@ -394,17 +396,17 @@ function App() {
             <button
               className="hamburger-menu"
               onClick={() => setIsMobileMenuOpen(true)}
-              aria-label="Open menu"
+              aria-label={t('header.open_menu')}
             >
               ☰
             </button>
             <div>
               <h2 className="page-title">
-              {activeTab === 'dashboard' && 'Dashboard Overview'}
-              {activeTab === 'topology' && 'Cluster Topology'}
-              {activeTab === 'alerts' && 'Notification Center'}
-              {activeTab === 'backups' && 'Backup Status Monitoring'}
-              {activeTab === 'settings' && 'Global Configurations'}
+              {activeTab === 'dashboard' && t('header.dashboard')}
+              {activeTab === 'topology' && t('header.topology')}
+              {activeTab === 'alerts' && t('header.alerts')}
+              {activeTab === 'backups' && t('header.backups')}
+              {activeTab === 'settings' && t('header.settings')}
             </h2>
             <Breadcrumb
               activeTab={activeTab}
@@ -417,23 +419,23 @@ function App() {
           </div>
           <div className="global-status">
             <div className="status-chip">
-              Clusters <strong>{clusters.length}</strong>
+              {t('header.clusters')} <strong>{clusters.length}</strong>
             </div>
             <div className="status-chip">
-              Nodes <strong>{activeNodes}/{totalNodes}</strong>
+              {t('header.nodes')} <strong>{activeNodes}/{totalNodes}</strong>
             </div>
             <div className="export-group">
               <button 
                 className="btn btn-sm export-btn"
                 onClick={() => exportJSON(clusters)}
-                title="Export full snapshot as JSON"
+                title={t('header.export_json')}
               >
                 📄 JSON
               </button>
               <button 
                 className="btn btn-sm export-btn"
                 onClick={() => exportCSV(clusters)}
-                title="Export inventory as CSV"
+                title={t('header.export_csv')}
               >
                 📊 CSV
               </button>
@@ -473,7 +475,7 @@ function App() {
                 type="text"
                 className="search-input"
                 style={{ width: '100%', maxWidth: '400px' }}
-                placeholder="Search nodes, virtual machines, tags, pools..."
+                placeholder={t('search.placeholder')}
                 value={dashboardSearch}
                 onChange={e => setDashboardSearch(e.target.value)}
               />

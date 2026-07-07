@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useI18n } from "../i18n";
 import "./LoginPage.css";
 
 // ── SVG Eye Icons (inline to avoid external dependencies) ──
@@ -70,7 +71,7 @@ function PasswordInput({ id, value, onChange, placeholder, autoComplete, autoFoc
         className="login-pw-toggle"
         onClick={() => setVisible(v => !v)}
         tabIndex={-1}
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? "hide password" : "show password"}
       >
         {visible ? <EyeOffIcon /> : <EyeIcon />}
       </button>
@@ -80,6 +81,7 @@ function PasswordInput({ id, value, onChange, placeholder, autoComplete, autoFoc
 
 // ── Main Component ──
 export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error }) {
+  const { t } = useI18n();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -88,8 +90,8 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
   const [localError, setLocalError] = useState(null);
 
   const subtitleText = mustChangePassword
-    ? "Please set a new password for your admin account"
-    : "Multi-Cluster Monitoring Dashboard";
+    ? t('login.must_change_password')
+    : t('login.subtitle');
 
   const { displayed, showCursor } = useTypingAnimation(subtitleText, 40, 500);
 
@@ -106,11 +108,11 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
     setLocalError(null);
 
     if (newPassword.length < 6) {
-      setLocalError("Password must be at least 6 characters");
+      setLocalError(t('settings.password.error_length'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setLocalError("Passwords do not match");
+      setLocalError(t('login.passwords_no_match'));
       return;
     }
 
@@ -131,7 +133,7 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
             alt="Proxmox Atlas"
             className="login-logo-img"
           />
-          <h1 className="login-title">Proxmox Atlas</h1>
+          <h1 className="login-title">{t('login.title')}</h1>
           <p className="login-subtitle">
             <span className={`login-subtitle-typing${showCursor ? '' : ' done'}`}
                   style={!showCursor ? { borderColor: 'transparent' } : undefined}>
@@ -152,7 +154,7 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
           <form onSubmit={handleLogin}>
             <div className="login-field">
               <label htmlFor="login-username" className="login-label">
-                Username
+                {t('settings.users.username')}
               </label>
               <input
                 id="login-username"
@@ -162,20 +164,20 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
                 onChange={e => setUsername(e.target.value)}
                 autoComplete="username"
                 autoFocus
-                placeholder="Enter your username"
+                placeholder={t('login.username_placeholder')}
               />
             </div>
 
             <div className="login-field" style={{ marginBottom: '1.75rem' }}>
               <label htmlFor="login-password" className="login-label">
-                Password
+                {t('settings.users.password')}
               </label>
               <PasswordInput
                 id="login-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder={t('login.password_placeholder')}
               />
             </div>
 
@@ -185,7 +187,7 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
               className="login-submit"
               disabled={loading || !username || !password}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t('login.signing_in') : t('login.sign_in')}
             </button>
           </form>
         ) : (
@@ -195,12 +197,12 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              First login detected. You must set a new password to continue.
+              {t('login.must_change_password')}
             </div>
 
             <div className="login-field">
               <label htmlFor="new-password" className="login-label">
-                New Password
+                {t('settings.password.new')}
               </label>
               <PasswordInput
                 id="new-password"
@@ -214,13 +216,13 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
 
             <div className="login-field" style={{ marginBottom: '1.75rem' }}>
               <label htmlFor="confirm-password" className="login-label">
-                Confirm New Password
+                {t('settings.password.confirm')}
               </label>
               <PasswordInput
                 id="confirm-password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="Repeat password"
+                placeholder={t('login.confirm_password_placeholder')}
                 autoComplete="new-password"
               />
             </div>
@@ -231,7 +233,7 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
               className="login-submit"
               disabled={loading || !newPassword || !confirmPassword}
             >
-              {loading ? "Setting password..." : "Set New Password & Continue"}
+              {loading ? t('settings.password.changing') : t('login.set_password')}
             </button>
           </form>
         )}

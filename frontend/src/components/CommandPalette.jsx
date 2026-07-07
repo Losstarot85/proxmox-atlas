@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useI18n } from "../i18n";
 
 const RECENT_KEY = "atlas-palette-recent";
 const MAX_RECENT = 5;
@@ -113,6 +114,7 @@ function buildItems(clusters, activeTab) {
 }
 
 export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTimeMachine, onExportJSON, onExportCSV, onToggleTheme }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
@@ -249,7 +251,7 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
             ref={inputRef}
             className="palette-input"
             type="text"
-            placeholder="Search VMs, nodes, actions..."
+            placeholder={t('palette.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -265,7 +267,7 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
         <div className="palette-results" ref={listRef}>
           {results.length === 0 ? (
             <div className="palette-empty">
-              No results for "<strong>{query}</strong>"
+              {t('palette.no_results')}
             </div>
           ) : (
             results.map((item, idx) => {

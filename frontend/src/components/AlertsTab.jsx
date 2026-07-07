@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../i18n";
 import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
 import { SkeletonAlerts } from "./Skeletons";
 import { AlertTimeline } from "./AlertTimeline";
@@ -92,6 +93,7 @@ export function AlertsTab({ clusters = [] }) {
   const { data, isLoading: loading } = useAlerts();
   const alerts = data?.alerts || [];
   const [viewMode, setViewMode] = React.useState("timeline");
+  const { t } = useI18n();
 
   const dismissMutation = useDismissAlert();
   const markReadMutation = useMarkAlertRead();
@@ -111,7 +113,7 @@ export function AlertsTab({ clusters = [] }) {
     <div className="alerts-tab">
       <div className="network-toolbar">
          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
-            <h2 style={{margin: 0}}>Notification Center</h2>
+            <h2 style={{margin: 0}}>{t('header.alerts')}</h2>
             <div className="filter-group" style={{ margin: 0, display: 'flex', gap: '2px' }}>
               <button 
                 type="button" 
@@ -119,7 +121,7 @@ export function AlertsTab({ clusters = [] }) {
                 onClick={() => setViewMode('timeline')}
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
               >
-                🕒 Timeline
+                🕒 {t('alerts.timeline')}
               </button>
               <button 
                 type="button" 
@@ -127,7 +129,7 @@ export function AlertsTab({ clusters = [] }) {
                 onClick={() => setViewMode('list')}
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
               >
-                📱 Swipe List
+                📱 {t('alerts.list')}
               </button>
               <button 
                 type="button" 
@@ -135,12 +137,12 @@ export function AlertsTab({ clusters = [] }) {
                 onClick={() => setViewMode('rules')}
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
               >
-                ⚙️ Alert Rules
+                ⚙️ {t('alerts.rules')}
               </button>
             </div>
          </div>
          <button className="btn" onClick={handleClearAll} disabled={alerts.length === 0}>
-           Clear All
+           {t('alerts.clear_all')}
          </button>
       </div>
 
@@ -151,7 +153,7 @@ export function AlertsTab({ clusters = [] }) {
       ) : alerts.length === 0 ? (
         <div className="empty-state" style={{ marginTop: "4rem" }}>
           <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>
-          All good! No active alerts.
+          {t('alerts.no_alerts_desc')}
         </div>
       ) : viewMode === "timeline" ? (
         <AlertTimeline 

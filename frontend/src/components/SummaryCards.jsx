@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TimeSeriesChart } from './TimeSeriesChart';
 import { AnimatedCounter } from './AnimatedCounter';
 import { classifyNode, classifyResource } from './ClusterHealthBar';
+import { useI18n } from '../i18n';
 
 // Inline Sparkline component for rendering history trends
 function Sparkline({ data, color = '#3b82f6' }) {
@@ -87,6 +88,7 @@ function formatBytesToSize(bytes) {
 }
 
 export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateToAlerts }) {
+  const { t } = useI18n();
   // Aggregate VMs & LXCs
   let runningVMs = 0;
   let totalVMs = 0;
@@ -220,7 +222,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <TimeSeriesChart 
           data={globalHistory || []} 
           dataKey="cpuPercent" 
-          title="Total CPU Usage" 
+          title={t('summary.total_cpu')} 
           color="#3b82f6" 
         />
       </div>
@@ -230,7 +232,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <TimeSeriesChart 
           data={globalHistory || []} 
           dataKey="memPercent" 
-          title="Total RAM Usage" 
+          title={t('summary.total_ram')} 
           color="#8b5cf6" 
         />
       </div>
@@ -240,7 +242,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🛡️</span>
-            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>Cluster Health</span>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('health.healthy')}</span>
           </div>
           {healthTrend && (
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getTrendColor(healthTrend, 'health') }} title="vs previous period">
@@ -268,7 +270,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>💾</span>
-            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Storage</span>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('resource.disk')}</span>
           </div>
           {storageTrend && (
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getTrendColor(storageTrend, 'storage') }} title="vs previous period">
@@ -296,7 +298,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🖥️</span>
-            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>Virtual Machines</span>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('summary.total_vms')}</span>
           </div>
           {vmTrend && (
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getTrendColor(vmTrend, 'vm') }} title="vs previous period">
@@ -325,7 +327,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>📦</span>
-            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>LXC Containers</span>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('cluster.containers')}</span>
           </div>
           {lxcTrend && (
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getTrendColor(lxcTrend, 'lxc') }} title="vs previous period">
@@ -367,7 +369,7 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🚨</span>
-            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>Active Alerts</span>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('summary.active_alerts')}</span>
           </div>
           {alertsTrend && (
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: getTrendColor(alertsTrend, 'alerts') }} title="vs previous period">

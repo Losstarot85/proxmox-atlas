@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 import { useToast } from "./Toast";
+import { useI18n, LOCALE_LABELS } from "../i18n";
 
 export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, onUpdateToken, userRole = 'viewer', username = '' }) {
   const canEdit = userRole === 'admin' || userRole === 'editor';
   const isAdmin = userRole === 'admin';
   const toast = useToast();
+  const { t, locale, setLocale, supportedLocales } = useI18n();
   const [intervalVal, setIntervalVal] = useState(globalInterval);
   const [webhooks, setWebhooks] = useState(globalWebhooks || []);
   const [logs, setLogs] = useState([]);
@@ -305,9 +307,9 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       {/* ==================== ACCOUNT SECURITY ==================== */}
       {userRole !== 'demo' && <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-          <h3>🔐 Account Security</h3>
+          <h3>🔐 {t('settings.password.title')}</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
-            Change the admin password for accessing Proxmox Atlas.
+            {t('settings.password.title')}
           </p>
         </div>
 
@@ -317,20 +319,20 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
           </div>
         )}
         {pwSuccess && (
-          <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ Password changed successfully.</p>
+          <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ {t('settings.password.success')}</p>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Current Password</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{t('settings.password.current')}</label>
             <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>New Password</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{t('settings.password.new')}</label>
             <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Confirm New Password</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>{t('settings.password.confirm')}</label>
             <input type="password" className="search-input" style={{ width: '100%', padding: '0.5rem' }} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Repeat password" autoComplete="new-password" />
           </div>
         </div>
@@ -340,7 +342,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
             setPwError(null);
             setPwSuccess(false);
             if (newPw.length < 6) { setPwError("Password must be at least 6 characters"); return; }
-            if (newPw !== confirmPw) { setPwError("Passwords do not match"); return; }
+            if (newPw !== confirmPw) { setPwError(t('settings.password.error_match')); return; }
             setPwSaving(true);
             try {
               const res = await fetch(`${API_BASE}/auth/change-password`, {
@@ -368,7 +370,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
               setPwSaving(false);
             }
           }}>
-            {pwSaving ? "Changing..." : "🔒 Change Password"}
+            {pwSaving ? t('settings.password.changing') : "🔒 " + t('settings.password.change')}
           </button>
         </div>
       </div>}
@@ -376,9 +378,9 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <div>
-            <h3>🖥️ Cluster Management</h3>
+            <h3>🖥️ {t('settings.clusters.title')}</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
-              Add, test, and remove Proxmox clusters. Changes take effect immediately without restart.
+              {t('settings.clusters.desc')}
             </p>
           </div>
           {canEdit && <button className="btn btn-primary" onClick={() => { setShowAddForm(!showAddForm); setTestResult(null); setClusterError(null); }}>
@@ -488,12 +490,12 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div className="setting-group" style={{ borderBottom: 'none' }}>
           <div className="setting-info">
-            <h3>Proxmox Polling Interval</h3>
-            <p>Seconds to wait between backend data updates. Alters dynamically both frontend API fetching and backend network load on cluster hosts.</p>
+            <h3>{t('settings.polling.title')}</h3>
+            <p>{t('settings.polling.desc')}</p>
           </div>
           <div className="setting-control">
             <input type="number" className="input-number" min="5" value={intervalVal} onChange={e => setIntervalVal(parseInt(e.target.value, 10) || 5)} />
-            <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>sec</span>
+            <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{t('settings.polling.sec')}</span>
           </div>
         </div>
 
@@ -503,15 +505,15 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
           </div>
         )}
         {success && (
-          <p className="msg-success" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>✅ Global settings saved successfully.</p>
+          <p className="msg-success" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>✅ {t('settings.polling.saved')}</p>
         )}
 
         {canEdit && <div className="settings-actions" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-          <button className="btn" onClick={handleDefault} disabled={isSaving}>Load Default (15s)</button>
+          <button className="btn" onClick={handleDefault} disabled={isSaving}>{t('settings.polling.default')}</button>
           <div className="actions-right">
-            <button className="btn" onClick={handleCancel} disabled={isSaving}>Cancel changes</button>
+            <button className="btn" onClick={handleCancel} disabled={isSaving}>{t('settings.polling.cancel')}</button>
             <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-               {isSaving ? "Saving..." : "Save Configuration"}
+               {isSaving ? t('settings.polling.saving') : t('settings.polling.save')}
             </button>
           </div>
         </div>}
@@ -521,9 +523,9 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       <div className="glass-card" style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "1rem" }}>
           <div>
-            <h3>Browser Push Notifications</h3>
+            <h3>{t('settings.push.title')}</h3>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", margin: 0, marginTop: "0.25rem" }}>
-              Opt-in to receive browser alerts for critical events, working even in the background.
+              {t('settings.push.desc')}
             </p>
           </div>
         </div>
@@ -563,14 +565,14 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <div>
-            <h3>Webhook Alerts Export</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>Configure multiple webhook endpoints to dispatch generated alerts externally.</p>
+            <h3>{t('settings.webhooks.title')}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>{t('settings.webhooks.desc')}</p>
           </div>
-          {canEdit && <button className="btn btn-primary" onClick={handleAddWebhook}>+ Add Webhook</button>}
+          {canEdit && <button className="btn btn-primary" onClick={handleAddWebhook}>{t('settings.webhooks.add')}</button>}
         </div>
 
         {webhooks.length === 0 ? (
-          <div className="empty-state" style={{ padding: '2rem' }}>No webhooks configured.</div>
+          <div className="empty-state" style={{ padding: '2rem' }}>{t('settings.webhooks.none')}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {webhooks.map((wh) => (
@@ -654,10 +656,10 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
         <div className="glass-card" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
             <div>
-              <h3>👥 User Management</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>Create, delete, and manage user accounts and roles.</p>
+              <h3>👥 {t('settings.users.title')}</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>{t('settings.users.title')}</p>
             </div>
-            <button className="btn btn-primary" onClick={() => { setShowAddUser(!showAddUser); setUserError(null); }}>{showAddUser ? 'Cancel' : '+ Add User'}</button>
+            <button className="btn btn-primary" onClick={() => { setShowAddUser(!showAddUser); setUserError(null); }}>{showAddUser ? t('common.cancel') : t('settings.users.add')}</button>
           </div>
 
           {userError && <div className="global-error" style={{ marginBottom: '1rem' }}><span>❌</span><span>{userError}</span></div>}
@@ -721,6 +723,47 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
           </div>
         </div>
       )}
+
+      {/* ==================== LANGUAGE PICKER ==================== */}
+      <div className="glass-card" style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+          <h3>🌍 {t('settings.language.title')}</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
+            {t('settings.language.desc')}
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
+          {supportedLocales.map(loc => {
+            const flags = { en: '🇬🇧', it: '🇮🇹', de: '🇩🇪', fr: '🇫🇷', es: '🇪🇸', zh: '🇨🇳' };
+            const isActive = locale === loc;
+            return (
+              <button
+                key={loc}
+                className={`btn ${isActive ? 'btn-primary' : ''}`}
+                onClick={() => setLocale(loc)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.9rem',
+                  fontWeight: isActive ? 600 : 400,
+                  border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
+                  borderRadius: '8px',
+                  background: isActive ? 'rgba(59, 130, 246, 0.15)' : 'var(--surface)',
+                  color: isActive ? 'var(--accent)' : 'var(--text-primary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>{flags[loc]}</span>
+                {LOCALE_LABELS[loc]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

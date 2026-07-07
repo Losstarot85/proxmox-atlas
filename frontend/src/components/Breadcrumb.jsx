@@ -6,15 +6,17 @@
  */
 
 import React from "react";
-
-const TAB_LABELS = {
-  dashboard: "Dashboard",
-  topology: "Topology",
-  alerts: "Alerts",
-  settings: "Settings",
-};
+import { useI18n } from "../i18n";
 
 export function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavigate, onCloseModals }) {
+  const { t } = useI18n();
+  const TAB_LABELS = {
+    dashboard: t("nav.dashboard"),
+    topology: t("nav.topology"),
+    alerts: t("nav.alerts"),
+    backups: t("nav.backups"),
+    settings: t("nav.settings"),
+  };
   const crumbs = [];
 
   // Root
@@ -35,7 +37,7 @@ export function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavig
 
   // Time Machine context
   if (timeMachineTarget) {
-    const typeLabel = timeMachineTarget.type === "NODE" ? "Node" : timeMachineTarget.type;
+    const typeLabel = timeMachineTarget.type === "NODE" ? t("topology.node") : timeMachineTarget.type;
     crumbs.push({
       label: `${typeLabel}: ${timeMachineTarget.name}`,
       icon: "⏱",
@@ -50,7 +52,7 @@ export function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavig
       onClick: () => onCloseModals(),
     });
     crumbs.push({
-      label: `What-If: ${whatIfTarget.node}`,
+      label: `${t("whatif.title")}: ${whatIfTarget.node}`,
       icon: "⚡",
       active: true,
     });
