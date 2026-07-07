@@ -457,7 +457,7 @@ function App() {
             />
           </Suspense>
         )}
-        {activeTab === "alerts" && <AlertsTab />}
+        {activeTab === "alerts" && <AlertsTab clusters={clusters} />}
         {activeTab === "backups" && <BackupStatus clusters={clusters} />}
 
         {activeTab === "settings" && (

@@ -2,6 +2,7 @@ import React from "react";
 import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
 import { SkeletonAlerts } from "./Skeletons";
 import { AlertTimeline } from "./AlertTimeline";
+import { AlertRulesEditor } from "./AlertRulesEditor";
 
 function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, handleDelete }) {
   const [touchStartX, setTouchStartX] = React.useState(0);
@@ -87,7 +88,7 @@ function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, 
   );
 }
 
-export function AlertsTab() {
+export function AlertsTab({ clusters = [] }) {
   const { data, isLoading: loading } = useAlerts();
   const alerts = data?.alerts || [];
   const [viewMode, setViewMode] = React.useState("timeline");
@@ -128,6 +129,14 @@ export function AlertsTab() {
               >
                 📱 Swipe List
               </button>
+              <button 
+                type="button" 
+                className={`filter-btn ${viewMode === 'rules' ? 'active' : ''}`}
+                onClick={() => setViewMode('rules')}
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+              >
+                ⚙️ Alert Rules
+              </button>
             </div>
          </div>
          <button className="btn" onClick={handleClearAll} disabled={alerts.length === 0}>
@@ -137,6 +146,8 @@ export function AlertsTab() {
 
       {loading ? (
         <SkeletonAlerts count={4} />
+      ) : viewMode === "rules" ? (
+        <AlertRulesEditor clusters={clusters} />
       ) : alerts.length === 0 ? (
         <div className="empty-state" style={{ marginTop: "4rem" }}>
           <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>

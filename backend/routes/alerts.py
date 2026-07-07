@@ -40,3 +40,21 @@ from alerts.notifier import get_webhook_logs
 @router.get("/alerts/webhook_logs")
 def fetch_webhook_logs():
     return {"logs": get_webhook_logs()}
+
+
+from alerts.engine import load_rules, save_rules
+
+
+@router.get("/alerts/rules")
+def get_alert_rules():
+    return load_rules()
+
+
+@router.post("/alerts/rules")
+def update_alert_rules(rules: dict):
+    success = save_rules(rules)
+    if success:
+        return {"status": "ok"}
+    else:
+        return {"status": "error", "message": "Failed to save rules"}
+

@@ -104,3 +104,28 @@ export function useWebhookLogs() {
     refetchInterval: 30_000,
   });
 }
+
+// ── Alert Rules ──
+
+export function useAlertRules() {
+  return useQuery({
+    queryKey: ["alertRules"],
+    queryFn: () => apiFetch("/alerts/rules"),
+  });
+}
+
+export function useSaveAlertRules() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rules) =>
+      apiFetch("/alerts/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rules),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alertRules"] });
+      qc.invalidateQueries({ queryKey: ["alerts"] });
+    },
+  });
+}

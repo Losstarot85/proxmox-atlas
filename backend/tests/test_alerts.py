@@ -85,3 +85,43 @@ def test_health_endpoint(client):
     data = res.json()
     assert data["components"]["backend"]["status"] == "ok"
     assert "prometheus" in data["components"]
+
+
+def test_alert_rules_endpoints(client, auth_headers):
+    """Test get and set alert rules endpoints."""
+    # Get current rules
+    res = client.get("/alerts/rules", headers=auth_headers)
+    assert res.status_code == 200
+    rules = res.json()
+    assert "cpu_threshold_percent" in rules
+    assert "ram_threshold_percent" in rules
+    assert "enabled_rules" in rules
+
+    # Modify rules
+    rules["cpu_threshold_percent"] = 77
+    rules["enabled_rules"]["cpu"] = False
+    rules["overrides"] = {
+        "test-cl:100": {
+            "cpu_threshold_percent": 99
+        }
+    }
+
+    # Save rules
+    res = client.post("/alerts/rules", json=rules, headers=auth_headers)
+    assert res.status_code == 200
+    assert res.json()["status"] == "ok"
+
+    # Fetch again to verify persistence
+    res = client.get("/alerts/rules", headers=auth_headers)
+    assert res.status_code == 200
+    updated_rules = res.json()
+    assert updated_rules["cpu_threshold_percent"] == 77
+    assert updated_rules["enabled_rules"]["cpu"] is False
+    assert updated_rules["overrides"]["test-cl:100"]["cpu_threshold_percent"] == 99
+
+    # Clean up rules by restoring defaults
+    rules["cpu_threshold_percent"] = 85
+    rules["enabled_rules"]["cpu"] = True
+    rules["overrides"] = {}
+    client.post("/alerts/rules", json=rules, headers=auth_headers)
+

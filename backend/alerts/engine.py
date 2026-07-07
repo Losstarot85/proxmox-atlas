@@ -9,8 +9,9 @@ from logger import get_logger
 
 log = get_logger("alerts.engine")
 
-RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.json")
+DEFAULT_RULES_PATH = os.path.join(os.path.dirname(__file__), "rules.json")
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(os.path.dirname(__file__)))
+RULES_PATH = os.path.join(DATA_DIR, "rules.json")
 ALERT_STATE_PATH = os.path.join(DATA_DIR, "alert_state.json")
 
 # In-memory record of current alerts to prevent repeated spam on every poll
@@ -69,6 +70,27 @@ def mark_state_dirty():
 _load_alert_state()
 
 
+def get_effective_rule(rules, rule_key, cluster_name, identifier, rule_type):
+    """
+    Returns the effective threshold value for a rule.
+    If the rule type is disabled globally, returns float('inf') to disable triggers.
+    Otherwise, check if a resource-specific override exists under rules['overrides'][f"{cluster_name}:{identifier}"].
+    If not, falls back to the global default rule value.
+    """
+    enabled_rules = rules.get("enabled_rules", {})
+    if not enabled_rules.get(rule_type, True):
+        return float('inf')
+        
+    overrides = rules.get("overrides", {})
+    res_key = f"{cluster_name}:{identifier}"
+    if res_key in overrides:
+        res_override = overrides[res_key]
+        if rule_key in res_override:
+            return res_override[rule_key]
+            
+    return rules.get(rule_key, float('inf'))
+
+
 def load_rules():
     defaults = {
         "cpu_threshold_percent": 85,
@@ -78,15 +100,44 @@ def load_rules():
         "network_threshold_mbps": 800,
         "ram_pressure_threshold_percent": 15,
         "backup_max_days": 7,
+        "enabled_rules": {
+            "cpu": True,
+            "ram": True,
+            "disk": True,
+            "iowait": True,
+            "network": True,
+            "ram_pressure": True,
+            "backup": True
+        },
+        "overrides": {}
     }
+    path_to_load = RULES_PATH
+    if not os.path.exists(path_to_load) and os.path.exists(DEFAULT_RULES_PATH):
+        path_to_load = DEFAULT_RULES_PATH
+
     try:
-        with open(RULES_PATH) as f:
+        with open(path_to_load) as f:
             user_rules = json.load(f)
-            # Merge defaults for any missing new keys
+            if "enabled_rules" in user_rules:
+                defaults["enabled_rules"].update(user_rules["enabled_rules"])
+                user_rules.pop("enabled_rules")
+            if "overrides" in user_rules:
+                defaults["overrides"].update(user_rules["overrides"])
+                user_rules.pop("overrides")
             defaults.update(user_rules)
             return defaults
-    except FileNotFoundError:
+    except Exception:
         return defaults
+
+
+def save_rules(rules_data):
+    try:
+        with open(RULES_PATH, "w") as f:
+            json.dump(rules_data, f, indent=2)
+        return True
+    except Exception as e:
+        log.error("save_rules_failed", error=str(e))
+        return False
 
 
 async def evaluate_alerts():
@@ -142,7 +193,7 @@ async def evaluate_alerts():
             # CPU Node
             cpu_p = (node.get("cpu", 0)) * 100
 
-            if cpu_p > rules["cpu_threshold_percent"]:
+            if cpu_p > get_effective_rule(rules, "cpu_threshold_percent", cluster_name, n_name, "cpu"):
                 ak = f"{base_key}:cpu"
                 if ak not in active_alerts and base_key not in silenced:
                     add_alert(
@@ -159,7 +210,7 @@ async def evaluate_alerts():
             # RAM Node
             if node.get("maxmem", 0) > 0:
                 ram_p = (node.get("mem", 0) / node["maxmem"]) * 100
-                if ram_p > rules["ram_threshold_percent"]:
+                if ram_p > get_effective_rule(rules, "ram_threshold_percent", cluster_name, n_name, "ram"):
                     ak = f"{base_key}:ram"
                     if ak not in active_alerts and base_key not in silenced:
                         add_alert(
@@ -177,7 +228,7 @@ async def evaluate_alerts():
             for sp in node.get("storage_pools", []):
                 if sp.get("active", 0) == 1 and sp.get("total", 0) > 0:
                     disk_p = (sp["used"] / sp["total"]) * 100
-                    if disk_p > rules["disk_usage_threshold_percent"]:
+                    if disk_p > get_effective_rule(rules, "disk_usage_threshold_percent", cluster_name, n_name, "disk"):
                         pool_name = sp["storage"]
                         ak = f"{base_key}:storage:{pool_name}"
                         if ak not in active_alerts and base_key not in silenced:
@@ -193,7 +244,7 @@ async def evaluate_alerts():
                             active_alerts[ak] = current_time
 
             # IO Stall
-            if node.get("pressure_io", 0) > rules["io_stall_threshold_percent"]:
+            if node.get("pressure_io", 0) > get_effective_rule(rules, "io_stall_threshold_percent", cluster_name, n_name, "iowait"):
                 ak = f"{base_key}:iostall"
                 if ak not in active_alerts and base_key not in silenced:
                     add_alert(
@@ -208,7 +259,7 @@ async def evaluate_alerts():
                     active_alerts[ak] = current_time
 
             # RAM Pressure Stall (Thrashing)
-            if node.get("pressure_ram", 0) > rules["ram_pressure_threshold_percent"]:
+            if node.get("pressure_ram", 0) > get_effective_rule(rules, "ram_pressure_threshold_percent", cluster_name, n_name, "ram_pressure"):
                 ak = f"{base_key}:ramstall"
                 if ak not in active_alerts and base_key not in silenced:
                     add_alert(
@@ -240,7 +291,7 @@ async def evaluate_alerts():
 
             # Network Saturation
             mbps = ((node.get("netin", 0) + node.get("netout", 0)) * 8) / 1000000
-            if mbps > rules["network_threshold_mbps"]:
+            if mbps > get_effective_rule(rules, "network_threshold_mbps", cluster_name, n_name, "network"):
                 ak = f"{base_key}:network"
                 if ak not in active_alerts and base_key not in silenced:
                     add_alert(
@@ -262,40 +313,41 @@ async def evaluate_alerts():
 
             # 5.4 Backup Status Monitoring Alert Rule
             latest_ctime = vmid_to_latest_backup.get(vmid)
-            backup_max_days = rules.get("backup_max_days", 7)
+            backup_max_days = get_effective_rule(rules, "backup_max_days", cluster_name, vmid, "backup")
             silenced = get_silenced()
 
-            if latest_ctime is None:
-                ak = f"{base_key}:backup_never"
-                if ak not in active_alerts and base_key not in silenced:
-                    add_alert(
-                        {
-                            "cluster": cluster_name,
-                            "node": res.get("node", "unknown"),
-                            "resource": f"{res.get('type', 'VM')} {vmid} ({r_name})",
-                            "severity": "warning",
-                            "message": f"VM {r_name} has no backup in {backup_max_days} days (never backed up)",
-                        }
-                    )
-                    active_alerts[ak] = current_time
-            else:
-                days_since = (current_time - latest_ctime) / 86400.0
-                if days_since > backup_max_days:
-                    ak = f"{base_key}:backup_old"
+            if backup_max_days != float("inf"):
+                if latest_ctime is None:
+                    ak = f"{base_key}:backup_never"
                     if ak not in active_alerts and base_key not in silenced:
-                        from datetime import datetime
-
-                        last_backup_str = datetime.fromtimestamp(latest_ctime).strftime("%Y-%m-%d")
                         add_alert(
                             {
                                 "cluster": cluster_name,
                                 "node": res.get("node", "unknown"),
                                 "resource": f"{res.get('type', 'VM')} {vmid} ({r_name})",
                                 "severity": "warning",
-                                "message": f"VM {r_name} has no backup in {int(days_since)} days (last backup: {last_backup_str})",
+                                "message": f"VM {r_name} has no backup in {backup_max_days} days (never backed up)",
                             }
                         )
                         active_alerts[ak] = current_time
+                else:
+                    days_since = (current_time - latest_ctime) / 86400.0
+                    if days_since > backup_max_days:
+                        ak = f"{base_key}:backup_old"
+                        if ak not in active_alerts and base_key not in silenced:
+                            from datetime import datetime
+
+                            last_backup_str = datetime.fromtimestamp(latest_ctime).strftime("%Y-%m-%d")
+                            add_alert(
+                                {
+                                    "cluster": cluster_name,
+                                    "node": res.get("node", "unknown"),
+                                    "resource": f"{res.get('type', 'VM')} {vmid} ({r_name})",
+                                    "severity": "warning",
+                                    "message": f"VM {r_name} has no backup in {int(days_since)} days (last backup: {last_backup_str})",
+                                }
+                            )
+                            active_alerts[ak] = current_time
 
             # Crash / Shutdown Tracker
             prev_status = previous_states.get(base_key, res.get("status"))
@@ -322,7 +374,7 @@ async def evaluate_alerts():
             cpu_p = (res.get("cpu", 0)) * 100
             silenced = get_silenced()
 
-            if cpu_p > rules["cpu_threshold_percent"]:
+            if cpu_p > get_effective_rule(rules, "cpu_threshold_percent", cluster_name, vmid, "cpu"):
                 ak = f"{base_key}:cpu"
                 if ak not in active_alerts and base_key not in silenced:
                     add_alert(
@@ -339,7 +391,7 @@ async def evaluate_alerts():
             # RAM VM
             if res.get("maxmem", 0) > 0:
                 ram_p = (res.get("mem", 0) / res["maxmem"]) * 100
-                if ram_p > rules["ram_threshold_percent"]:
+                if ram_p > get_effective_rule(rules, "ram_threshold_percent", cluster_name, vmid, "ram"):
                     ak = f"{base_key}:ram"
                     if ak not in active_alerts and base_key not in silenced:
                         add_alert(
