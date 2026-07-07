@@ -41,11 +41,40 @@ function App() {
   const [forceCollapse, setForceCollapse] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
   const [whatIfTarget, setWhatIfTarget] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const touchStartRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartRef.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartRef.current === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStartRef.current - touchEnd;
+    touchStartRef.current = null;
+
+    // Detect swipe (diff > 0 is swipe left to go next, diff < 0 is swipe right to go prev)
+    if (Math.abs(diff) > 60) {
+      const tabs = ["dashboard", "topology", "backups", "alerts", "settings"];
+      const currentIndex = tabs.indexOf(activeTab);
+      if (diff > 0) {
+        if (currentIndex < tabs.length - 1) {
+          handleNavClick(tabs[currentIndex + 1]);
+        }
+      } else {
+        if (currentIndex > 0) {
+          handleNavClick(tabs[currentIndex - 1]);
+        }
+      }
+    }
+  };
 
   const handleNavClick = (tab) => {
     router.navigate(tab);
     setForceCollapse(true);
     setIsSidebarHovered(false);
+    setIsMobileMenuOpen(false);
   };
 
   const openTimeMachine = (target) => {
@@ -166,9 +195,14 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Mobile Drawer Backdrop */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
       {/* Sidebar Navigation */}
       <aside 
-        className={`sidebar ${isExpanded ? 'expanded' : ''}`}
+        className={`sidebar ${isExpanded ? 'expanded' : ''} ${isMobileMenuOpen ? 'sidebar-mobile-open' : ''}`}
         onMouseEnter={() => { setIsSidebarHovered(true); setForceCollapse(false); }}
         onMouseLeave={() => setIsSidebarHovered(false)}
       >
@@ -256,11 +290,71 @@ function App() {
         </div>
       </aside>
 
+      {/* Bottom Navigation for Mobile */}
+      <nav className="mobile-tab-bar">
+        <button
+          className={`mobile-tab-item ${activeTab === "dashboard" ? "active" : ""}`}
+          onClick={() => handleNavClick("dashboard")}
+        >
+          <span className="mobile-tab-icon">📊</span>
+          <span className="mobile-tab-label">Dashboard</span>
+        </button>
+        <button
+          className={`mobile-tab-item ${activeTab === "topology" ? "active" : ""}`}
+          onClick={() => handleNavClick("topology")}
+        >
+          <span className="mobile-tab-icon">🌍</span>
+          <span className="mobile-tab-label">Topology</span>
+        </button>
+        <button
+          className={`mobile-tab-item ${activeTab === "backups" ? "active" : ""}`}
+          onClick={() => handleNavClick("backups")}
+        >
+          <span className="mobile-tab-icon">💾</span>
+          <span className="mobile-tab-label">Backups</span>
+        </button>
+        <button
+          className={`mobile-tab-item ${activeTab === "alerts" ? "active" : ""}`}
+          onClick={() => handleNavClick("alerts")}
+          style={{ position: 'relative' }}
+        >
+          <span className="mobile-tab-icon">
+            🚨
+            {unreadAlerts > 0 && (
+              <span className="mobile-badge">
+                {unreadAlerts > 99 ? '99+' : unreadAlerts}
+              </span>
+            )}
+          </span>
+          <span className="mobile-tab-label">Alerts</span>
+        </button>
+        <button
+          className={`mobile-tab-item ${activeTab === "settings" ? "active" : ""}`}
+          onClick={() => handleNavClick("settings")}
+        >
+          <span className="mobile-tab-icon">⚙️</span>
+          <span className="mobile-tab-label">Settings</span>
+        </button>
+      </nav>
+
       {/* Main Content Area */}
-      <main className="main-content" key={activeTab}>
+      <main 
+        className="main-content" 
+        key={activeTab}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <header className="top-header">
-          <div>
-            <h2 className="page-title">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              className="hamburger-menu"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+            <div>
+              <h2 className="page-title">
               {activeTab === 'dashboard' && 'Dashboard Overview'}
               {activeTab === 'topology' && 'Cluster Topology'}
               {activeTab === 'alerts' && 'Notification Center'}
@@ -274,6 +368,7 @@ function App() {
               onNavigate={handleNavClick}
               onCloseModals={() => { closeTimeMachine(); setWhatIfTarget(null); }}
             />
+          </div>
           </div>
           <div className="global-status">
             <div className="status-chip">

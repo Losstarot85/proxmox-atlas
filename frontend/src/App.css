@@ -2029,3 +2029,194 @@ tbody tr:last-child td {
   padding: 0.75rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+/* ==========================================================================
+   Responsive Sidebar & Mobile Bottom Navigation (Step 6.1)
+   ========================================================================== */
+
+.hamburger-menu {
+  display: none;
+}
+
+.mobile-tab-bar {
+  display: none;
+}
+
+/* 768px - 1024px: Tablet Mode */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar {
+    width: 68px !important; /* Keep collapsed */
+    padding: 1.5rem 0.5rem !important;
+  }
+  .sidebar.expanded {
+    width: 68px !important;
+  }
+  .sidebar .logo-text-group,
+  .sidebar .nav-text {
+    display: none !important;
+    opacity: 0 !important;
+  }
+  .main-content {
+    margin-left: 68px !important;
+    padding: 1.5rem 2rem !important; /* Adjusted padding */
+  }
+}
+
+/* < 768px: Mobile Mode */
+@media (max-width: 767px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  /* Hide sidebar on desktop layout, style as drawer */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 240px !important;
+    height: 100vh;
+    transform: translateX(-240px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100 !important;
+    padding: 1.5rem 1rem !important;
+    background-color: var(--bg-secondary);
+    box-shadow: 10px 0 25px rgba(0, 0, 0, 0.6);
+  }
+
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Force display of text in mobile drawer */
+  .sidebar .logo-text-group,
+  .sidebar .nav-text {
+    opacity: 1 !important;
+    display: block !important;
+  }
+
+  /* Main content padding adjustment & space for bottom bar */
+  .main-content {
+    margin-left: 0 !important;
+    margin-bottom: 60px !important; /* Height of bottom tab bar */
+    padding: 1rem 1.25rem !important;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* Mobile Top Header layout adjustments */
+  .top-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .global-status {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Hamburger Menu Button */
+  .hamburger-menu {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .hamburger-menu:hover {
+    background: var(--surface-hover);
+  }
+
+  /* Bottom Navigation Tab Bar */
+  .mobile-tab-bar {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(17, 24, 39, 0.85); /* Sleek dark mode glass */
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 90 !important;
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex: 1;
+    height: 100%;
+    min-height: 48px; /* Touch-friendly */
+    gap: 2px;
+    font-family: var(--sans);
+    transition: color 0.2s;
+  }
+
+  .mobile-tab-item.active {
+    color: var(--accent-light);
+  }
+
+  .mobile-tab-icon {
+    font-size: 1.25rem;
+  }
+
+  .mobile-tab-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+
+  /* Backdrop Overlay for mobile drawer */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 95;
+    animation: fade-in 0.2s ease-out;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .mobile-badge {
+    position: absolute;
+    top: -4px;
+    right: -10px;
+    background-color: var(--danger);
+    color: white;
+    border-radius: 50%;
+    padding: 1px 5px;
+    font-size: 0.6rem;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+  }
+}
+
