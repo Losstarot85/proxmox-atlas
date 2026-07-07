@@ -1,6 +1,7 @@
 import React from "react";
 import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
 import { SkeletonAlerts } from "./Skeletons";
+import { AlertTimeline } from "./AlertTimeline";
 
 function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, handleDelete }) {
   const [touchStartX, setTouchStartX] = React.useState(0);
@@ -89,6 +90,7 @@ function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, 
 export function AlertsTab() {
   const { data, isLoading: loading } = useAlerts();
   const alerts = data?.alerts || [];
+  const [viewMode, setViewMode] = React.useState("timeline");
 
   const dismissMutation = useDismissAlert();
   const markReadMutation = useMarkAlertRead();
@@ -107,7 +109,27 @@ export function AlertsTab() {
   return (
     <div className="alerts-tab">
       <div className="network-toolbar">
-         <h2 style={{margin: 0}}>Notification Center</h2>
+         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+            <h2 style={{margin: 0}}>Notification Center</h2>
+            <div className="filter-group" style={{ margin: 0, display: 'flex', gap: '2px' }}>
+              <button 
+                type="button" 
+                className={`filter-btn ${viewMode === 'timeline' ? 'active' : ''}`}
+                onClick={() => setViewMode('timeline')}
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+              >
+                🕒 Timeline
+              </button>
+              <button 
+                type="button" 
+                className={`filter-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+                style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+              >
+                📱 Swipe List
+              </button>
+            </div>
+         </div>
          <button className="btn" onClick={handleClearAll} disabled={alerts.length === 0}>
            Clear All
          </button>
@@ -120,6 +142,13 @@ export function AlertsTab() {
           <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>
           All good! No active alerts.
         </div>
+      ) : viewMode === "timeline" ? (
+        <AlertTimeline 
+          alerts={alerts}
+          handleSilence={handleSilence}
+          handleMarkRead={handleMarkRead}
+          handleDelete={handleDelete}
+        />
       ) : (
         <div className="alerts-list" style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
           {alerts.map(alert => (
