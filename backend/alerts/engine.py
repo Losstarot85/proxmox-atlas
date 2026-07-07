@@ -80,14 +80,14 @@ def get_effective_rule(rules, rule_key, cluster_name, identifier, rule_type):
     enabled_rules = rules.get("enabled_rules", {})
     if not enabled_rules.get(rule_type, True):
         return float('inf')
-        
+
     overrides = rules.get("overrides", {})
     res_key = f"{cluster_name}:{identifier}"
     if res_key in overrides:
         res_override = overrides[res_key]
         if rule_key in res_override:
             return res_override[rule_key]
-            
+
     return rules.get(rule_key, float('inf'))
 
 
@@ -110,7 +110,7 @@ def is_flapping_and_register(ak, is_violating):
         # Keep only transitions in the last 5 minutes (300 seconds)
         transitions = [t for t in transitions if now - t < 300]
         flap_history[ak] = transitions
-        
+
     transitions = flap_history.get(ak, [])
     # Flapping if 4 or more transitions in 5 minutes
     return len(transitions) >= 4
@@ -457,17 +457,17 @@ async def evaluate_alerts():
 
     for group_key, items in grouped_buckets.items():
         cluster_name, node_name, alert_type = group_key
-        
+
         # If there are 3 or more alerts of the same type on the same node, group them
         if len(items) >= 3:
             vm_names = [x["name"] for x in items]
             grouped_message = f"{len(items)} VMs on node {node_name} have high {alert_type.upper()}: {', '.join(vm_names)}"
             if alert_type == "backup":
                 grouped_message = f"{len(items)} VMs on node {node_name} have stale/missing backups: {', '.join(vm_names)}"
-                
+
             grouped_ak = f"{cluster_name}:{node_name}:grouped_{alert_type}"
             silenced = get_silenced()
-            
+
             # Trigger the grouped alert
             if grouped_ak not in active_alerts and f"{cluster_name}:{node_name}:node" not in silenced:
                 add_alert({
@@ -478,7 +478,7 @@ async def evaluate_alerts():
                     "message": grouped_message
                 })
                 active_alerts[grouped_ak] = current_time
-                
+
             # Prevent individual alerts from firing by placing them in active_alerts cooldown
             for x in items:
                 active_alerts[x["ak"]] = current_time

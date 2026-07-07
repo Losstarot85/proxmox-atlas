@@ -128,11 +128,11 @@ def test_alert_rules_endpoints(client, auth_headers):
 
 def test_smart_alert_grouping(client, auth_headers):
     """Test that >= 3 VM alerts on the same node are grouped into a single alert."""
-    from alerts.store import alerts_store
-    from alerts.engine import active_alerts, evaluate_alerts
-    from cache import cache
     import asyncio
-    import time
+
+    from alerts.engine import active_alerts, evaluate_alerts
+    from alerts.store import alerts_store
+    from cache import cache
 
     alerts_store.clear()
     active_alerts.clear()
@@ -159,7 +159,7 @@ def test_smart_alert_grouping(client, auth_headers):
     grouped_alert = next((a for a in alerts if "VM GROUP" in a["resource"]), None)
     assert grouped_alert is not None
     assert "3 VMs on node node1 have high CPU" in grouped_alert["message"]
-    
+
     # Ensure individual alerts did not fire
     individual_alerts = [a for a in alerts if "High CPU usage on VM" in a["message"]]
     assert len(individual_alerts) == 0
@@ -167,10 +167,11 @@ def test_smart_alert_grouping(client, auth_headers):
 
 def test_node_down_suppression(client, auth_headers):
     """Test that individual VM offline alerts are suppressed when their host node is down."""
-    from alerts.store import alerts_store
-    from alerts.engine import active_alerts, previous_states, evaluate_alerts
-    from cache import cache
     import asyncio
+
+    from alerts.engine import active_alerts, evaluate_alerts, previous_states
+    from alerts.store import alerts_store
+    from cache import cache
 
     alerts_store.clear()
     active_alerts.clear()
@@ -209,10 +210,11 @@ def test_node_down_suppression(client, auth_headers):
 
 def test_alert_flap_detection(client, auth_headers):
     """Test that rapid toggling of a metric suppresses alerts via flap detection."""
-    from alerts.store import alerts_store
-    from alerts.engine import active_alerts, evaluate_alerts, flap_history, rule_states
-    from cache import cache
     import asyncio
+
+    from alerts.engine import active_alerts, evaluate_alerts, flap_history, rule_states
+    from alerts.store import alerts_store
+    from cache import cache
 
     alerts_store.clear()
     active_alerts.clear()
