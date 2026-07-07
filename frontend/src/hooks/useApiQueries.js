@@ -47,6 +47,7 @@ export function useAlerts(enabled = true) {
     queryKey: ["alerts"],
     queryFn: () => apiFetch("/alerts"),
     refetchInterval: 15_000, // Poll every 15s for new alerts
+    refetchIntervalInBackground: true,
     enabled,
   });
 }

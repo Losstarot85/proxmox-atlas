@@ -26,6 +26,46 @@ const TopologyTab = lazy(() => import("./components/TopologyTab").then(m => ({ d
 const WhatIfModal = lazy(() => import("./components/WhatIfModal").then(m => ({ default: m.WhatIfModal })));
 
 
+function triggerBrowserPushNotification(alert) {
+  if (!("serviceWorker" in navigator) || !("Notification" in window)) return;
+  if (window.Notification.permission !== "granted") return;
+
+  navigator.serviceWorker.ready.then((registration) => {
+    let type = "NODE";
+    let id = alert.node;
+
+    if (alert.resource) {
+      const match = alert.resource.match(/^(VM|LXC)\s+(\d+)/i);
+      if (match) {
+        type = match[1].toUpperCase();
+        id = match[2];
+      }
+    }
+
+    const targetUrl = `${window.location.origin}/#/dashboard/resource/${type}/${id}`;
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "SHOW_NOTIFICATION",
+        title: `⚠️ Critical Alert: ${alert.cluster}`,
+        body: alert.message,
+        url: targetUrl,
+        tag: `alert-${alert.id}`,
+      });
+    } else {
+      registration.showNotification(`⚠️ Critical Alert: ${alert.cluster}`, {
+        body: alert.message,
+        icon: "/logo.png",
+        badge: "/favicon.svg",
+        tag: `alert-${alert.id}`,
+        renotify: true,
+        data: { url: targetUrl },
+      });
+    }
+  });
+}
+
+
 function App() {
   const auth = useAuth();
   const toast = useToast();
@@ -162,6 +202,11 @@ function App() {
         const severity = a.severity || "warning";
         const toastType = severity === "critical" ? "error" : "warning";
         toast[toastType](a.message || `Alert on ${a.node || a.cluster || "cluster"}`);
+
+        // Trigger browser push notification for new critical alerts if opted-in
+        if (severity === "critical" && localStorage.getItem("enable_push_notifications") === "true") {
+          triggerBrowserPushNotification(a);
+        }
       }
     });
   }, [alertsData, toast]);

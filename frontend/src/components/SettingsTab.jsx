@@ -21,6 +21,51 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
 
+  // Browser Push Notifications State
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(() => {
+    return localStorage.getItem("enable_push_notifications") === "true";
+  });
+  const [pushPermissionStatus, setPushPermissionStatus] = useState(() => {
+    return typeof window !== "undefined" && window.Notification ? window.Notification.permission : "default";
+  });
+
+  const handleTogglePushNotifications = async (e) => {
+    const checked = e.target.checked;
+    setPushNotificationsEnabled(checked);
+    localStorage.setItem("enable_push_notifications", checked ? "true" : "false");
+
+    if (checked && window.Notification) {
+      if (window.Notification.permission === "default") {
+        const permission = await window.Notification.requestPermission();
+        setPushPermissionStatus(permission);
+        if (permission === "granted") {
+          toast.success("Push notifications enabled!");
+        } else if (permission === "denied") {
+          toast.error("Notification permission denied!");
+        }
+      } else {
+        setPushPermissionStatus(window.Notification.permission);
+        if (window.Notification.permission === "granted") {
+          toast.success("Push notifications enabled!");
+        }
+      }
+    } else if (!checked) {
+      toast.info("Push notifications disabled.");
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if (window.Notification) {
+      const permission = await window.Notification.requestPermission();
+      setPushPermissionStatus(permission);
+      if (permission === "granted") {
+        toast.success("Permission granted!");
+      } else {
+        toast.error("Permission denied!");
+      }
+    }
+  };
+
   // Cluster Management State
   const [clusters, setClusters] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -470,6 +515,48 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
             </button>
           </div>
         </div>}
+      </div>
+
+      {/* ==================== BROWSER PUSH NOTIFICATIONS ==================== */}
+      <div className="glass-card" style={{ marginBottom: "2rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "1rem" }}>
+          <div>
+            <h3>Browser Push Notifications</h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", margin: 0, marginTop: "0.25rem" }}>
+              Opt-in to receive browser alerts for critical events, working even in the background.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", padding: "0.5rem 0", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={pushNotificationsEnabled}
+              onChange={handleTogglePushNotifications}
+              style={{ width: "18px", height: "18px", cursor: "pointer" }}
+            />
+            Enable Browser Push Notifications
+          </label>
+
+          {pushPermissionStatus === "default" && pushNotificationsEnabled && (
+            <button className="btn btn-primary" onClick={requestNotificationPermission}>
+              Request Permission
+            </button>
+          )}
+
+          {pushPermissionStatus === "denied" && (
+            <span style={{ color: "var(--danger)", fontSize: "0.9rem" }}>
+              ⚠️ Notification permission denied. Please enable them in your browser settings.
+            </span>
+          )}
+
+          {pushPermissionStatus === "granted" && pushNotificationsEnabled && (
+            <span className="badge badge-online" style={{ padding: "0.25rem 0.6rem" }}>
+              ✓ Notifications Active
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ==================== WEBHOOKS ==================== */}
