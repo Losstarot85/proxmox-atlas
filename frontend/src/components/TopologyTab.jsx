@@ -92,6 +92,19 @@ function TopologyNode({ nodeData, clusterName, initialPosition, onOpenTimeMachin
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0.5rem' }}>No VMs</div>
         )}
       </div>
+      
+      {/* Mobile simplified VM summary */}
+      <div className="mobile-only-vm-summary">
+        {nodeData.vms?.length > 0 ? (
+          <>
+            <span>🖥️ VMs: {nodeData.vms.filter(v => v.type === 'VM').length}</span>
+            <span>📦 LXCs: {nodeData.vms.filter(v => v.type === 'LXC').length}</span>
+            <span>🟢 Running: {nodeData.vms.filter(v => v.status === 'running').length}</span>
+          </>
+        ) : (
+          <span>No VMs or LXCs</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -185,6 +198,46 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
   const [scale, setScale] = useState(1);
   const isPanningRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
+
+  const touchStartDistRef = useRef(null);
+  const touchStartScaleRef = useRef(1);
+  const touchLastPosRef = useRef({ x: 0, y: 0 });
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartDistRef.current = dist;
+      touchStartScaleRef.current = scale;
+    } else if (e.touches.length === 1 && !e.target.closest('.topo-cluster')) {
+      isPanningRef.current = true;
+      touchLastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && touchStartDistRef.current !== null) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchStartDistRef.current;
+      setScale(Math.min(Math.max(0.2, touchStartScaleRef.current * factor), 3));
+    } else if (e.touches.length === 1 && isPanningRef.current) {
+      const dx = e.touches[0].clientX - touchLastPosRef.current.x;
+      const dy = e.touches[0].clientY - touchLastPosRef.current.y;
+      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      touchLastPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartDistRef.current = null;
+    isPanningRef.current = false;
+  };
 
   const [clusterBlocks, setClusterBlocks] = useState([]);
 
@@ -291,6 +344,10 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
            onPointerMove={handlePointerMove}
            onPointerUp={handlePointerUp}
            onPointerLeave={handlePointerUp}
+           onTouchStart={handleTouchStart}
+           onTouchMove={handleTouchMove}
+           onTouchEnd={handleTouchEnd}
+           onTouchCancel={handleTouchEnd}
       >
         <div 
           className="topology-canvas"
