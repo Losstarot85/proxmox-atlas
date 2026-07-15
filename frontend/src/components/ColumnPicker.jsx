@@ -47,6 +47,8 @@ export function ColumnPicker({ columns, visibleColumns, onChange, presets }) {
     onChange(updated);
   };
 
+  const menuId = React.useId();
+
   return (
     <div className="column-picker-container" ref={dropdownRef}>
       <button 
@@ -55,16 +57,17 @@ export function ColumnPicker({ columns, visibleColumns, onChange, presets }) {
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}
+        aria-controls={menuId}
       >
         <span>Columns</span>
         <span className={`arrow ${isOpen ? 'up' : 'down'}`}>▾</span>
       </button>
 
       {isOpen && (
-        <div className="column-picker-dropdown glass-card">
+        <div id={menuId} className="column-picker-dropdown glass-card" role="region" aria-label="Columns configuration menu">
           <div className="dropdown-section presets-section">
             <span className="dropdown-label">Presets</span>
-            <div className="presets-buttons">
+            <div className="presets-buttons" role="group" aria-label="Column selection presets">
               {Object.keys(presets).map(name => (
                 <button
                   type="button"

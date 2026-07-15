@@ -5,7 +5,7 @@
  * configuration, network info, and action buttons placeholder.
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { RadialGauge } from "./RadialGauge";
@@ -86,15 +86,99 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
 
 
 
+  const drawerRef = useRef(null);
+
+  useEffect(() => {
+    drawerRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      // Don't close if a confirm modal or sub-modal is open
+      if (confirmModal || showMigrateModal || showConsoleModal) return;
+
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!drawerRef.current) return;
+        const focusable = drawerRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, confirmModal, showMigrateModal, showConsoleModal]);
+
+  const confirmModalRef = useRef(null);
+  useEffect(() => {
+    if (!confirmModal) return;
+    confirmModalRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setConfirmModal(null);
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!confirmModalRef.current) return;
+        const focusable = confirmModalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmModal]);
+
   return (
-    <div className="rd-overlay" onClick={onClose}>
-      <div className="rd-drawer" onClick={(e) => e.stopPropagation()}>
+    <div className="rd-overlay" onClick={onClose} role="presentation">
+      <div 
+        ref={drawerRef}
+        tabIndex="-1"
+        className="rd-drawer" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rd-title"
+        style={{ outline: "none" }}
+      >
         {/* Header */}
         <div className="rd-header">
           <div className="rd-header-left">
             <span className="rd-type-badge">{resource.type === "VM" ? "💻 VM" : "📦 LXC"}</span>
             <div>
-              <h2 className="rd-title">{resource.name}</h2>
+              <h2 id="rd-title" className="rd-title">{resource.name}</h2>
               <span className="rd-subtitle mono-cell">ID {resource.vmid} · {clusterName}</span>
             </div>
           </div>
@@ -102,7 +186,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
             <span className={`badge ${isRunning ? "badge-online" : "badge-offline"}`}>
               {isRunning ? "🟢 Running" : "🔴 Stopped"}
             </span>
-            <button className="rd-close" onClick={onClose}>✕</button>
+            <button className="rd-close" onClick={onClose} aria-label="Close details">✕</button>
           </div>
         </div>
 
@@ -260,10 +344,19 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
       </div>
 
       {confirmModal && (
-        <div className="action-confirm-overlay" onClick={() => !actionLoading && setConfirmModal(null)}>
-          <div className="action-confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="action-confirm-overlay" onClick={() => !actionLoading && setConfirmModal(null)} role="presentation">
+          <div 
+            ref={confirmModalRef}
+            tabIndex="-1"
+            className="action-confirm-modal" 
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-action-title"
+            style={{ outline: "none" }}
+          >
             <div className="action-confirm-header">
-              <h3>Confirm Power Action</h3>
+              <h3 id="confirm-action-title">Confirm Power Action</h3>
             </div>
             <div className="action-confirm-body">
               <p>Are you sure you want to <strong>{confirmModal.action.toUpperCase()}</strong> the resource <strong>{resource.name}</strong> (ID {resource.vmid})?</p>
@@ -278,6 +371,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
                 className="btn btn-cancel" 
                 disabled={actionLoading} 
                 onClick={() => setConfirmModal(null)}
+                aria-label="Cancel action"
               >
                 Cancel
               </button>
@@ -285,6 +379,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
                 className={`btn btn-confirm ${confirmModal.action === "start" ? "btn-start" : "btn-stop"}`}
                 disabled={actionLoading}
                 onClick={executeAction}
+                aria-label={`Confirm power ${confirmModal.action} action`}
               >
                 {actionLoading ? "Executing..." : "Confirm"}
               </button>
@@ -319,6 +414,44 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    modalRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      // Don't close with Esc if currently actively migrating
+      if (isMigrating) return;
+
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, isMigrating]);
 
   const resourcePathType = resource.type === "VM" ? "qemu" : "lxc";
   const typeLabel = resource.type === "VM" ? "VM" : "Container";
@@ -433,10 +566,19 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
   };
 
   return (
-    <div className="action-confirm-overlay" onClick={() => !actionLoading && !isMigrating && onClose()}>
-      <div className="action-confirm-modal migrate-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="action-confirm-overlay" onClick={() => !actionLoading && !isMigrating && onClose()} role="presentation">
+      <div 
+        ref={modalRef}
+        tabIndex="-1"
+        className="action-confirm-modal migrate-modal" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="migrate-modal-title"
+        style={{ outline: "none" }}
+      >
         <div className="action-confirm-header">
-          <h3>📦 Migrate {typeLabel} {resource.name}</h3>
+          <h3 id="migrate-modal-title">📦 Migrate {typeLabel} {resource.name}</h3>
         </div>
         <div className="action-confirm-body">
           {isMigrating ? (
@@ -456,8 +598,9 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
               </p>
               
               <div className="form-group" style={{ margin: "1rem 0" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.9rem" }}>Target Node</label>
+                <label htmlFor="migrate-target-select" style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.9rem" }}>Target Node</label>
                 <select 
+                  id="migrate-target-select"
                   className="form-select" 
                   value={targetNode} 
                   onChange={(e) => setTargetNode(e.target.value)}
@@ -542,6 +685,41 @@ function ConsoleModal({ resource, clusterName, onClose, toast }) {
   const [proxmoxHost, setProxmoxHost] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    modalRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const typeLabel = resource.type === "VM" ? "VM" : "Container";
   const consoleType = resource.type === "VM" ? "noVNC" : "xterm.js";
@@ -589,10 +767,19 @@ function ConsoleModal({ resource, clusterName, onClose, toast }) {
   };
 
   return (
-    <div className="action-confirm-overlay" onClick={onClose}>
-      <div className="action-confirm-modal console-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="action-confirm-overlay" onClick={onClose} role="presentation">
+      <div 
+        ref={modalRef}
+        tabIndex="-1"
+        className="action-confirm-modal console-modal" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="console-modal-title"
+        style={{ outline: "none" }}
+      >
         <div className="action-confirm-header">
-          <h3>🖥️ Console — {typeLabel} {resource.name}</h3>
+          <h3 id="console-modal-title">🖥️ Console — {typeLabel} {resource.name}</h3>
         </div>
         <div className="action-confirm-body">
           {loading ? (

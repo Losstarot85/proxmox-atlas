@@ -55,18 +55,24 @@ export function CollapsibleSection({
   children,
   variant = "section",
 }) {
+  const contentId = React.useId();
+
   return (
     <div className={`cs-wrapper cs-${variant} ${collapsed ? "cs-collapsed" : "cs-expanded"} ${className}`}>
       <button
         className="cs-header"
         onClick={onToggle}
         aria-expanded={!collapsed}
+        aria-controls={contentId}
       >
         <span className="cs-chevron">{collapsed ? "▸" : "▾"}</span>
         <span className="cs-title">{title}</span>
         {summary && <span className="cs-summary">{summary}</span>}
       </button>
-      <div className="cs-content-grid">
+      <div 
+        id={contentId}
+        className="cs-content-grid"
+      >
         <div className="cs-content-inner">
           {children}
         </div>

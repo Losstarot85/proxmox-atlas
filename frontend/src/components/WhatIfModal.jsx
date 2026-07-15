@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { API_BASE } from "../config";
 import { SkeletonSimulation } from "./Skeletons";
 
@@ -13,6 +13,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     if (!cluster || !node) return;
@@ -28,14 +29,58 @@ export function WhatIfModal({ cluster, node, onClose }) {
       .catch(err => { setError(err.message); setLoading(false); });
   }, [cluster, node]);
 
+  useEffect(() => {
+    // Focus the modal content area on mount
+    modalRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   if (!cluster || !node) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content whatif-modal" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} role="presentation">
+      <div 
+        ref={modalRef}
+        tabIndex="-1"
+        className="modal-content whatif-modal" 
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="whatif-title"
+        style={{ outline: "none" }}
+      >
         <div className="modal-header">
-          <h3>⚡ What-If: Removing <span style={{ color: 'var(--danger)' }}>{node}</span></h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <h3 id="whatif-title">⚡ What-If: Removing <span style={{ color: 'var(--danger)' }}>{node}</span></h3>
+          <button className="modal-close" onClick={onClose} aria-label="Close dialogue">✕</button>
         </div>
 
         {loading && (

@@ -174,12 +174,14 @@ export function BackupStatus({ clusters }) {
             placeholder={t('backup.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search backup resources"
           />
 
           {/* Configurable N days threshold */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>Threshold:</span>
+            <label htmlFor="backup-threshold-select" style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>Threshold:</label>
             <select
+              id="backup-threshold-select"
               className="search-input"
               style={{ width: "120px", margin: 0, padding: "0.3rem 0.5rem", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
               value={backupThresholdDays}

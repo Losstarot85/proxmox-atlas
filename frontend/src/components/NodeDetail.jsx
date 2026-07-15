@@ -6,7 +6,7 @@
  * Reuses rd-* CSS classes from ResourceDetail.css.
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
@@ -91,15 +91,60 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
   const runningLXCs = nodeGuests.filter(r => r.type === "LXC" && r.status === "running").length;
   const totalLXCs = nodeGuests.filter(r => r.type === "LXC").length;
 
+  const drawerRef = useRef(null);
+
+  useEffect(() => {
+    drawerRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!drawerRef.current) return;
+        const focusable = drawerRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="rd-overlay" onClick={onClose}>
-      <div className="rd-drawer" onClick={(e) => e.stopPropagation()}>
+    <div className="rd-overlay" onClick={onClose} role="presentation">
+      <div 
+        ref={drawerRef}
+        tabIndex="-1"
+        className="rd-drawer" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="nd-title"
+        style={{ outline: "none" }}
+      >
         {/* Header */}
         <div className="rd-header">
           <div className="rd-header-left">
             <span className="rd-type-badge">🖥️</span>
             <div>
-              <h2 className="rd-title">{node.name}</h2>
+              <h2 id="nd-title" className="rd-title">{node.name}</h2>
               <span className="rd-subtitle mono-cell">
                 Node · {clusterName}
                 <UptimePulse historyBlocks={cm.status} />
@@ -110,7 +155,7 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
             <span className={`badge ${isOnline ? "badge-online" : "badge-offline"}`}>
               {isOnline ? "🟢 Online" : "🔴 Offline"}
             </span>
-            <button className="rd-close" onClick={onClose}>✕</button>
+            <button className="rd-close" onClick={onClose} aria-label="Close details">✕</button>
           </div>
         </div>
 
@@ -222,6 +267,7 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
                 type="text"
                 className="search-input nd-guest-search"
                 placeholder="Filter guests..."
+                aria-label="Filter guests on this node"
                 value={guestFilter}
                 onChange={(e) => setGuestFilter(e.target.value)}
               />

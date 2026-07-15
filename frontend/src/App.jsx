@@ -242,6 +242,10 @@ function App() {
 
   return (
     <div className="app-container">
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+
       {/* Mobile Drawer Backdrop */}
       {isMobileMenuOpen && (
         <div className="sidebar-backdrop" onClick={() => setIsMobileMenuOpen(false)} />
@@ -252,6 +256,7 @@ function App() {
         className={`sidebar ${isExpanded ? 'expanded' : ''} ${isMobileMenuOpen ? 'sidebar-mobile-open' : ''}`}
         onMouseEnter={() => { setIsSidebarHovered(true); setForceCollapse(false); }}
         onMouseLeave={() => setIsSidebarHovered(false)}
+        aria-label="Sidebar navigation"
       >
         <div className="logo-container">
           <img src="/logo.png" alt="Proxmox Atlas Logo" className="logo-icon-img" />
@@ -261,11 +266,14 @@ function App() {
           </div>
         </div>
         
-        <nav className="nav-links">
+        <nav className="nav-links" role="tablist" aria-label="Tabs navigation">
           <button
             className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
             onClick={() => handleNavClick("dashboard")}
             title={!isExpanded ? t('nav.dashboard') : ""}
+            role="tab"
+            aria-selected={activeTab === "dashboard"}
+            aria-controls="main-content"
           >
             <span className="nav-icon">📊</span>
             <span className="nav-text">{t('nav.dashboard')}</span>
@@ -274,6 +282,9 @@ function App() {
             className={`nav-item ${activeTab === "topology" ? "active" : ""}`}
             onClick={() => handleNavClick("topology")}
             title={!isExpanded ? t('nav.topology') : ""}
+            role="tab"
+            aria-selected={activeTab === "topology"}
+            aria-controls="main-content"
           >
             <span className="nav-icon">🌍</span>
             <span className="nav-text">{t('nav.topology')}</span>
@@ -283,6 +294,9 @@ function App() {
             onClick={() => handleNavClick("alerts")}
             title={!isExpanded ? `${t('nav.alerts')} ${unreadAlerts > 0 ? `(${unreadAlerts})` : ''}` : ""}
             style={{ position: 'relative' }}
+            role="tab"
+            aria-selected={activeTab === "alerts"}
+            aria-controls="main-content"
           >
             <span className="nav-icon">
               🚨
@@ -310,6 +324,9 @@ function App() {
             className={`nav-item ${activeTab === "backups" ? "active" : ""}`}
             onClick={() => handleNavClick("backups")}
             title={!isExpanded ? t('nav.backups') : ""}
+            role="tab"
+            aria-selected={activeTab === "backups"}
+            aria-controls="main-content"
           >
             <span className="nav-icon">💾</span>
             <span className="nav-text">{t('nav.backups')}</span>
@@ -318,6 +335,9 @@ function App() {
             className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
             onClick={() => handleNavClick("settings")}
             title={!isExpanded ? t('nav.settings') : ""}
+            role="tab"
+            aria-selected={activeTab === "settings"}
+            aria-controls="main-content"
           >
             <span className="nav-icon">⚙️</span>
             <span className="nav-text">{t('nav.settings')}</span>
@@ -338,10 +358,13 @@ function App() {
       </aside>
 
       {/* Bottom Navigation for Mobile */}
-      <nav className="mobile-tab-bar">
+      <nav className="mobile-tab-bar" role="tablist" aria-label="Mobile navigation">
         <button
           className={`mobile-tab-item ${activeTab === "dashboard" ? "active" : ""}`}
           onClick={() => handleNavClick("dashboard")}
+          role="tab"
+          aria-selected={activeTab === "dashboard"}
+          aria-controls="main-content"
         >
           <span className="mobile-tab-icon">📊</span>
           <span className="mobile-tab-label">{t('nav.dashboard')}</span>
@@ -349,6 +372,9 @@ function App() {
         <button
           className={`mobile-tab-item ${activeTab === "topology" ? "active" : ""}`}
           onClick={() => handleNavClick("topology")}
+          role="tab"
+          aria-selected={activeTab === "topology"}
+          aria-controls="main-content"
         >
           <span className="mobile-tab-icon">🌍</span>
           <span className="mobile-tab-label">{t('nav.topology')}</span>
@@ -356,6 +382,9 @@ function App() {
         <button
           className={`mobile-tab-item ${activeTab === "backups" ? "active" : ""}`}
           onClick={() => handleNavClick("backups")}
+          role="tab"
+          aria-selected={activeTab === "backups"}
+          aria-controls="main-content"
         >
           <span className="mobile-tab-icon">💾</span>
           <span className="mobile-tab-label">{t('nav.backups')}</span>
@@ -364,6 +393,9 @@ function App() {
           className={`mobile-tab-item ${activeTab === "alerts" ? "active" : ""}`}
           onClick={() => handleNavClick("alerts")}
           style={{ position: 'relative' }}
+          role="tab"
+          aria-selected={activeTab === "alerts"}
+          aria-controls="main-content"
         >
           <span className="mobile-tab-icon">
             🚨
@@ -378,6 +410,9 @@ function App() {
         <button
           className={`mobile-tab-item ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => handleNavClick("settings")}
+          role="tab"
+          aria-selected={activeTab === "settings"}
+          aria-controls="main-content"
         >
           <span className="mobile-tab-icon">⚙️</span>
           <span className="mobile-tab-label">{t('nav.settings')}</span>
@@ -386,6 +421,8 @@ function App() {
 
       {/* Main Content Area */}
       <main 
+        id="main-content"
+        tabIndex="-1"
         className="main-content" 
         key={activeTab}
         onTouchStart={handleTouchStart}
@@ -429,6 +466,7 @@ function App() {
                 className="btn btn-sm export-btn"
                 onClick={() => exportJSON(clusters)}
                 title={t('header.export_json')}
+                aria-label={t('header.export_json')}
               >
                 📄 JSON
               </button>
@@ -436,6 +474,7 @@ function App() {
                 className="btn btn-sm export-btn"
                 onClick={() => exportCSV(clusters)}
                 title={t('header.export_csv')}
+                aria-label={t('header.export_csv')}
               >
                 📊 CSV
               </button>
@@ -444,6 +483,7 @@ function App() {
               className="theme-toggle" 
               onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>

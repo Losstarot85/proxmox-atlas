@@ -242,8 +242,14 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
   const hasSection = results.some((r) => r.section);
 
   return (
-    <div className="palette-overlay" onClick={onClose}>
-      <div className="palette-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="palette-overlay" onClick={onClose} role="presentation">
+      <div 
+        className="palette-modal" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+      >
         {/* Search header */}
         <div className="palette-header">
           <span className="palette-icon">🔍</span>
@@ -257,14 +263,31 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
             onKeyDown={handleKeyDown}
             autoComplete="off"
             spellCheck="false"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls="palette-listbox"
+            aria-activedescendant={results[selectedIndex] ? results[selectedIndex].id : undefined}
+            aria-label="Search actions, nodes, and virtual machines"
           />
-          <kbd className="palette-esc" onClick={onClose}>
-            ESC
-          </kbd>
+          <button 
+            className="palette-esc" 
+            onClick={onClose}
+            aria-label="Close command palette"
+            style={{ background: "transparent", border: "none", cursor: "pointer" }}
+          >
+            <kbd>ESC</kbd>
+          </button>
         </div>
 
         {/* Results */}
-        <div className="palette-results" ref={listRef}>
+        <div 
+          id="palette-listbox"
+          className="palette-results" 
+          ref={listRef}
+          role="listbox"
+          aria-label="Search results"
+        >
           {results.length === 0 ? (
             <div className="palette-empty">
               {t('palette.no_results')}
@@ -276,14 +299,17 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
                 hasSection && item.section && (idx === 0 || results[idx - 1]?.section !== item.section);
 
               return (
-                <div key={item.id}>
+                <div key={item.id} role="presentation">
                   {showSection && (
-                    <div className="palette-section-label">{item.section}</div>
+                    <div className="palette-section-label" role="presentation">{item.section}</div>
                   )}
                   <div
+                    id={item.id}
                     className={`palette-item ${idx === selectedIndex ? "selected" : ""}`}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     onClick={() => executeItem(item)}
+                    role="option"
+                    aria-selected={idx === selectedIndex}
                   >
                     <span className="palette-item-icon">{item.icon}</span>
                     <div className="palette-item-details">

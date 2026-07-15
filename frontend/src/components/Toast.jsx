@@ -12,7 +12,7 @@
  *   toast.confirm("Delete user?", { onConfirm: () => deleteUser(id) });
  */
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import "./Toast.css";
 const ToastContext = createContext(null);
 
@@ -191,16 +191,61 @@ function ToastItem({ toast, onDismiss }) {
    ══════════════════════════════════════════════════════════════════════ */
 
 function ConfirmDialog({ message, confirmLabel, cancelLabel, type, onConfirm, onCancel }) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onCancel();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!dialogRef.current) return;
+        const focusable = dialogRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+
   return (
-    <div className="confirm-overlay" onClick={onCancel}>
-      <div className={`confirm-dialog confirm-${type}`} onClick={(e) => e.stopPropagation()}>
-        <div className="confirm-icon">{ICONS[type]}</div>
-        <p className="confirm-message">{message}</p>
+    <div className="confirm-overlay" onClick={onCancel} role="presentation">
+      <div 
+        ref={dialogRef}
+        tabIndex="-1"
+        className={`confirm-dialog confirm-${type}`} 
+        onClick={(e) => e.stopPropagation()}
+        role="alertdialog"
+        aria-modal="true"
+        aria-describedby="confirm-message-text"
+        style={{ outline: "none" }}
+      >
+        <div className="confirm-icon" role="presentation">{ICONS[type]}</div>
+        <p id="confirm-message-text" className="confirm-message">{message}</p>
         <div className="confirm-actions">
-          <button className="confirm-btn confirm-btn-cancel" onClick={onCancel}>
+          <button className="confirm-btn confirm-btn-cancel" onClick={onCancel} aria-label={`Cancel: ${cancelLabel}`}>
             {cancelLabel}
           </button>
-          <button className="confirm-btn confirm-btn-confirm" onClick={onConfirm}>
+          <button className="confirm-btn confirm-btn-confirm" onClick={onConfirm} aria-label={`Confirm: ${confirmLabel}`}>
             {confirmLabel}
           </button>
         </div>

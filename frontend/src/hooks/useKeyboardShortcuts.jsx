@@ -13,7 +13,7 @@
  * All shortcuts are suppressed when focus is on an input/textarea/select.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 const SHORTCUTS = [
   { key: "1", label: "Dashboard", group: "Navigation", description: "Switch to Dashboard tab" },
@@ -119,6 +119,42 @@ export function useKeyboardShortcuts({
  * ShortcutsCheatSheet — modal showing all available keyboard shortcuts.
  */
 export function ShortcutsCheatSheet({ shortcuts, onClose }) {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    modalRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   // Group shortcuts by category
   const groups = {};
   shortcuts.forEach((s) => {
@@ -127,11 +163,20 @@ export function ShortcutsCheatSheet({ shortcuts, onClose }) {
   });
 
   return (
-    <div className="palette-overlay" onClick={onClose}>
-      <div className="shortcuts-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="palette-overlay" onClick={onClose} role="presentation">
+      <div 
+        ref={modalRef}
+        tabIndex="-1"
+        className="shortcuts-modal" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-title"
+        style={{ outline: "none" }}
+      >
         <div className="shortcuts-header">
-          <h3>⌨️ Keyboard Shortcuts</h3>
-          <kbd className="palette-esc" onClick={onClose}>ESC</kbd>
+          <h3 id="shortcuts-title">⌨️ Keyboard Shortcuts</h3>
+          <kbd className="palette-esc" onClick={onClose} role="button" aria-label="Close shortcuts list">ESC</kbd>
         </div>
         <div className="shortcuts-body">
           {Object.entries(groups).map(([group, items]) => (

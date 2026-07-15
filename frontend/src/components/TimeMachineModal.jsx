@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { API_BASE } from "../config";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { UptimeHeatmap } from "./UptimeHeatmap";
@@ -9,6 +9,7 @@ export function TimeMachineModal({ target, onClose }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const modalRef = useRef(null);
   
   // Default range: last 24 hours
   const [timeRange, setTimeRange] = useState("24h");
@@ -47,6 +48,41 @@ export function TimeMachineModal({ target, onClose }) {
     fetchData();
   }, [target, timeRange]);
 
+  useEffect(() => {
+    // Focus the modal content area on mount
+    modalRef.current?.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+        e.preventDefault();
+      }
+      if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   if (!target) return null;
 
   const formatTime = (unixTime) => {
@@ -56,11 +92,20 @@ export function TimeMachineModal({ target, onClose }) {
   };
 
   return (
-    <div className="tm-modal-overlay" onClick={onClose}>
-      <div className="tm-modal-content" onClick={e => e.stopPropagation()}>
+    <div className="tm-modal-overlay" onClick={onClose} role="presentation">
+      <div 
+        ref={modalRef}
+        tabIndex="-1"
+        className="tm-modal-content" 
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tm-title"
+        style={{ outline: "none" }}
+      >
         <div className="tm-modal-header">
-          <h2>Time Machine: {target.name} ({target.type})</h2>
-          <button className="tm-close-btn" onClick={onClose}>✕</button>
+          <h2 id="tm-title">Time Machine: {target.name} ({target.type})</h2>
+          <button className="tm-close-btn" onClick={onClose} aria-label="Close dialogue">✕</button>
         </div>
         
         <div className="tm-controls">

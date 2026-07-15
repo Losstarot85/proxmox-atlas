@@ -114,12 +114,15 @@ export function AlertsTab({ clusters = [] }) {
       <div className="network-toolbar">
          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
             <h2 style={{margin: 0}}>{t('header.alerts')}</h2>
-            <div className="filter-group" style={{ margin: 0, display: 'flex', gap: '2px' }}>
+            <div className="filter-group" style={{ margin: 0, display: 'flex', gap: '2px' }} role="tablist" aria-label="Alerts view selection">
               <button 
                 type="button" 
                 className={`filter-btn ${viewMode === 'timeline' ? 'active' : ''}`}
                 onClick={() => setViewMode('timeline')}
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                role="tab"
+                aria-selected={viewMode === 'timeline'}
+                aria-controls="alerts-content"
               >
                 🕒 {t('alerts.timeline')}
               </button>
@@ -128,6 +131,9 @@ export function AlertsTab({ clusters = [] }) {
                 className={`filter-btn ${viewMode === 'list' ? 'active' : ''}`}
                 onClick={() => setViewMode('list')}
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                role="tab"
+                aria-selected={viewMode === 'list'}
+                aria-controls="alerts-content"
               >
                 📱 {t('alerts.list')}
               </button>
@@ -136,6 +142,9 @@ export function AlertsTab({ clusters = [] }) {
                 className={`filter-btn ${viewMode === 'rules' ? 'active' : ''}`}
                 onClick={() => setViewMode('rules')}
                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                role="tab"
+                aria-selected={viewMode === 'rules'}
+                aria-controls="alerts-content"
               >
                 ⚙️ {t('alerts.rules')}
               </button>
@@ -146,36 +155,38 @@ export function AlertsTab({ clusters = [] }) {
          </button>
       </div>
 
-      {loading ? (
-        <SkeletonAlerts count={4} />
-      ) : viewMode === "rules" ? (
-        <AlertRulesEditor clusters={clusters} />
-      ) : alerts.length === 0 ? (
-        <div className="empty-state" style={{ marginTop: "4rem" }}>
-          <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>
-          {t('alerts.no_alerts_desc')}
-        </div>
-      ) : viewMode === "timeline" ? (
-        <AlertTimeline 
-          alerts={alerts}
-          handleSilence={handleSilence}
-          handleMarkRead={handleMarkRead}
-          handleDelete={handleDelete}
-        />
-      ) : (
-        <div className="alerts-list" style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-          {alerts.map(alert => (
-            <SwipeableAlertCard 
-              key={alert.id}
-              alert={alert}
-              formatTime={formatTime}
-              handleSilence={handleSilence}
-              handleMarkRead={handleMarkRead}
-              handleDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+      <div id="alerts-content">
+        {loading ? (
+          <SkeletonAlerts count={4} />
+        ) : viewMode === "rules" ? (
+          <AlertRulesEditor clusters={clusters} />
+        ) : alerts.length === 0 ? (
+          <div className="empty-state" style={{ marginTop: "4rem" }}>
+            <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>
+            {t('alerts.no_alerts_desc')}
+          </div>
+        ) : viewMode === "timeline" ? (
+          <AlertTimeline 
+            alerts={alerts}
+            handleSilence={handleSilence}
+            handleMarkRead={handleMarkRead}
+            handleDelete={handleDelete}
+          />
+        ) : (
+          <div className="alerts-list" style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+            {alerts.map(alert => (
+              <SwipeableAlertCard 
+                key={alert.id}
+                alert={alert}
+                formatTime={formatTime}
+                handleSilence={handleSilence}
+                handleMarkRead={handleMarkRead}
+                handleDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
