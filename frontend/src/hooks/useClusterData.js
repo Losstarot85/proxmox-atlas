@@ -186,5 +186,5 @@ export function useClusterData(token) {
     };
   }, [connect, token]);
 
-  return { clusters, globalHistory: globalHistoryRef.current, metricsMap: metricsMapRef.current, loading, error };
+  return { clusters, globalHistory: globalHistoryRef.current, metricsMap: metricsMapRef.current, loading, error, reconnect: connect };
 }

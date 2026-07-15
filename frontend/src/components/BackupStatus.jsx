@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { API_BASE } from "../config";
 import { SkeletonTable } from "./Skeletons";
 import { useI18n } from "../i18n";
+import { EmptyState, Tooltip } from "./EmptyState";
 
 export function BackupStatus({ clusters }) {
   const { t } = useI18n();
@@ -179,7 +180,10 @@ export function BackupStatus({ clusters }) {
 
           {/* Configurable N days threshold */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <label htmlFor="backup-threshold-select" style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>Threshold:</label>
+            <label htmlFor="backup-threshold-select" style={{ fontSize: "0.9rem", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center" }}>
+              Threshold:
+              <Tooltip text="Staleness threshold. If a VM or container has not been backed up within this number of days, it is marked as unprotected." />
+            </label>
             <select
               id="backup-threshold-select"
               className="search-input"
@@ -338,9 +342,7 @@ export function BackupStatus({ clusters }) {
               ⏳ Recent Backups Timeline
             </h3>
             {backupAnalysis.timeline.length === 0 ? (
-              <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)", border: "1px dashed var(--border)", borderRadius: "8px" }}>
-                No backup archive files found on your storage pools.
-              </div>
+              <EmptyState type="backups" />
             ) : (
               <div className="timeline-container" style={{ display: "flex", flexDirection: "column", gap: "1rem", position: "relative", paddingLeft: "1.5rem" }}>
                 {/* Visual timeline line */}

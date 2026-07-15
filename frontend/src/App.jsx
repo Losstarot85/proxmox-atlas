@@ -13,6 +13,8 @@ import { Breadcrumb } from "./components/Breadcrumb";
 import { ResourceDetail } from "./components/ResourceDetail";
 import { NodeDetail } from "./components/NodeDetail";
 import { BackupStatus } from "./components/BackupStatus";
+import { OnboardingWizard, ChangelogModal } from "./components/Onboarding";
+import { EmptyState, Tooltip, DiscoveryDot } from "./components/EmptyState";
 import { exportJSON, exportCSV } from "./utils/exportData";
 import { SkeletonDashboard } from "./components/Skeletons";
 import { useToast } from "./components/Toast";
@@ -79,6 +81,8 @@ function App() {
   const [pollingIntervalSeconds, setPollingIntervalSeconds] = useState(15);
   const [webhooks, setWebhooks] = useState([]);
   const [initialSettingsLoaded, setInitialSettingsLoaded] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
@@ -213,7 +217,27 @@ function App() {
     });
   }, [alertsData, toast]);
 
-  const { clusters, globalHistory, metricsMap, loading, error } = useClusterData(auth.isAuthenticated ? auth.token : null);
+  const { clusters, globalHistory, metricsMap, loading, error, reconnect } = useClusterData(auth.isAuthenticated ? auth.token : null);
+
+  // Auto-trigger onboarding if no clusters configured
+  useEffect(() => {
+    if (auth.isAuthenticated && initialSettingsLoaded && !loading && clusters.length === 0) {
+      const skipped = localStorage.getItem("atlas-onboarding-skipped") === "true";
+      if (!skipped) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [auth.isAuthenticated, initialSettingsLoaded, loading, clusters.length]);
+
+  // Trigger Changelog ("What's New") modal
+  useEffect(() => {
+    if (auth.isAuthenticated && initialSettingsLoaded && clusters.length > 0) {
+      const lastSeen = localStorage.getItem("atlas-last-seen-version");
+      if (lastSeen !== "1.3.0") {
+        setShowChangelog(true);
+      }
+    }
+  }, [auth.isAuthenticated, initialSettingsLoaded, clusters.length]);
 
   // Auth gate: show login page if not authenticated
   if (!auth.isAuthenticated) {
@@ -502,37 +526,45 @@ function App() {
         )}
 
         {activeTab === "dashboard" && (
-          <>
-            <SummaryCards
-              clusters={clusters}
-              globalHistory={globalHistory}
-              alerts={alertsData?.alerts || []}
-              onNavigateToAlerts={() => handleNavClick("alerts")}
+          clusters.length === 0 ? (
+            <EmptyState
+              type="clusters"
+              onAction={() => setShowOnboarding(true)}
+              actionLabel="Run Setup Wizard"
             />
-            <div style={{ marginBottom: '1.5rem', display: 'flex' }}>
-              <input
-                id="dashboard-search"
-                type="text"
-                className="search-input"
-                style={{ width: '100%', maxWidth: '400px' }}
-                placeholder={t('search.placeholder')}
-                value={dashboardSearch}
-                onChange={e => setDashboardSearch(e.target.value)}
+          ) : (
+            <>
+              <SummaryCards
+                clusters={clusters}
+                globalHistory={globalHistory}
+                alerts={alertsData?.alerts || []}
+                onNavigateToAlerts={() => handleNavClick("alerts")}
               />
-            </div>
-            {clusters.map((cluster) => (
-              <ClusterSection 
-                key={cluster.name} 
-                cluster={cluster} 
-                globalHistory={globalHistory} 
-                metricsMap={metricsMap}
-                searchQuery={dashboardSearch}
-                onOpenTimeMachine={openTimeMachine}
-                onOpenResource={(resource) => openResource(resource, cluster.name)}
-                userRole={auth.userRole}
-              />
-            ))}
-          </>
+              <div style={{ marginBottom: '1.5rem', display: 'flex' }}>
+                <input
+                  id="dashboard-search"
+                  type="text"
+                  className="search-input"
+                  style={{ width: '100%', maxWidth: '400px' }}
+                  placeholder={t('search.placeholder')}
+                  value={dashboardSearch}
+                  onChange={e => setDashboardSearch(e.target.value)}
+                />
+              </div>
+              {clusters.map((cluster) => (
+                <ClusterSection 
+                  key={cluster.name} 
+                  cluster={cluster} 
+                  globalHistory={globalHistory} 
+                  metricsMap={metricsMap}
+                  searchQuery={dashboardSearch}
+                  onOpenTimeMachine={openTimeMachine}
+                  onOpenResource={(resource) => openResource(resource, cluster.name)}
+                  userRole={auth.userRole}
+                />
+              ))}
+            </>
+          )
         )}
 
         {activeTab === "topology" && (
@@ -637,6 +669,29 @@ function App() {
 
       {showCheatSheet && (
         <ShortcutsCheatSheet shortcuts={shortcuts} onClose={closeCheatSheet} />
+      )}
+
+      {showOnboarding && (
+        <OnboardingWizard
+          onComplete={() => {
+            setShowOnboarding(false);
+            localStorage.setItem("atlas-last-seen-version", "1.3.0");
+            reconnect();
+          }}
+          onSkip={() => {
+            setShowOnboarding(false);
+            localStorage.setItem("atlas-onboarding-skipped", "true");
+          }}
+        />
+      )}
+
+      {showChangelog && (
+        <ChangelogModal
+          onClose={() => {
+            setShowChangelog(false);
+            localStorage.setItem("atlas-last-seen-version", "1.3.0");
+          }}
+        />
       )}
     </div>
   );

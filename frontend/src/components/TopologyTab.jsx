@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Tooltip } from "./EmptyState";
 
 function getCpuColor(cpuRatio) {
   if (cpuRatio == null) return "var(--surface-hover)";
@@ -326,7 +327,10 @@ export function TopologyTab({ clusters, onOpenTimeMachine, onOpenWhatIf }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem' }}>
       <div className="topology-controls glass-card">
-         <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Topology Board</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center' }}>
+            Topology Board
+            <Tooltip text="Interactive network mapping. Drag datacenters or nodes to reorganize. Scroll to zoom. Drag background to pan. Click virtual machine chips to launch time machine, or click node Removal buttons to simulate failures." />
+          </span>
          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginRight: '1rem' }}>
               Wheel: Zoom | Drag Bg: Pan | Drag Clusters: Datacenter | Drag Nodes: Rack Position

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { API_BASE } from "../config";
 import { SkeletonSimulation } from "./Skeletons";
+import { Tooltip } from "./EmptyState";
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return "0 B";
@@ -79,7 +80,10 @@ export function WhatIfModal({ cluster, node, onClose }) {
         style={{ outline: "none" }}
       >
         <div className="modal-header">
-          <h3 id="whatif-title">⚡ What-If: Removing <span style={{ color: 'var(--danger)' }}>{node}</span></h3>
+          <h3 id="whatif-title" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            ⚡ What-If: Removing <span style={{ color: 'var(--danger)', marginLeft: '0.25rem' }}>{node}</span>
+            <Tooltip text="This simulation calculates memory, CPU, and storage impact of removing the selected node, identifying if there is enough reserve capacity in the rest of the cluster to host all displaced virtual guests." />
+          </h3>
           <button className="modal-close" onClick={onClose} aria-label="Close dialogue">✕</button>
         </div>
 

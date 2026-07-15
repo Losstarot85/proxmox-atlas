@@ -4,6 +4,7 @@ import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClear
 import { SkeletonAlerts } from "./Skeletons";
 import { AlertTimeline } from "./AlertTimeline";
 import { AlertRulesEditor } from "./AlertRulesEditor";
+import { EmptyState } from "./EmptyState";
 
 function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, handleDelete }) {
   const [touchStartX, setTouchStartX] = React.useState(0);
@@ -161,10 +162,7 @@ export function AlertsTab({ clusters = [] }) {
         ) : viewMode === "rules" ? (
           <AlertRulesEditor clusters={clusters} />
         ) : alerts.length === 0 ? (
-          <div className="empty-state" style={{ marginTop: "4rem" }}>
-            <span style={{fontSize: "3rem", display: "block", marginBottom: "1rem"}}>✅</span>
-            {t('alerts.no_alerts_desc')}
-          </div>
+          <EmptyState type="alerts" />
         ) : viewMode === "timeline" ? (
           <AlertTimeline 
             alerts={alerts}

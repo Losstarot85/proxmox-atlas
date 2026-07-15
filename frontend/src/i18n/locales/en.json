@@ -388,5 +388,29 @@
   "common.seconds": "seconds",
   "common.ago": "ago",
   "common.never": "Never",
-  "common.na": "N/A"
+  "common.na": "N/A",
+
+  "empty.clusters.title": "No Clusters Monitored",
+  "empty.clusters.desc": "Get started by adding your first Proxmox VE cluster. Atlas will automatically start monitoring nodes, VMs, backups, and health metrics.",
+  "empty.alerts.title": "All Systems Operational",
+  "empty.alerts.desc": "Great job! There are currently no warnings, failures, or performance alerts recorded on any of your connected clusters.",
+  "empty.backups.title": "Backups Healthy",
+  "empty.backups.desc": "All active virtual machines and LXC containers are backed up within your configured safety threshold. No stale data detected.",
+  "empty.default.title": "No Data Available",
+  "empty.default.desc": "No items matched your current filters or configuration.",
+  "empty.default.action": "Get Started",
+
+  "onboarding.welcome.title": "Welcome to Proxmox Atlas",
+  "onboarding.welcome.desc": "Atlas is a real-time monitor, analytics engine, and predictive what-if simulator for Proxmox VE hypervisors.",
+  "onboarding.welcome.cta": "Get Started",
+  "onboarding.add_cluster.title": "Add your first cluster",
+  "onboarding.add_cluster.desc": "Provide API credentials to establish monitoring. Atlas requires read access to cluster metrics.",
+  "onboarding.validation_error": "All fields are required.",
+  "onboarding.done.title": "All Set!",
+  "onboarding.done.desc": "Your Proxmox cluster has been configured successfully. Atlas is now polling cluster metrics in the background.",
+  "onboarding.done.cta": "Enter Dashboard",
+
+  "common.skip": "Skip",
+  "common.back": "Back",
+  "common.saving": "Saving..."
 }

@@ -3,6 +3,7 @@ import { API_BASE } from "../config";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { UptimeHeatmap } from "./UptimeHeatmap";
 import { SkeletonChart } from "./Skeletons";
+import { Tooltip as HelpTooltip } from "./EmptyState";
 import "./TimeMachineModal.css";
 
 export function TimeMachineModal({ target, onClose }) {
@@ -104,7 +105,10 @@ export function TimeMachineModal({ target, onClose }) {
         style={{ outline: "none" }}
       >
         <div className="tm-modal-header">
-          <h2 id="tm-title">Time Machine: {target.name} ({target.type})</h2>
+          <h2 id="tm-title" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            Time Machine: {target.name} ({target.type})
+            <HelpTooltip text="Time Machine provides historical analytics, trends, resource usage (CPU/RAM), and uptime pulse over a configurable timeframe (24 hours, 7 days, 30 days)." />
+          </h2>
           <button className="tm-close-btn" onClick={onClose} aria-label="Close dialogue">✕</button>
         </div>
         

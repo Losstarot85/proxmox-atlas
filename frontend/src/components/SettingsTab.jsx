@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 import { useToast } from "./Toast";
 import { useI18n, LOCALE_LABELS } from "../i18n";
+import { DiscoveryDot } from "./EmptyState";
 
 export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, onUpdateToken, userRole = 'viewer', username = '' }) {
   const canEdit = userRole === 'admin' || userRole === 'editor';
@@ -727,7 +728,11 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       {/* ==================== LANGUAGE PICKER ==================== */}
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-          <h3>🌍 {t('settings.language.title')}</h3>
+          <h3>
+            <DiscoveryDot featureId="settings-language">
+              🌍 {t('settings.language.title')}
+            </DiscoveryDot>
+          </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
             {t('settings.language.desc')}
           </p>
