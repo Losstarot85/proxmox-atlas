@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ShieldCheck, HardDrive, Monitor, Layers, AlertTriangle } from 'lucide-react';
 import { TimeSeriesChart } from './TimeSeriesChart';
 import { AnimatedCounter } from './AnimatedCounter';
 import { classifyNode, classifyResource } from './ClusterHealthBar';
@@ -242,7 +243,7 @@ export const SummaryCards = React.memo(function SummaryCards({ clusters, globalH
       <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${healthColor}`, '--card-delay': '0.12s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🛡️</span>
+            <span style={{ color: healthColor, display: 'flex', alignItems: 'center' }}><ShieldCheck size={18} /></span>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('health.healthy')}</span>
           </div>
           {healthTrend && (
@@ -270,7 +271,7 @@ export const SummaryCards = React.memo(function SummaryCards({ clusters, globalH
       <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${storageColor}`, '--card-delay': '0.18s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>💾</span>
+            <span style={{ color: storageColor, display: 'flex', alignItems: 'center' }}><HardDrive size={18} /></span>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('resource.disk')}</span>
           </div>
           {storageTrend && (
@@ -298,7 +299,7 @@ export const SummaryCards = React.memo(function SummaryCards({ clusters, globalH
       <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${vmColor}`, '--card-delay': '0.24s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🖥️</span>
+            <span style={{ color: vmColor, display: 'flex', alignItems: 'center' }}><Monitor size={18} /></span>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('summary.total_vms')}</span>
           </div>
           {vmTrend && (
@@ -327,7 +328,7 @@ export const SummaryCards = React.memo(function SummaryCards({ clusters, globalH
       <div className="glass-card stat-card stat-card-standard" style={{ borderLeft: `4px solid ${lxcColor}`, '--card-delay': '0.3s', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>📦</span>
+            <span style={{ color: lxcColor, display: 'flex', alignItems: 'center' }}><Layers size={18} /></span>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('cluster.containers')}</span>
           </div>
           {lxcTrend && (
@@ -369,7 +370,7 @@ export const SummaryCards = React.memo(function SummaryCards({ clusters, globalH
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🚨</span>
+            <span style={{ color: alertsColor, display: 'flex', alignItems: 'center' }}><AlertTriangle size={18} /></span>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('summary.active_alerts')}</span>
           </div>
           {alertsTrend && (

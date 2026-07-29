@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Zap, AlertTriangle, ClipboardList, Monitor, CheckCircle2 } from 'lucide-react';
 import { API_BASE } from "../config";
 import { SkeletonSimulation } from "./Skeletons";
 import { Tooltip } from "./EmptyState";
@@ -80,8 +81,8 @@ export function WhatIfModal({ cluster, node, onClose }) {
         style={{ outline: "none" }}
       >
         <div className="modal-header">
-          <h3 id="whatif-title" style={{ display: 'inline-flex', alignItems: 'center' }}>
-            ⚡ What-If: Removing <span style={{ color: 'var(--danger)', marginLeft: '0.25rem' }}>{node}</span>
+          <h3 id="whatif-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Zap size={18} /> What-If: Removing <span style={{ color: 'var(--danger)', marginLeft: '0.25rem' }}>{node}</span>
             <Tooltip text="This simulation calculates memory, CPU, and storage impact of removing the selected node, identifying if there is enough reserve capacity in the rest of the cluster to host all displaced virtual guests." />
           </h3>
           <button className="modal-close" onClick={onClose} aria-label="Close dialogue">✕</button>
@@ -93,7 +94,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
 
         {error && (
           <div className="global-error" style={{ margin: '1rem' }}>
-            <span>⚠️</span>
+            <span><AlertTriangle size={16} /></span>
             <span>Simulation error: {error}</span>
           </div>
         )}
@@ -123,7 +124,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
             {/* Migration Plan */}
             {data.migration_plan.length > 0 && (
               <div className="whatif-section">
-                <h4>📋 Migration Plan</h4>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><ClipboardList size={16} /> Migration Plan</h4>
                 <div className="table-wrapper">
                   <div className="responsive-table">
                     <table>
@@ -201,7 +202,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
             {/* Surviving Nodes State After Migration */}
             {data.surviving_nodes.length > 0 && (
               <div className="whatif-section">
-                <h4>🖥️ Post-Migration Node Status</h4>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Monitor size={16} /> Post-Migration Node Status</h4>
                 <div className="table-wrapper">
                   <div className="responsive-table">
                     <table>
@@ -243,8 +244,8 @@ export function WhatIfModal({ cluster, node, onClose }) {
                             <td className="mono-cell">{sn.vm_count_after}</td>
                             <td>
                               {sn.congested
-                                ? <span className="badge badge-offline">⚠️ Congested</span>
-                                : <span className="badge badge-online">✅ OK</span>
+                                ? <span className="badge badge-offline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><AlertTriangle size={10} /> Congested</span>
+                                : <span className="badge badge-online" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><CheckCircle2 size={10} /> OK</span>
                               }
                             </td>
                           </tr>
@@ -258,7 +259,7 @@ export function WhatIfModal({ cluster, node, onClose }) {
 
             {data.summary.total_displaced_vms === 0 && (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                <p style={{ fontSize: '1.2rem' }}>✅ No running VM or LXC on this node.</p>
+                <p style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}><CheckCircle2 size={20} style={{ color: 'var(--success)' }} /> No running VM or LXC on this node.</p>
                 <p>Removing it would have no impact on virtualized resources.</p>
               </div>
             )}

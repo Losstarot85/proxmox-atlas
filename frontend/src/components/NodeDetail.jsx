@@ -6,7 +6,8 @@
  * Reuses rd-* CSS classes from ResourceDetail.css.
  */
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { Monitor, Circle, Server, Box, Clock } from 'lucide-react';
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { UptimePulse } from "./UptimePulse";
@@ -142,7 +143,7 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
         {/* Header */}
         <div className="rd-header">
           <div className="rd-header-left">
-            <span className="rd-type-badge">🖥️</span>
+            <span className="rd-type-badge"><Monitor size={16} /></span>
             <div>
               <h2 id="nd-title" className="rd-title">{node.name}</h2>
               <span className="rd-subtitle mono-cell">
@@ -152,8 +153,8 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
             </div>
           </div>
           <div className="rd-header-right">
-            <span className={`badge ${isOnline ? "badge-online" : "badge-offline"}`}>
-              {isOnline ? "🟢 Online" : "🔴 Offline"}
+            <span className={`badge ${isOnline ? "badge-online" : "badge-offline"}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              {isOnline ? <><Circle size={8} fill="var(--success)" color="var(--success)" /> Online</> : <><Circle size={8} fill="var(--danger)" color="var(--danger)" /> Offline</>}
             </span>
             <button className="rd-close" onClick={onClose} aria-label="Close details">✕</button>
           </div>
@@ -284,7 +285,7 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
                     className="nd-guest-row"
                     onClick={() => onOpenResource && onOpenResource(r)}
                   >
-                    <span className="nd-guest-icon">{r.type === "VM" ? "💻" : "📦"}</span>
+                    <span className="nd-guest-icon">{r.type === "VM" ? <Server size={14} /> : <Box size={14} />}</span>
                     <span className="nd-guest-id mono-cell">{r.vmid}</span>
                     <span className="nd-guest-name">{r.name}</span>
                     <span className={`badge ${r.status === "running" ? "badge-online" : "badge-offline"}`} style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>
@@ -298,8 +299,8 @@ export function NodeDetail({ node, clusterName, metricsMap, resources, onClose, 
 
           {/* Actions */}
           <section className="rd-section rd-actions">
-            <button className="btn" onClick={() => onOpenTimeMachine({ id: node.name, type: "NODE", name: node.name })}>
-              ⏱ Open Time Machine
+            <button className="btn" onClick={() => onOpenTimeMachine({ id: node.name, type: "NODE", name: node.name })} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Clock size={14} /> Open Time Machine
             </button>
           </section>
         </div>

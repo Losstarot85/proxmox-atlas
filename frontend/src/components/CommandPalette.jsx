@@ -7,7 +7,8 @@
  * CSS lives in App.css (palette-* classes).
  */
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { LayoutDashboard, Globe, Bell, Settings, Download, FileText, SunMedium, Building2, Monitor, AlertCircle, Server, Box, Search, Clock } from 'lucide-react';
 import { useI18n } from "../i18n";
 
 const RECENT_KEY = "atlas-palette-recent";
@@ -65,13 +66,13 @@ function buildItems(clusters, activeTab) {
 
   // Static navigation actions
   items.push(
-    { id: "nav-dashboard", name: "Go to Dashboard", icon: "📊", sub: "Navigation", action: "navigate", tab: "dashboard" },
-    { id: "nav-topology", name: "Go to Topology", icon: "🗺️", sub: "Navigation", action: "navigate", tab: "topology" },
-    { id: "nav-alerts", name: "Go to Alerts", icon: "🔔", sub: "Navigation", action: "navigate", tab: "alerts" },
-    { id: "nav-settings", name: "Go to Settings", icon: "⚙️", sub: "Navigation", action: "navigate", tab: "settings" },
-    { id: "act-export-json", name: "Export JSON", icon: "📥", sub: "Export current data as JSON", action: "export-json" },
-    { id: "act-export-csv", name: "Export CSV", icon: "📄", sub: "Export current data as CSV", action: "export-csv" },
-    { id: "act-theme", name: "Toggle Theme", icon: "🌓", sub: "Switch between dark and light mode", action: "toggle-theme" }
+    { id: "nav-dashboard", name: "Go to Dashboard", icon: <LayoutDashboard size={16} />, sub: "Navigation", action: "navigate", tab: "dashboard" },
+    { id: "nav-topology", name: "Go to Topology", icon: <Globe size={16} />, sub: "Navigation", action: "navigate", tab: "topology" },
+    { id: "nav-alerts", name: "Go to Alerts", icon: <Bell size={16} />, sub: "Navigation", action: "navigate", tab: "alerts" },
+    { id: "nav-settings", name: "Go to Settings", icon: <Settings size={16} />, sub: "Navigation", action: "navigate", tab: "settings" },
+    { id: "act-export-json", name: "Export JSON", icon: <Download size={16} />, sub: "Export current data as JSON", action: "export-json" },
+    { id: "act-export-csv", name: "Export CSV", icon: <FileText size={16} />, sub: "Export current data as CSV", action: "export-csv" },
+    { id: "act-theme", name: "Toggle Theme", icon: <SunMedium size={16} />, sub: "Switch between dark and light mode", action: "toggle-theme" }
   );
 
   // Dynamic items from cluster data
@@ -79,7 +80,7 @@ function buildItems(clusters, activeTab) {
     items.push({
       id: `cluster-${cluster.name}`,
       name: cluster.name,
-      icon: "🏢",
+      icon: <Building2 size={16} />,
       sub: `Cluster · ${cluster.nodes?.length || 0} nodes`,
       action: "cluster",
       data: cluster,
@@ -89,7 +90,7 @@ function buildItems(clusters, activeTab) {
       items.push({
         id: `node-${cluster.name}-${node.name}`,
         name: node.name,
-        icon: node.status === "online" ? "🖥️" : "🔴",
+        icon: node.status === "online" ? <Monitor size={16} /> : <AlertCircle size={16} style={{ color: "var(--danger)" }} />,
         sub: `Node · ${cluster.name} · ${node.status}`,
         action: "time-machine",
         data: { id: node.name, type: "NODE", name: node.name },
@@ -97,7 +98,7 @@ function buildItems(clusters, activeTab) {
     });
 
     cluster.resources?.forEach((r) => {
-      const icon = r.type === "VM" ? "💻" : "📦";
+      const icon = r.type === "VM" ? <Server size={16} /> : <Box size={16} />;
       const status = r.status === "running" ? "running" : "stopped";
       items.push({
         id: `${r.type}-${cluster.name}-${r.vmid}`,
@@ -252,7 +253,7 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
       >
         {/* Search header */}
         <div className="palette-header">
-          <span className="palette-icon">🔍</span>
+          <span className="palette-icon" style={{ display: "flex", alignItems: "center" }}><Search size={18} /></span>
           <input
             ref={inputRef}
             className="palette-input"
@@ -317,7 +318,7 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
                       <span className="palette-item-sub">{item.sub}</span>
                     </div>
                     <span className="palette-item-action">
-                      {item.action === "time-machine" ? "⏱ Time Machine" : 
+                      {item.action === "time-machine" ? <><Clock size={12} style={{ marginRight: '0.2rem', verticalAlign: 'middle' }} /> Time Machine</> : 
                        item.action === "navigate" ? "↵ Open" :
                        item.action === "toggle-theme" ? "↵ Toggle" :
                        item.action === "export-json" || item.action === "export-csv" ? "↓ Export" :

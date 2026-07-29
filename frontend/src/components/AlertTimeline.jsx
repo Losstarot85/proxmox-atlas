@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Search, Calendar, Monitor, Box, MapPin, BellOff, Eye, Trash2, X } from 'lucide-react';
 
 export function AlertTimeline({ 
   alerts, 
@@ -176,8 +177,8 @@ export function AlertTimeline({
             <label>Severity</label>
             <select value={filterSeverity} onChange={(e) => setFilterSeverity(e.target.value)} className="select-control">
               <option value="all">All Severities</option>
-              <option value="critical">🚨 Critical</option>
-              <option value="warning">⚠️ Warning</option>
+              <option value="critical">Critical</option>
+              <option value="warning">Warning</option>
             </select>
           </div>
 
@@ -215,7 +216,7 @@ export function AlertTimeline({
       {/* Timeline List */}
       {filteredAlerts.length === 0 ? (
         <div className="empty-state glass-card" style={{ padding: '3rem 2rem', textAlign: 'center' }}>
-          <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '1rem' }}>🔍</span>
+          <span style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'var(--text-secondary)' }}><Search size={40} /></span>
           No alerts match the selected filter criteria.
         </div>
       ) : (
@@ -224,7 +225,7 @@ export function AlertTimeline({
             <div key={dateStr} className="timeline-group">
               {/* Day Header Banner */}
               <div className="timeline-date-header">
-                <span>📅 {dateStr}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={14} /> {dateStr}</span>
                 <span className="timeline-count-badge">{groupedAlerts[dateStr].length} alerts</span>
               </div>
 
@@ -269,8 +270,8 @@ export function AlertTimeline({
                             <div className="timeline-meta-chips">
                               <span className="timeline-chip cluster-chip" title="Cluster">{alert.cluster}</span>
                               <span className="timeline-chip node-chip" title="Node">{alert.node}</span>
-                              <span className="timeline-chip resource-chip" title="Resource">
-                                {type === "VM" ? "🖥️ " : type === "LXC" ? "📦 " : "📍 "}
+                              <span className="timeline-chip resource-chip" title="Resource" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                {type === "VM" ? <Monitor size={12} /> : type === "LXC" ? <Box size={12} /> : <MapPin size={12} />}
                                 {alert.resource}
                               </span>
                             </div>
@@ -311,24 +312,27 @@ export function AlertTimeline({
                               <button 
                                 className="btn btn-sm"
                                 onClick={() => handleSilence(alert.id)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                               >
-                                🔕 Silence 1h
+                                <BellOff size={13} /> Silence 1h
                               </button>
                               
                               {!alert.read && (
                                 <button 
                                   className="btn btn-sm"
                                   onClick={() => handleMarkRead(alert.id)}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                                 >
-                                  👁️ Mark Read
+                                  <Eye size={13} /> Mark Read
                                 </button>
                               )}
 
                               <button 
                                 className="btn btn-sm btn-stop"
                                 onClick={() => handleDelete(alert.id)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                               >
-                                🗑️ Dismiss
+                                <Trash2 size={13} /> Dismiss
                               </button>
                             </div>
                           </div>

@@ -7,6 +7,7 @@
  */
 
 import React, { useMemo } from "react";
+import { Check, AlertTriangle, X, Circle } from 'lucide-react';
 import "./ClusterHealthBar.css";
 
 /**
@@ -47,10 +48,10 @@ function classifyResource(r) {
 }
 
 const TIERS = [
-  { key: "healthy",  label: "Healthy",  color: "#22c55e", icon: "✓" },
-  { key: "warning",  label: "Warning",  color: "#f59e0b", icon: "⚠" },
-  { key: "critical", label: "Critical", color: "#ef4444", icon: "✕" },
-  { key: "offline",  label: "Offline",  color: "#6b7280", icon: "○" },
+  { key: "healthy",  label: "Healthy",  color: "#22c55e", icon: <Check size={12} /> },
+  { key: "warning",  label: "Warning",  color: "#f59e0b", icon: <AlertTriangle size={12} /> },
+  { key: "critical", label: "Critical", color: "#ef4444", icon: <X size={12} /> },
+  { key: "offline",  label: "Offline",  color: "#6b7280", icon: <Circle size={10} /> },
 ];
 
 export const ClusterHealthBar = React.memo(function ClusterHealthBar({ nodes, resources, activeFilter, onFilterChange }) {

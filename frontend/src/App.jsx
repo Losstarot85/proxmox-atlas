@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
+import { LayoutDashboard, Globe, Bell, Database, Settings, LogOut, Menu, Sun, Moon, FileText, BarChart3, AlertTriangle, Gamepad2 } from 'lucide-react';
 import { API_BASE } from "./config";
 import { useI18n } from "./i18n";
 import { useAuth } from "./hooks/useAuth";
@@ -304,7 +305,7 @@ function App() {
             aria-selected={activeTab === "dashboard"}
             aria-controls="main-content"
           >
-            <span className="nav-icon">📊</span>
+            <span className="nav-icon"><LayoutDashboard size={20} /></span>
             <span className="nav-text">{t('nav.dashboard')}</span>
           </button>
           <button
@@ -315,7 +316,7 @@ function App() {
             aria-selected={activeTab === "topology"}
             aria-controls="main-content"
           >
-            <span className="nav-icon">🌍</span>
+            <span className="nav-icon"><Globe size={20} /></span>
             <span className="nav-text">{t('nav.topology')}</span>
           </button>
           <button
@@ -328,7 +329,7 @@ function App() {
             aria-controls="main-content"
           >
             <span className="nav-icon">
-              🚨
+              <Bell size={20} />
               {unreadAlerts > 0 && (
                 <span className="badge-notification" style={{
                   position: 'absolute',
@@ -357,7 +358,7 @@ function App() {
             aria-selected={activeTab === "backups"}
             aria-controls="main-content"
           >
-            <span className="nav-icon">💾</span>
+            <span className="nav-icon"><Database size={20} /></span>
             <span className="nav-text">{t('nav.backups')}</span>
           </button>
           <button
@@ -368,7 +369,7 @@ function App() {
             aria-selected={activeTab === "settings"}
             aria-controls="main-content"
           >
-            <span className="nav-icon">⚙️</span>
+            <span className="nav-icon"><Settings size={20} /></span>
             <span className="nav-text">{t('nav.settings')}</span>
           </button>
         </nav>
@@ -380,7 +381,7 @@ function App() {
             title={!isExpanded ? t('nav.logout') : ""}
             style={{ color: 'var(--danger)', opacity: 0.8 }}
           >
-            <span className="nav-icon">🚪</span>
+            <span className="nav-icon"><LogOut size={20} /></span>
             <span className="nav-text">{t('nav.logout')}</span>
           </button>
         </div>
@@ -395,7 +396,7 @@ function App() {
           aria-selected={activeTab === "dashboard"}
           aria-controls="main-content"
         >
-          <span className="mobile-tab-icon">📊</span>
+          <span className="mobile-tab-icon"><LayoutDashboard size={20} /></span>
           <span className="mobile-tab-label">{t('nav.dashboard')}</span>
         </button>
         <button
@@ -405,7 +406,7 @@ function App() {
           aria-selected={activeTab === "topology"}
           aria-controls="main-content"
         >
-          <span className="mobile-tab-icon">🌍</span>
+          <span className="mobile-tab-icon"><Globe size={20} /></span>
           <span className="mobile-tab-label">{t('nav.topology')}</span>
         </button>
         <button
@@ -415,7 +416,7 @@ function App() {
           aria-selected={activeTab === "backups"}
           aria-controls="main-content"
         >
-          <span className="mobile-tab-icon">💾</span>
+          <span className="mobile-tab-icon"><Database size={20} /></span>
           <span className="mobile-tab-label">{t('nav.backups')}</span>
         </button>
         <button
@@ -427,7 +428,7 @@ function App() {
           aria-controls="main-content"
         >
           <span className="mobile-tab-icon">
-            🚨
+            <Bell size={20} />
             {unreadAlerts > 0 && (
               <span className="mobile-badge">
                 {unreadAlerts > 99 ? '99+' : unreadAlerts}
@@ -443,7 +444,7 @@ function App() {
           aria-selected={activeTab === "settings"}
           aria-controls="main-content"
         >
-          <span className="mobile-tab-icon">⚙️</span>
+          <span className="mobile-tab-icon"><Settings size={20} /></span>
           <span className="mobile-tab-label">{t('nav.settings')}</span>
         </button>
       </nav>
@@ -472,7 +473,7 @@ function App() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span>🎮</span>
+              <span><Gamepad2 size={18} /></span>
               <span><strong>Live Public Demo Mode</strong> — You are exploring Proxmox Atlas with synthetic cluster data in Read-Only mode.</span>
             </div>
             <button 
@@ -491,7 +492,7 @@ function App() {
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label={t('header.open_menu')}
             >
-              ☰
+              <Menu size={22} />
             </button>
             <div>
               <h2 className="page-title">
@@ -524,7 +525,7 @@ function App() {
                 title={t('header.export_json')}
                 aria-label={t('header.export_json')}
               >
-                📄 JSON
+                <FileText size={14} style={{marginRight: '0.25rem', verticalAlign: 'middle'}} /> JSON
               </button>
               <button 
                 className="btn btn-sm export-btn"
@@ -532,7 +533,7 @@ function App() {
                 title={t('header.export_csv')}
                 aria-label={t('header.export_csv')}
               >
-                📊 CSV
+                <BarChart3 size={14} style={{marginRight: '0.25rem', verticalAlign: 'middle'}} /> CSV
               </button>
             </div>
             <button 
@@ -541,7 +542,7 @@ function App() {
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.75rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}>
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{auth.username}</span>
@@ -552,7 +553,7 @@ function App() {
 
         {error && (
           <div className="global-error">
-            <span>⚠️</span>
+            <span><AlertTriangle size={16} /></span>
             <span>{error}</span>
           </div>
         )}

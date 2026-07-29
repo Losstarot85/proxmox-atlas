@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { ArrowRight, XCircle, CheckCircle2, PartyPopper, Globe, Sparkles } from 'lucide-react';
 import { useI18n } from "../i18n";
 import { API_BASE } from "../config";
 
@@ -153,14 +154,15 @@ export function OnboardingWizard({ onComplete, onSkip }) {
                   {t("common.skip", "Skip")}
                 </button>
               )}
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setStep(2)}
-                aria-label="Proceed to add cluster configuration"
-              >
-                {t("onboarding.welcome.cta", "Get Started")} →
-              </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setStep(2)}
+                  aria-label="Proceed to add cluster configuration"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+                >
+                  {t("onboarding.welcome.cta", "Get Started")} <ArrowRight size={16} />
+                </button>
             </div>
           </div>
         )}
@@ -176,7 +178,7 @@ export function OnboardingWizard({ onComplete, onSkip }) {
             </p>
 
             <form onSubmit={handleAddCluster} className="onboarding-form">
-              {error && <div className="msg-error" style={{ marginBottom: "1rem" }}>❌ {error}</div>}
+              {error && <div className="msg-error" style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}><XCircle size={16} /> {error}</div>}
 
               <div className="form-grid">
                 <div className="form-group">
@@ -257,7 +259,7 @@ export function OnboardingWizard({ onComplete, onSkip }) {
                     border: `1px solid ${testResult.ok ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)"}`
                   }}
                 >
-                  {testResult.ok ? "✅ " : "❌ "}
+                  {testResult.ok ? <CheckCircle2 size={14} style={{ color: 'var(--success)', display: 'inline', marginRight: '0.35rem', verticalAlign: 'middle' }} /> : <XCircle size={14} style={{ color: 'var(--danger)', display: 'inline', marginRight: '0.35rem', verticalAlign: 'middle' }} />}
                   {testResult.message}
                 </div>
               )}
@@ -389,21 +391,21 @@ export function ChangelogModal({ onClose }) {
         
         <div className="changelog-body" style={{ margin: "1.5rem 0", textAlign: "left" }}>
           <div className="changelog-feature">
-            <h3>🌍 Full Internationalization (i18n)</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Globe size={18} /> Full Internationalization (i18n)</h3>
             <p>
               We've localized Proxmox Atlas into 6 languages: English, Italian, German, Spanish, French, and Chinese! You can toggle language instantly via the select dropdown in the Settings tab.
             </p>
           </div>
 
           <div className="changelog-feature" style={{ marginTop: "1rem" }}>
-            <h3>♿ Enhanced Accessibility (a11y)</h3>
+            <h3>Enhanced Accessibility (a11y)</h3>
             <p>
               Atlas is now fully compliant with WCAG 2.1 AA requirements. Features include full keyboard control, focus trap dialogs, skip-to-content navigation, and native screen reader announcements.
             </p>
           </div>
 
           <div className="changelog-feature" style={{ marginTop: "1rem" }}>
-            <h3>✨ Onboarding & Discovery Guides</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Sparkles size={18} /> Onboarding & Discovery Guides</h3>
             <p>
               New features are flagged with blue pulsing discovery dots. Hover over complex components to view inline tooltips detailing their parameters.
             </p>

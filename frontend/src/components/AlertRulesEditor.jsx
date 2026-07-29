@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { XCircle, Save, Loader2, CheckCircle2 } from "lucide-react";
 import { useAlertRules, useSaveAlertRules } from "../hooks/useApiQueries";
 
 export function AlertRulesEditor({ clusters = [] }) {
@@ -352,7 +353,7 @@ export function AlertRulesEditor({ clusters = [] }) {
   if (isLoading || !localRules) {
     return (
       <div className="empty-state glass-card" style={{ padding: "4rem 2rem", textAlign: "center" }}>
-        <span>⏳</span> Loading rules editor...
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}><Loader2 size={18} className="spin" /> Loading rules editor...</span>
       </div>
     );
   }
@@ -360,7 +361,7 @@ export function AlertRulesEditor({ clusters = [] }) {
   if (isError) {
     return (
       <div className="empty-state glass-card" style={{ padding: "4rem 2rem", textAlign: "center", borderColor: "var(--danger)" }}>
-        <span style={{ color: "var(--danger)" }}>❌</span> Failed to load alert rules from backend.
+        <span style={{ color: "var(--danger)", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}><XCircle size={18} /> Failed to load alert rules from backend.</span>
       </div>
     );
   }
@@ -373,8 +374,8 @@ export function AlertRulesEditor({ clusters = [] }) {
         <div className="glass-card" style={{ padding: "1.5rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
             <h3 style={{ margin: 0 }}>Global Threshold Rules</h3>
-            <button className="btn" onClick={handleSave} disabled={saveRulesMutation.isPending}>
-              {saveRulesMutation.isPending ? "Saving..." : "💾 Save Rules"}
+            <button className="btn" onClick={handleSave} disabled={saveRulesMutation.isPending} style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              {saveRulesMutation.isPending ? "Saving..." : <><Save size={14} /> Save Rules</>}
             </button>
           </div>
 
@@ -692,8 +693,8 @@ export function AlertRulesEditor({ clusters = [] }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", overflowY: "auto", maxHeight: "600px", paddingRight: "4px" }}>
           {previewTriggers.length === 0 ? (
-            <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.8rem", border: "1px dashed var(--border)", borderRadius: "8px" }}>
-              🟢 No resources would trigger alerts under these settings.
+            <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.8rem", border: "1px dashed var(--border)", borderRadius: "8px", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+              <CheckCircle2 size={14} style={{ color: 'var(--success)' }} /> No resources would trigger alerts under these settings.
             </div>
           ) : (
             previewTriggers.map((t, idx) => (

@@ -13,7 +13,8 @@
  * All shortcuts are suppressed when focus is on an input/textarea/select.
  */
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { Keyboard } from 'lucide-react';
 
 const SHORTCUTS = [
   { key: "1", label: "Dashboard", group: "Navigation", description: "Switch to Dashboard tab" },
@@ -175,7 +176,7 @@ export function ShortcutsCheatSheet({ shortcuts, onClose }) {
         style={{ outline: "none" }}
       >
         <div className="shortcuts-header">
-          <h3 id="shortcuts-title">⌨️ Keyboard Shortcuts</h3>
+          <h3 id="shortcuts-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Keyboard size={18} /> Keyboard Shortcuts</h3>
           <kbd className="palette-esc" onClick={onClose} role="button" aria-label="Close shortcuts list">ESC</kbd>
         </div>
         <div className="shortcuts-body">

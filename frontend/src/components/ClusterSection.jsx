@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { AlertTriangle, Circle } from 'lucide-react';
 import { ResourceSection } from "./ResourceSection";
 import { formatCPU, formatBytesToGB, formatNetwork, formatPressure, formatLoad } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
@@ -242,14 +243,14 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
 
           {cluster.error && (
             <div className="global-error" style={{ marginBottom: "1.5rem" }}>
-              <span>⚠️</span>
+              <span><AlertTriangle size={16} /></span>
               <span>{cluster.error}</span>
             </div>
           )}
           
           {cluster.failed_nodes?.length > 0 && (
             <div className="global-error" style={{ marginBottom: "1.5rem" }}>
-              <span>⚠️</span>
+              <span><AlertTriangle size={16} /></span>
               <span>Partial data — unreachable nodes: {cluster.failed_nodes.join(", ")}</span>
             </div>
           )}
@@ -329,8 +330,8 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                               {visibleColumns.status && (
                                 <td>
                                   {isOnline 
-                                    ? <span className="badge badge-online">🟢 Online</span> 
-                                    : <span className="badge badge-offline">🔴 Offline</span>}
+                                    ? <span className="badge badge-online" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--success)" color="var(--success)" /> Online</span> 
+                                    : <span className="badge badge-offline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--danger)" color="var(--danger)" /> Offline</span>}
                                 </td>
                               )}
                               {visibleColumns.cpu && (
@@ -443,9 +444,9 @@ export function ClusterSection({ cluster, globalHistory, metricsMap, searchQuery
                           <span className="card-name">{n.name}</span>
                         </div>
                         {isOnline ? (
-                          <span className="badge badge-online">🟢 Online</span>
+                          <span className="badge badge-online" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--success)" color="var(--success)" /> Online</span>
                         ) : (
-                          <span className="badge badge-offline">🔴 Offline</span>
+                          <span className="badge badge-offline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--danger)" color="var(--danger)" /> Offline</span>
                         )}
                       </div>
 

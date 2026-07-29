@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { CheckCircle2, XCircle, Lock, Monitor, AlertTriangle, Globe, Plug } from 'lucide-react';
 import { API_BASE } from "../config";
 import { useToast } from "./Toast";
 import { useI18n, LOCALE_LABELS } from "../i18n";
@@ -316,11 +317,11 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
 
         {pwError && (
           <div className="global-error" style={{ marginBottom: '1rem' }}>
-            <span>❌</span><span>{pwError}</span>
+            <span style={{ color: "var(--danger)", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}><XCircle size={14} /></span><span>{pwError}</span>
           </div>
         )}
         {pwSuccess && (
-          <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ {t('settings.password.success')}</p>
+          <p className="msg-success" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><CheckCircle2 size={14} /> {t('settings.password.success')}</p>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
@@ -371,7 +372,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
               setPwSaving(false);
             }
           }}>
-            {pwSaving ? t('settings.password.changing') : "🔒 " + t('settings.password.change')}
+            {pwSaving ? t('settings.password.changing') : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Lock size={14} /> {t('settings.password.change')}</span>}
           </button>
         </div>
       </div>}
@@ -379,7 +380,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
       <div className="glass-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <div>
-            <h3>🖥️ {t('settings.clusters.title')}</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Monitor size={18} /> {t('settings.clusters.title')}</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>
               {t('settings.clusters.desc')}
             </p>
@@ -391,11 +392,11 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
 
         {clusterError && (
           <div className="global-error" style={{ marginBottom: '1rem' }}>
-            <span>❌</span><span>{clusterError}</span>
+            <span style={{ color: "var(--danger)", display: "inline-flex", alignItems: "center" }}><XCircle size={14} /></span><span>{clusterError}</span>
           </div>
         )}
         {clusterSuccess && (
-          <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ {clusterSuccess}</p>
+          <p className="msg-success" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><CheckCircle2 size={14} /> {clusterSuccess}</p>
         )}
 
         {/* Add Cluster Form */}
@@ -433,13 +434,13 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
                 border: `1px solid ${testResult.ok ? '#22c55e' : 'var(--danger)'}`,
                 color: testResult.ok ? '#22c55e' : 'var(--danger)', fontSize: '0.9rem'
               }}>
-                {testResult.ok ? '✅' : '❌'} {testResult.message}
+                {testResult.ok ? <CheckCircle2 size={14} style={{ color: 'var(--success)', verticalAlign: 'middle' }} /> : <XCircle size={14} style={{ color: 'var(--danger)', verticalAlign: 'middle' }} />} {testResult.message}
               </div>
             )}
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button className="btn" onClick={handleTestConnection} disabled={isTesting || !newCluster.host || !newCluster.token_id || !newCluster.token_secret} style={{ borderColor: 'var(--accent)' }}>
-                {isTesting ? "Testing..." : "🔌 Test Connection"}
+                {isTesting ? "Testing..." : <><Plug size={14} style={{ verticalAlign: 'middle' }} /> Test Connection</>}
               </button>
               <button className="btn btn-primary" onClick={handleAddCluster} disabled={isAdding || !testResult?.ok} title={!testResult?.ok ? "Test connection before adding" : ""}>
                 {isAdding ? "Adding..." : "Add Cluster"}
@@ -502,11 +503,11 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
 
         {error && (
           <div className="alert-message global-error" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
-            <span>❌</span><span>{error}</span>
+            <span style={{ color: "var(--danger)", display: "inline-flex", alignItems: "center" }}><XCircle size={14} /></span><span>{error}</span>
           </div>
         )}
         {success && (
-          <p className="msg-success" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>✅ {t('settings.polling.saved')}</p>
+          <p className="msg-success" style={{ marginTop: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><CheckCircle2 size={14} /> {t('settings.polling.saved')}</p>
         )}
 
         {canEdit && <div className="settings-actions" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
@@ -550,7 +551,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
 
           {pushPermissionStatus === "denied" && (
             <span style={{ color: "var(--danger)", fontSize: "0.9rem" }}>
-              ⚠️ Notification permission denied. Please enable them in your browser settings.
+              <AlertTriangle size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} /> Notification permission denied. Please enable them in your browser settings.
             </span>
           )}
 
@@ -663,8 +664,8 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
             <button className="btn btn-primary" onClick={() => { setShowAddUser(!showAddUser); setUserError(null); }}>{showAddUser ? t('common.cancel') : t('settings.users.add')}</button>
           </div>
 
-          {userError && <div className="global-error" style={{ marginBottom: '1rem' }}><span>❌</span><span>{userError}</span></div>}
-          {userSuccess && <p className="msg-success" style={{ marginBottom: '1rem' }}>✅ {userSuccess}</p>}
+          {userError && <div className="global-error" style={{ marginBottom: '1rem' }}><span style={{ display: 'inline-flex', alignItems: 'center' }}><XCircle size={14} /></span><span>{userError}</span></div>}
+          {userSuccess && <p className="msg-success" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><CheckCircle2 size={14} /> {userSuccess}</p>}
 
           {showAddUser && (
             <div style={{ background: 'rgba(0,0,0,0.15)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
@@ -702,7 +703,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
                     <tr key={u.username}>
                       <td style={{ fontWeight: 600 }}>{u.username}</td>
                       <td><span className="badge" style={{ padding: '0.2rem 0.5rem', textTransform: 'uppercase', fontSize: '0.7rem', background: u.role === 'admin' ? 'rgba(239,68,68,0.15)' : u.role === 'editor' ? 'rgba(59,130,246,0.15)' : u.role === 'demo' ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.08)', color: u.role === 'admin' ? '#ef4444' : u.role === 'editor' ? '#3b82f6' : u.role === 'demo' ? '#a855f7' : 'var(--text-secondary)' }}>{u.role}</span></td>
-                      <td>{u.must_change_password ? <span style={{ color: 'var(--warning)', fontSize: '0.85rem' }}>⚠ Must change password</span> : <span style={{ color: '#22c55e', fontSize: '0.85rem' }}>✓ Active</span>}</td>
+                      <td>{u.must_change_password ? <span style={{ color: 'var(--warning)', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><AlertTriangle size={13} /> Must change password</span> : <span style={{ color: '#22c55e', fontSize: '0.85rem' }}>✓ Active</span>}</td>
                       <td className="mono-cell" style={{ fontSize: '0.8rem' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
                       <td style={{ display: 'flex', gap: '0.5rem' }}>
                         {u.username !== 'admin' && <button className="btn btn-sm" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: '0.75rem' }} onClick={() => handleDeleteUser(u.username)}>Delete</button>}
@@ -730,7 +731,7 @@ export function SettingsTab({ globalInterval, globalWebhooks, onSaveSettings, on
         <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <h3>
             <DiscoveryDot featureId="settings-language">
-              🌍 {t('settings.language.title')}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Globe size={18} /> {t('settings.language.title')}</span>
             </DiscoveryDot>
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, marginTop: '0.25rem' }}>

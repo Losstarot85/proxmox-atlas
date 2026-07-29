@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Zap, Monitor, Box, Circle } from 'lucide-react';
 import { Tooltip } from "./EmptyState";
 
 function getCpuColor(cpuRatio) {
@@ -66,14 +67,14 @@ function TopologyNode({ nodeData, clusterName, initialPosition, onOpenTimeMachin
           >
             CPU: {nodeData.cpu != null ? (nodeData.cpu * 100).toFixed(1) : "? "}%
           </button>
-          <button 
-            className="btn btn-sm"
-            onClick={(e) => { e.stopPropagation(); onOpenWhatIf(clusterName, nodeData.name); }}
-            style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.15)', borderColor: 'var(--warning)' }}
-            title="Simulate node removal"
-          >
-            ⚡ What-If
-          </button>
+            <button 
+              className="btn btn-sm"
+              onClick={(e) => { e.stopPropagation(); onOpenWhatIf(clusterName, nodeData.name); }}
+              style={{ padding: '0.1rem 0.4rem', fontSize: '0.7rem', background: 'rgba(245, 158, 11, 0.15)', borderColor: 'var(--warning)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+              title="Simulate node removal"
+            >
+              <Zap size={11} /> What-If
+            </button>
         </div>
       </div>
       <div className="topo-vms-container">
@@ -98,9 +99,9 @@ function TopologyNode({ nodeData, clusterName, initialPosition, onOpenTimeMachin
       <div className="mobile-only-vm-summary">
         {nodeData.vms?.length > 0 ? (
           <>
-            <span>🖥️ VMs: {nodeData.vms.filter(v => v.type === 'VM').length}</span>
-            <span>📦 LXCs: {nodeData.vms.filter(v => v.type === 'LXC').length}</span>
-            <span>🟢 Running: {nodeData.vms.filter(v => v.status === 'running').length}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Monitor size={12} /> VMs: {nodeData.vms.filter(v => v.type === 'VM').length}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Box size={12} /> LXCs: {nodeData.vms.filter(v => v.type === 'LXC').length}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--success)" color="var(--success)" /> Running: {nodeData.vms.filter(v => v.status === 'running').length}</span>
           </>
         ) : (
           <span>No VMs or LXCs</span>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, ClipboardList, Clock } from 'lucide-react';
 import { API_BASE } from "../config";
 import { SkeletonTable } from "./Skeletons";
 import { useI18n } from "../i18n";
@@ -27,12 +28,12 @@ const BackupRow = React.memo(({ res, getRelativeTimeString, formatTime, formatBy
     </td>
     <td style={{ padding: "0.75rem" }}>
       {res.isStale ? (
-        <span className="badge" style={{ backgroundColor: "var(--danger-bg)", color: "var(--danger)", border: "none" }}>
-          ⚠️ Lacking Backup
+        <span className="badge" style={{ backgroundColor: "var(--danger-bg)", color: "var(--danger)", border: "none", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+          <AlertTriangle size={12} /> Lacking Backup
         </span>
       ) : (
-        <span className="badge" style={{ backgroundColor: "var(--success-bg)", color: "var(--success)", border: "none" }}>
-          ✅ Protected
+        <span className="badge" style={{ backgroundColor: "var(--success-bg)", color: "var(--success)", border: "none", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+          <CheckCircle2 size={12} /> Protected
         </span>
       )}
     </td>
@@ -217,7 +218,7 @@ export function BackupStatus({ clusters }) {
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <h2 style={{ margin: 0 }}>{t('header.backups')}</h2>
           <button className="btn" onClick={fetchBackups} disabled={loading} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            🔄 Refresh
+            <RefreshCw size={14} /> Refresh
           </button>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "center" }}>
@@ -257,7 +258,7 @@ export function BackupStatus({ clusters }) {
 
       {error && (
         <div className="global-error" style={{ marginBottom: "1.5rem" }}>
-          <span>⚠️</span>
+          <span><AlertTriangle size={16} /></span>
           <span>{error}</span>
         </div>
       )}
@@ -301,7 +302,7 @@ export function BackupStatus({ clusters }) {
           {staleResources.length > 0 && (
             <div className="glass-card" style={{ padding: "1rem 1.5rem", borderLeft: "4px solid var(--danger)", background: "rgba(239, 68, 68, 0.04)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "600", color: "var(--danger)", marginBottom: "0.25rem" }}>
-                <span>🚨</span> Action Required: {staleResources.length} resources are lacking recent backups
+                <span><ShieldAlert size={18} /></span> Action Required: {staleResources.length} resources are lacking recent backups
               </div>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                 The resources listed below have not been backed up within your configured threshold of {backupThresholdDays} days, or have no backups recorded on Proxmox storage pools.
@@ -320,7 +321,7 @@ export function BackupStatus({ clusters }) {
             }}
           >
             <h3 style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              📋 Protection Inventory ({filteredResources.length})
+              <ClipboardList size={18} /> Protection Inventory ({filteredResources.length})
             </h3>
             <table className="cluster-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
@@ -377,7 +378,7 @@ export function BackupStatus({ clusters }) {
           {/* Recent Timeline View */}
           <div className="glass-card" style={{ padding: "1.5rem" }}>
             <h3 style={{ marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              ⏳ Recent Backups Timeline
+              <Clock size={18} /> Recent Backups Timeline
             </h3>
             {backupAnalysis.timeline.length === 0 ? (
               <EmptyState type="backups" />

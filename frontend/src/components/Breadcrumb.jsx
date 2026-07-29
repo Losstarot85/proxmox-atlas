@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { Home, Clock, Zap } from 'lucide-react';
 import { useI18n } from "../i18n";
 
 export const Breadcrumb = React.memo(function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavigate, onCloseModals }) {
@@ -22,7 +23,7 @@ export const Breadcrumb = React.memo(function Breadcrumb({ activeTab, timeMachin
   // Root
   crumbs.push({
     label: "Atlas",
-    icon: "🏠",
+    icon: <Home size={14} />,
     onClick: () => onNavigate("dashboard"),
   });
 
@@ -40,7 +41,7 @@ export const Breadcrumb = React.memo(function Breadcrumb({ activeTab, timeMachin
     const typeLabel = timeMachineTarget.type === "NODE" ? t("topology.node") : timeMachineTarget.type;
     crumbs.push({
       label: `${typeLabel}: ${timeMachineTarget.name}`,
-      icon: "⏱",
+      icon: <Clock size={14} />,
       active: true,
     });
   }
@@ -53,7 +54,7 @@ export const Breadcrumb = React.memo(function Breadcrumb({ activeTab, timeMachin
     });
     crumbs.push({
       label: `${t("whatif.title")}: ${whatIfTarget.node}`,
-      icon: "⚡",
+      icon: <Zap size={14} />,
       active: true,
     });
   }

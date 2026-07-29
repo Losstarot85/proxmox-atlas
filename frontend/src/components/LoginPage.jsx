@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Gamepad2 } from 'lucide-react';
 import { useI18n } from "../i18n";
 import { API_BASE } from "../config";
 import "./LoginPage.css";
@@ -249,7 +250,10 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
                     transition: "all 0.2s ease"
                   }}
                 >
-                  🎮 Try Public Demo (Read-Only)
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Gamepad2 size={18} />
+                    Try Public Demo (Read-Only)
+                  </span>
                 </button>
               </div>
             )}

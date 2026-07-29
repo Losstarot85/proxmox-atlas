@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { Circle, RefreshCw, Square, Play, Power, MapPin, Box, Zap, Tag, AlertTriangle } from 'lucide-react';
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { CollapsibleSection, useCollapsedState } from "./CollapsibleSection";
@@ -93,8 +94,8 @@ const ResourceRow = React.memo(({
         {visibleColumns.status && (
           <td>
             {isRunning
-              ? <span className="badge badge-online">🟢 Running</span>
-              : <span className="badge badge-offline">🔴 Stopped</span>
+              ? <span className="badge badge-online" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--success)" color="var(--success)" /> Running</span>
+              : <span className="badge badge-offline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--danger)" color="var(--danger)" /> Stopped</span>
             }
           </td>
         )}
@@ -469,9 +470,9 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
             </span>
           </div>
           {isOnline ? (
-            <span className="badge badge-online">🟢 Running</span>
+            <span className="badge badge-online" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--success)" color="var(--success)" /> Running</span>
           ) : (
-            <span className="badge badge-offline">🔴 Stopped</span>
+            <span className="badge badge-offline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Circle size={8} fill="var(--danger)" color="var(--danger)" /> Stopped</span>
           )}
         </div>
 
@@ -595,27 +596,30 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
                       className="btn btn-sm card-action-btn"
                       onClick={() => setConfirmModal({ resource: r, action: "shutdown", warning: "Warning: Shutting down this resource may interrupt active connections." })}
                     >
-                      🔌 Shutdown
+                      <Power size={12} /> Shutdown
                     </button>
                     <button 
                       className="btn btn-sm card-action-btn"
                       onClick={() => setConfirmModal({ resource: r, action: "reboot", warning: "Warning: Rebooting this resource will temporarily disrupt all hosted services." })}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                     >
-                      🔄 Reboot
+                      <RefreshCw size={12} /> Reboot
                     </button>
                     <button 
                       className="btn btn-sm card-action-btn btn-stop"
                       onClick={() => setConfirmModal({ resource: r, action: "stop", warning: "Warning: Force stopping this resource may cause data corruption in active database processes." })}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                     >
-                      ⏹ Stop
+                      <Square size={12} /> Stop
                     </button>
                   </>
                 ) : (
                   <button 
                     className="btn btn-sm card-action-btn btn-start"
                     onClick={() => setConfirmModal({ resource: r, action: "start" })}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                   >
-                    ▶️ Start
+                    <Play size={12} /> Start
                   </button>
                 )}
               </div>
@@ -770,10 +774,10 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
                     <React.Fragment key={groupKey}>
                       <tr className="group-header-row">
                         <td colSpan={activeColsCount} className="group-header-td">
-                          {groupBy === "node" && `📍 Node: ${groupKey}`}
-                          {groupBy === "pool" && `📦 Pool: ${groupKey}`}
-                          {groupBy === "status" && `⚡ Status: ${groupKey}`}
-                          {groupBy === "tag" && `🏷️ Tag: ${groupKey}`}
+                          {groupBy === "node" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> Node: {groupKey}</span>}
+                          {groupBy === "pool" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Box size={14} /> Pool: {groupKey}</span>}
+                          {groupBy === "status" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Zap size={14} /> Status: {groupKey}</span>}
+                          {groupBy === "tag" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Tag size={14} /> Tag: {groupKey}</span>}
                           {` (${groupItems.length})`}
                         </td>
                       </tr>
@@ -799,10 +803,10 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
             return (
               <React.Fragment key={groupKey}>
                 <div className="group-header-row" style={{ padding: '0.75rem 0.5rem', fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)', marginTop: '0.75rem' }}>
-                  {groupBy === "node" && `📍 Node: ${groupKey}`}
-                  {groupBy === "pool" && `📦 Pool: ${groupKey}`}
-                  {groupBy === "status" && `⚡ Status: ${groupKey}`}
-                  {groupBy === "tag" && `🏷️ Tag: ${groupKey}`}
+                  {groupBy === "node" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> Node: {groupKey}</span>}
+                  {groupBy === "pool" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Box size={14} /> Pool: {groupKey}</span>}
+                  {groupBy === "status" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Zap size={14} /> Status: {groupKey}</span>}
+                  {groupBy === "tag" && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Tag size={14} /> Tag: {groupKey}</span>}
                   {` (${groupItems.length})`}
                 </div>
                 {groupItems.map((r) => renderCard(r))}
@@ -828,12 +832,12 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
           </div>
           {contextMenu.resource.status === "running" ? (
             <>
-              <button onClick={() => handleContextMenuAction("shutdown")}>🔌 Shutdown</button>
-              <button onClick={() => handleContextMenuAction("reboot")}>🔄 Reboot</button>
-              <button onClick={() => handleContextMenuAction("stop")} className="destructive">⏹ Force Stop</button>
+              <button onClick={() => handleContextMenuAction("shutdown")} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Power size={13} /> Shutdown</button>
+              <button onClick={() => handleContextMenuAction("reboot")} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><RefreshCw size={13} /> Reboot</button>
+              <button onClick={() => handleContextMenuAction("stop")} className="destructive" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Square size={13} /> Force Stop</button>
             </>
           ) : (
-            <button onClick={() => handleContextMenuAction("start")}>▶️ Start</button>
+            <button onClick={() => handleContextMenuAction("start")} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Play size={13} /> Start</button>
           )}
         </div>
       )}
@@ -847,8 +851,8 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
             <div className="action-confirm-body">
               <p>Are you sure you want to <strong>{confirmModal.action.toUpperCase()}</strong> the resource <strong>{confirmModal.resource.name}</strong> (ID {confirmModal.resource.vmid})?</p>
               {confirmModal.warning && (
-                <div className="action-confirm-warning">
-                  ⚠️ {confirmModal.warning}
+                <div className="action-confirm-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <AlertTriangle size={16} /> {confirmModal.warning}
                 </div>
               )}
             </div>

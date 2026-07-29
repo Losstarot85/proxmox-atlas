@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Server, Box, Circle, Clock, Play, Power, RefreshCw, Square, Monitor, AlertTriangle, XCircle, Zap, Link2 } from 'lucide-react';
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { RadialGauge } from "./RadialGauge";
@@ -176,15 +177,15 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
         {/* Header */}
         <div className="rd-header">
           <div className="rd-header-left">
-            <span className="rd-type-badge">{resource.type === "VM" ? "💻 VM" : "📦 LXC"}</span>
+            <span className="rd-type-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>{resource.type === "VM" ? <><Server size={14} /> VM</> : <><Box size={14} /> LXC</>}</span>
             <div>
               <h2 id="rd-title" className="rd-title">{resource.name}</h2>
               <span className="rd-subtitle mono-cell">ID {resource.vmid} · {clusterName}</span>
             </div>
           </div>
           <div className="rd-header-right">
-            <span className={`badge ${isRunning ? "badge-online" : "badge-offline"}`}>
-              {isRunning ? "🟢 Running" : "🔴 Stopped"}
+            <span className={`badge ${isRunning ? "badge-online" : "badge-offline"}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              {isRunning ? <><Circle size={8} fill="var(--success)" color="var(--success)" /> Running</> : <><Circle size={8} fill="var(--danger)" color="var(--danger)" /> Stopped</>}
             </span>
             <button className="rd-close" onClick={onClose} aria-label="Close details">✕</button>
           </div>
@@ -288,8 +289,8 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
 
           {/* Actions */}
           <section className="rd-section rd-actions">
-            <button className="btn" onClick={() => { onOpenTimeMachine({ id: resource.vmid, type: resource.type, name: resource.name }); }}>
-              ⏱ Open Time Machine
+            <button className="btn" onClick={() => { onOpenTimeMachine({ id: resource.vmid, type: resource.type, name: resource.name }); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Clock size={14} /> Open Time Machine
             </button>
             <button 
               className="btn btn-start" 
@@ -297,7 +298,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
               onClick={() => handleDetailAction("start")}
               title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
             >
-              ▶️ Start
+              <Play size={14} /> Start
             </button>
             <button 
               className="btn btn-shutdown" 
@@ -305,7 +306,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
               onClick={() => handleDetailAction("shutdown")}
               title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
             >
-              🔌 Shutdown
+              <Power size={14} /> Shutdown
             </button>
             <button 
               className="btn btn-reboot" 
@@ -313,7 +314,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
               onClick={() => handleDetailAction("reboot")}
               title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
             >
-              🔄 Reboot
+              <RefreshCw size={14} /> Reboot
             </button>
             <button 
               className="btn btn-stop destructive" 
@@ -321,7 +322,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
               onClick={() => handleDetailAction("stop")}
               title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ""}
             >
-              ⏹ Force Stop
+              <Square size={14} /> Force Stop
             </button>
             <button 
               className="btn btn-migrate" 
@@ -329,7 +330,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
               onClick={() => setShowMigrateModal(true)}
               title={userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : ((resource.type !== "VM" && resource.type !== "LXC") ? "Only VMs and LXC containers can be migrated" : "")}
             >
-              📦 Migrate
+              <Box size={14} /> Migrate
             </button>
             <button 
               className="btn btn-console" 
@@ -337,7 +338,7 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
               onClick={() => setShowConsoleModal(true)}
               title={!isRunning ? "Console is only available for running resources" : (userRole !== "admin" && userRole !== "editor" ? "Insufficient permissions" : "Open noVNC/xterm.js console in new tab")}
             >
-              🖥️ Console
+              <Monitor size={14} /> Console
             </button>
           </section>
         </div>
@@ -361,8 +362,8 @@ export function ResourceDetail({ resource, clusterName, cluster, metricsMap, onC
             <div className="action-confirm-body">
               <p>Are you sure you want to <strong>{confirmModal.action.toUpperCase()}</strong> the resource <strong>{resource.name}</strong> (ID {resource.vmid})?</p>
               {confirmModal.warning && (
-                <div className="action-confirm-warning">
-                  ⚠️ {confirmModal.warning}
+                <div className="action-confirm-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <AlertTriangle size={16} /> {confirmModal.warning}
                 </div>
               )}
             </div>
@@ -578,7 +579,7 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
         style={{ outline: "none" }}
       >
         <div className="action-confirm-header">
-          <h3 id="migrate-modal-title">📦 Migrate {typeLabel} {resource.name}</h3>
+          <h3 id="migrate-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Box size={18} /> Migrate {typeLabel} {resource.name}</h3>
         </div>
         <div className="action-confirm-body">
           {isMigrating ? (
@@ -624,8 +625,8 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
               </div>
 
               {suggestedNode && (
-                <div className="migration-suggestion">
-                  ⚡ Suggested by What-If: <strong>{suggestedNode.name}</strong> (Best fit: {((suggestedNode.maxmem - suggestedNode.mem) / 1e9).toFixed(1)} GB free RAM)
+                <div className="migration-suggestion" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Zap size={14} /> Suggested by What-If: <strong>{suggestedNode.name}</strong> (Best fit: {((suggestedNode.maxmem - suggestedNode.mem) / 1e9).toFixed(1)} GB free RAM)
                 </div>
               )}
 
@@ -648,14 +649,14 @@ function MigrateModal({ resource, cluster, onClose, toast }) {
               )}
 
               {capacityError && (
-                <div className="action-confirm-warning blocker-error">
-                  ❌ {capacityError}
+                <div className="action-confirm-warning blocker-error" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <XCircle size={14} /> {capacityError}
                 </div>
               )}
 
               {congestionWarning && (
-                <div className="action-confirm-warning">
-                  ⚠️ {congestionWarning}
+                <div className="action-confirm-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <AlertTriangle size={14} /> {congestionWarning}
                 </div>
               )}
             </>
@@ -779,7 +780,7 @@ function ConsoleModal({ resource, clusterName, onClose, toast }) {
         style={{ outline: "none" }}
       >
         <div className="action-confirm-header">
-          <h3 id="console-modal-title">🖥️ Console — {typeLabel} {resource.name}</h3>
+          <h3 id="console-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Monitor size={18} /> Console — {typeLabel} {resource.name}</h3>
         </div>
         <div className="action-confirm-body">
           {loading ? (
@@ -788,8 +789,8 @@ function ConsoleModal({ resource, clusterName, onClose, toast }) {
               <p>Generating console URL...</p>
             </div>
           ) : error ? (
-            <div className="action-confirm-warning blocker-error">
-              ❌ {error}
+            <div className="action-confirm-warning blocker-error" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <XCircle size={14} /> {error}
             </div>
           ) : (
             <>
@@ -803,8 +804,8 @@ function ConsoleModal({ resource, clusterName, onClose, toast }) {
                     <div className="console-step-content">
                       <strong>Login to Proxmox</strong>
                       <p>Open the Proxmox Web UI and log in (if not already).</p>
-                      <button className="btn btn-small" onClick={handleOpenLogin} style={{ marginTop: "0.5rem" }}>
-                        🔗 Open Proxmox UI
+                      <button className="btn btn-small" onClick={handleOpenLogin} style={{ marginTop: "0.5rem", display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Link2 size={14} /> Open Proxmox UI
                       </button>
                     </div>
                   </div>
@@ -813,8 +814,8 @@ function ConsoleModal({ resource, clusterName, onClose, toast }) {
                     <div className="console-step-content">
                       <strong>Open Console</strong>
                       <p>Once logged in, click below to open the {consoleType} console.</p>
-                      <button className="btn btn-console" onClick={handleOpenConsole} style={{ marginTop: "0.5rem" }}>
-                        🖥️ Open {consoleType} Console
+                      <button className="btn btn-console" onClick={handleOpenConsole} style={{ marginTop: "0.5rem", display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Monitor size={14} /> Open {consoleType} Console
                       </button>
                     </div>
                   </div>

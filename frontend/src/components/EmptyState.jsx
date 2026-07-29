@@ -1,4 +1,5 @@
 import React from "react";
+import { HelpCircle } from 'lucide-react';
 import { useI18n } from "../i18n";
 
 export function EmptyState({ type, actionLabel, onAction }) {
@@ -164,8 +165,9 @@ export function Tooltip({ text }) {
         type="button"
         className="tooltip-trigger"
         aria-label="More information"
+        style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
       >
-        ?
+        <HelpCircle size={14} />
       </button>
       <div className="tooltip-bubble" role="tooltip">
         {text}

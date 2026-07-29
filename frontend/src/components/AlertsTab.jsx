@@ -1,4 +1,5 @@
 import React from "react";
+import { Settings, BellOff } from "lucide-react";
 import { useI18n } from "../i18n";
 import { useAlerts, useDismissAlert, useMarkAlertRead, useSilenceAlert, useClearAllAlerts } from "../hooks/useApiQueries";
 import { SkeletonAlerts } from "./Skeletons";
@@ -74,8 +75,8 @@ function SwipeableAlertCard({ alert, formatTime, handleSilence, handleMarkRead, 
       </div>
       
       <div className="alert-actions" style={{display: 'flex', gap: '0.5rem'}}>
-        <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleSilence(alert.id)}>
-          🔕 Silence 1h
+        <button className="btn" style={{padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem'}} onClick={() => handleSilence(alert.id)}>
+          <BellOff size={14} /> Silence 1h
         </button>
         {!alert.read && (
           <button className="btn" style={{padding: '0.5rem 1rem'}} onClick={() => handleMarkRead(alert.id)}>
@@ -147,7 +148,7 @@ export function AlertsTab({ clusters = [] }) {
                 aria-selected={viewMode === 'rules'}
                 aria-controls="alerts-content"
               >
-                ⚙️ {t('alerts.rules')}
+                <Settings size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />{t('alerts.rules')}
               </button>
             </div>
          </div>

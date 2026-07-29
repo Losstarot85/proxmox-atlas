@@ -305,13 +305,19 @@
 
 /* Glassmorphism Cards */
 .glass-card {
-  background: var(--surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: var(--shadow);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -321,8 +327,50 @@
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow), 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   border-color: var(--border-accent);
+}
+
+[data-theme="light"] .glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Lucide Icon System Transitions */
+.nav-icon svg,
+.mobile-tab-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.75;
+  transition: transform 0.2s ease, color 0.2s ease, filter 0.2s ease;
+}
+
+.nav-item:hover .nav-icon svg,
+.nav-item.active .nav-icon svg {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+.mobile-tab-item:hover .mobile-tab-icon svg,
+.mobile-tab-item.active .mobile-tab-icon svg {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 4px var(--accent-glow));
+}
+
+.btn svg {
+  transition: transform 0.15s ease;
+}
+
+.btn:hover svg {
+  transform: scale(1.08);
 }
 
 @keyframes card-enter {
