@@ -29,7 +29,6 @@ async def demo_login():
     }
 
 
-
 class LoginRequest(BaseModel):
     username: str
     password: str

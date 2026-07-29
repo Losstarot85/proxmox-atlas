@@ -23,40 +23,238 @@ log = get_logger("demo_generator")
 HISTORY_LENGTH = 40  # sparkline data points
 
 _PROD_NODES = [
-    {"node": "pve-prod-01", "maxcpu": 32, "maxmem": 128 * 1024**3, "maxdisk": 2 * 1024**4, "base_cpu": 0.35, "base_mem_pct": 0.62},
-    {"node": "pve-prod-02", "maxcpu": 32, "maxmem": 128 * 1024**3, "maxdisk": 2 * 1024**4, "base_cpu": 0.42, "base_mem_pct": 0.71},
-    {"node": "pve-prod-03", "maxcpu": 16, "maxmem": 64 * 1024**3, "maxdisk": 1 * 1024**4, "base_cpu": 0.28, "base_mem_pct": 0.55},
+    {
+        "node": "pve-prod-01",
+        "maxcpu": 32,
+        "maxmem": 128 * 1024**3,
+        "maxdisk": 2 * 1024**4,
+        "base_cpu": 0.35,
+        "base_mem_pct": 0.62,
+    },
+    {
+        "node": "pve-prod-02",
+        "maxcpu": 32,
+        "maxmem": 128 * 1024**3,
+        "maxdisk": 2 * 1024**4,
+        "base_cpu": 0.42,
+        "base_mem_pct": 0.71,
+    },
+    {
+        "node": "pve-prod-03",
+        "maxcpu": 16,
+        "maxmem": 64 * 1024**3,
+        "maxdisk": 1 * 1024**4,
+        "base_cpu": 0.28,
+        "base_mem_pct": 0.55,
+    },
 ]
 
 _DEV_NODES = [
-    {"node": "pve-dev-01", "maxcpu": 16, "maxmem": 64 * 1024**3, "maxdisk": 1 * 1024**4, "base_cpu": 0.18, "base_mem_pct": 0.40},
-    {"node": "pve-dev-02", "maxcpu": 8, "maxmem": 32 * 1024**3, "maxdisk": 512 * 1024**3, "base_cpu": 0.12, "base_mem_pct": 0.35},
+    {
+        "node": "pve-dev-01",
+        "maxcpu": 16,
+        "maxmem": 64 * 1024**3,
+        "maxdisk": 1 * 1024**4,
+        "base_cpu": 0.18,
+        "base_mem_pct": 0.40,
+    },
+    {
+        "node": "pve-dev-02",
+        "maxcpu": 8,
+        "maxmem": 32 * 1024**3,
+        "maxdisk": 512 * 1024**3,
+        "base_cpu": 0.12,
+        "base_mem_pct": 0.35,
+    },
 ]
 
 _PROD_RESOURCES = [
-    {"vmid": 100, "name": "k8s-control-plane", "type": "VM", "node": "pve-prod-01", "maxcpu": 4, "maxmem": 8 * 1024**3, "status": "running", "tags": "kubernetes,production", "pool": "kubernetes", "base_cpu": 0.15, "base_mem_pct": 0.45},
-    {"vmid": 101, "name": "k8s-worker-01", "type": "VM", "node": "pve-prod-01", "maxcpu": 8, "maxmem": 16 * 1024**3, "status": "running", "tags": "kubernetes,production", "pool": "kubernetes", "base_cpu": 0.55, "base_mem_pct": 0.68},
-    {"vmid": 102, "name": "k8s-worker-02", "type": "VM", "node": "pve-prod-02", "maxcpu": 8, "maxmem": 16 * 1024**3, "status": "running", "tags": "kubernetes,production", "pool": "kubernetes", "base_cpu": 0.48, "base_mem_pct": 0.62},
-    {"vmid": 200, "name": "postgres-primary", "type": "VM", "node": "pve-prod-02", "maxcpu": 4, "maxmem": 32 * 1024**3, "status": "running", "tags": "database,production", "pool": "databases", "base_cpu": 0.30, "base_mem_pct": 0.78},
-    {"vmid": 201, "name": "postgres-replica", "type": "VM", "node": "pve-prod-03", "maxcpu": 4, "maxmem": 16 * 1024**3, "status": "running", "tags": "database,production", "pool": "databases", "base_cpu": 0.12, "base_mem_pct": 0.55},
-    {"vmid": 300, "name": "redis-cache", "type": "LXC", "node": "pve-prod-01", "maxcpu": 2, "maxmem": 4 * 1024**3, "status": "running", "tags": "cache,production", "pool": "services", "base_cpu": 0.08, "base_mem_pct": 0.60},
-    {"vmid": 301, "name": "nginx-ingress", "type": "LXC", "node": "pve-prod-02", "maxcpu": 2, "maxmem": 2 * 1024**3, "status": "running", "tags": "web,production", "pool": "services", "base_cpu": 0.22, "base_mem_pct": 0.35},
-    {"vmid": 302, "name": "monitoring-stack", "type": "LXC", "node": "pve-prod-03", "maxcpu": 2, "maxmem": 4 * 1024**3, "status": "running", "tags": "monitoring,production", "pool": "services", "base_cpu": 0.18, "base_mem_pct": 0.52},
-    {"vmid": 900, "name": "win-legacy-app", "type": "VM", "node": "pve-prod-03", "maxcpu": 2, "maxmem": 4 * 1024**3, "status": "stopped", "tags": "legacy,windows", "pool": "", "base_cpu": 0.0, "base_mem_pct": 0.0},
+    {
+        "vmid": 100,
+        "name": "k8s-control-plane",
+        "type": "VM",
+        "node": "pve-prod-01",
+        "maxcpu": 4,
+        "maxmem": 8 * 1024**3,
+        "status": "running",
+        "tags": "kubernetes,production",
+        "pool": "kubernetes",
+        "base_cpu": 0.15,
+        "base_mem_pct": 0.45,
+    },
+    {
+        "vmid": 101,
+        "name": "k8s-worker-01",
+        "type": "VM",
+        "node": "pve-prod-01",
+        "maxcpu": 8,
+        "maxmem": 16 * 1024**3,
+        "status": "running",
+        "tags": "kubernetes,production",
+        "pool": "kubernetes",
+        "base_cpu": 0.55,
+        "base_mem_pct": 0.68,
+    },
+    {
+        "vmid": 102,
+        "name": "k8s-worker-02",
+        "type": "VM",
+        "node": "pve-prod-02",
+        "maxcpu": 8,
+        "maxmem": 16 * 1024**3,
+        "status": "running",
+        "tags": "kubernetes,production",
+        "pool": "kubernetes",
+        "base_cpu": 0.48,
+        "base_mem_pct": 0.62,
+    },
+    {
+        "vmid": 200,
+        "name": "postgres-primary",
+        "type": "VM",
+        "node": "pve-prod-02",
+        "maxcpu": 4,
+        "maxmem": 32 * 1024**3,
+        "status": "running",
+        "tags": "database,production",
+        "pool": "databases",
+        "base_cpu": 0.30,
+        "base_mem_pct": 0.78,
+    },
+    {
+        "vmid": 201,
+        "name": "postgres-replica",
+        "type": "VM",
+        "node": "pve-prod-03",
+        "maxcpu": 4,
+        "maxmem": 16 * 1024**3,
+        "status": "running",
+        "tags": "database,production",
+        "pool": "databases",
+        "base_cpu": 0.12,
+        "base_mem_pct": 0.55,
+    },
+    {
+        "vmid": 300,
+        "name": "redis-cache",
+        "type": "LXC",
+        "node": "pve-prod-01",
+        "maxcpu": 2,
+        "maxmem": 4 * 1024**3,
+        "status": "running",
+        "tags": "cache,production",
+        "pool": "services",
+        "base_cpu": 0.08,
+        "base_mem_pct": 0.60,
+    },
+    {
+        "vmid": 301,
+        "name": "nginx-ingress",
+        "type": "LXC",
+        "node": "pve-prod-02",
+        "maxcpu": 2,
+        "maxmem": 2 * 1024**3,
+        "status": "running",
+        "tags": "web,production",
+        "pool": "services",
+        "base_cpu": 0.22,
+        "base_mem_pct": 0.35,
+    },
+    {
+        "vmid": 302,
+        "name": "monitoring-stack",
+        "type": "LXC",
+        "node": "pve-prod-03",
+        "maxcpu": 2,
+        "maxmem": 4 * 1024**3,
+        "status": "running",
+        "tags": "monitoring,production",
+        "pool": "services",
+        "base_cpu": 0.18,
+        "base_mem_pct": 0.52,
+    },
+    {
+        "vmid": 900,
+        "name": "win-legacy-app",
+        "type": "VM",
+        "node": "pve-prod-03",
+        "maxcpu": 2,
+        "maxmem": 4 * 1024**3,
+        "status": "stopped",
+        "tags": "legacy,windows",
+        "pool": "",
+        "base_cpu": 0.0,
+        "base_mem_pct": 0.0,
+    },
 ]
 
 _DEV_RESOURCES = [
-    {"vmid": 500, "name": "staging-api", "type": "VM", "node": "pve-dev-01", "maxcpu": 4, "maxmem": 8 * 1024**3, "status": "running", "tags": "staging,api", "pool": "staging", "base_cpu": 0.10, "base_mem_pct": 0.38},
-    {"vmid": 501, "name": "gitlab-runner", "type": "VM", "node": "pve-dev-01", "maxcpu": 4, "maxmem": 8 * 1024**3, "status": "running", "tags": "ci-cd,development", "pool": "ci", "base_cpu": 0.35, "base_mem_pct": 0.50},
-    {"vmid": 502, "name": "dev-database", "type": "LXC", "node": "pve-dev-02", "maxcpu": 2, "maxmem": 4 * 1024**3, "status": "running", "tags": "database,development", "pool": "staging", "base_cpu": 0.06, "base_mem_pct": 0.42},
-    {"vmid": 503, "name": "test-sandbox", "type": "VM", "node": "pve-dev-02", "maxcpu": 2, "maxmem": 4 * 1024**3, "status": "stopped", "tags": "testing", "pool": "staging", "base_cpu": 0.0, "base_mem_pct": 0.0},
+    {
+        "vmid": 500,
+        "name": "staging-api",
+        "type": "VM",
+        "node": "pve-dev-01",
+        "maxcpu": 4,
+        "maxmem": 8 * 1024**3,
+        "status": "running",
+        "tags": "staging,api",
+        "pool": "staging",
+        "base_cpu": 0.10,
+        "base_mem_pct": 0.38,
+    },
+    {
+        "vmid": 501,
+        "name": "gitlab-runner",
+        "type": "VM",
+        "node": "pve-dev-01",
+        "maxcpu": 4,
+        "maxmem": 8 * 1024**3,
+        "status": "running",
+        "tags": "ci-cd,development",
+        "pool": "ci",
+        "base_cpu": 0.35,
+        "base_mem_pct": 0.50,
+    },
+    {
+        "vmid": 502,
+        "name": "dev-database",
+        "type": "LXC",
+        "node": "pve-dev-02",
+        "maxcpu": 2,
+        "maxmem": 4 * 1024**3,
+        "status": "running",
+        "tags": "database,development",
+        "pool": "staging",
+        "base_cpu": 0.06,
+        "base_mem_pct": 0.42,
+    },
+    {
+        "vmid": 503,
+        "name": "test-sandbox",
+        "type": "VM",
+        "node": "pve-dev-02",
+        "maxcpu": 2,
+        "maxmem": 4 * 1024**3,
+        "status": "stopped",
+        "tags": "testing",
+        "pool": "staging",
+        "base_cpu": 0.0,
+        "base_mem_pct": 0.0,
+    },
 ]
 
 _IP_MAP = {
-    100: ["10.10.1.10"], 101: ["10.10.1.11"], 102: ["10.10.1.12"],
-    200: ["10.10.2.20"], 201: ["10.10.2.21"],
-    300: ["10.10.3.30"], 301: ["10.10.3.31"], 302: ["10.10.3.32"],
-    500: ["10.20.1.50"], 501: ["10.20.1.51"], 502: ["10.20.1.52"],
+    100: ["10.10.1.10"],
+    101: ["10.10.1.11"],
+    102: ["10.10.1.12"],
+    200: ["10.10.2.20"],
+    201: ["10.10.2.21"],
+    300: ["10.10.3.30"],
+    301: ["10.10.3.31"],
+    302: ["10.10.3.32"],
+    500: ["10.20.1.50"],
+    501: ["10.20.1.51"],
+    502: ["10.20.1.52"],
 }
 
 # ──────────────────────────────────────────────────────────────────────
@@ -109,8 +307,12 @@ def _build_resource(template: dict, cluster_name: str) -> dict:
     key = f"{cluster_name}-{template['type']}-{template['vmid']}"
     if key not in _metrics_history:
         _metrics_history[key] = {
-            "cpu": [round(_jitter(template["base_cpu"], 0.08) * 100, 1) for _ in range(HISTORY_LENGTH)] if is_running else [],
-            "ram": [round(_jitter(template["base_mem_pct"], 0.04) * 100, 1) for _ in range(HISTORY_LENGTH)] if is_running else [],
+            "cpu": [round(_jitter(template["base_cpu"], 0.08) * 100, 1) for _ in range(HISTORY_LENGTH)]
+            if is_running
+            else [],
+            "ram": [round(_jitter(template["base_mem_pct"], 0.04) * 100, 1) for _ in range(HISTORY_LENGTH)]
+            if is_running
+            else [],
         }
     else:
         hist = _metrics_history[key]
@@ -163,15 +365,17 @@ def _build_backup_data(cluster_name: str, resources: list[dict]) -> dict:
         last_backup_age = random.randint(86400 * 10, 86400 * 30) if is_stale else random.randint(3600, 86400 * 2)
         backup_time = now - last_backup_age
 
-        backups.append({
-            "vmid": r["vmid"],
-            "name": r["name"],
-            "type": r["type"],
-            "node": r["node"],
-            "volid": f"local:backup/vzdump-{r['type'].lower()}-{r['vmid']}-{backup_time}.vma.zst",
-            "ctime": backup_time,
-            "size": random.randint(500_000_000, 50_000_000_000),
-        })
+        backups.append(
+            {
+                "vmid": r["vmid"],
+                "name": r["name"],
+                "type": r["type"],
+                "node": r["node"],
+                "volid": f"local:backup/vzdump-{r['type'].lower()}-{r['vmid']}-{backup_time}.vma.zst",
+                "ctime": backup_time,
+                "size": random.randint(500_000_000, 50_000_000_000),
+            }
+        )
 
     return {
         "cluster": cluster_name,

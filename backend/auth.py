@@ -106,7 +106,6 @@ def _ensure_demo_user():
         log.info("demo_user_auto_created")
 
 
-
 def _save_auth():
     """Persist auth data to disk."""
     try:
