@@ -1,10 +1,12 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { formatCPU, formatBytesToGB, formatNetwork, formatIO, formatPressure } from "../utils/formatters";
 import { Sparkline } from "./Sparkline";
 import { CollapsibleSection, useCollapsedState } from "./CollapsibleSection";
 import { ColumnPicker } from "./ColumnPicker";
 import { API_BASE } from "../config";
 import { useToast } from "./Toast";
+import { useVirtualScroll } from "../hooks/useVirtualScroll";
+
 
 const VIRTUAL_THRESHOLD = 100;
 
@@ -58,6 +60,120 @@ const getInitialResourceColumns = (typeFilter) => {
 };
 
 // Sub-component for resources (VM, LXC) with metrics
+const ResourceRow = React.memo(({
+  r,
+  idx,
+  visibleColumns,
+  metricsMap,
+  clusterName,
+  activeColsCount,
+  onOpenResource,
+  onOpenTimeMachine,
+  handleRowContextMenu
+}) => {
+  const isRunning = r.status === "running";
+  const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
+  const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
+
+  const cm = metricsMap[`${clusterName}-${r.type}-${r.vmid}`] || { cpu: [], ram: [] };
+  const cpuHistory = cm.cpu;
+  const ramHistory = cm.ram;
+
+  return (
+    <React.Fragment key={`${r.type}-${r.vmid}`}>
+      <tr
+        id={`row-${r.type}-${r.vmid}`}
+        onClick={() => onOpenResource ? onOpenResource(r) : onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
+        onContextMenu={(e) => handleRowContextMenu(e, r)}
+        style={{ cursor: 'pointer', '--row-index': idx }}
+        className="hoverable-row"
+      >
+        {visibleColumns.id && <td className="mono-cell">{r.vmid}</td>}
+        {visibleColumns.name && <td style={{ fontWeight: 500 }}>{r.name}</td>}
+        {visibleColumns.status && (
+          <td>
+            {isRunning
+              ? <span className="badge badge-online">🟢 Running</span>
+              : <span className="badge badge-offline">🔴 Stopped</span>
+            }
+          </td>
+        )}
+        {visibleColumns.cpu && (
+          <td>
+            {isRunning ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Sparkline data={cpuHistory} color="#3b82f6" />
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
+                  <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
+                </div>
+              </div>
+            ) : "-"}
+          </td>
+        )}
+        {visibleColumns.ram && (
+          <td>
+            {isRunning ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Sparkline data={ramHistory} color="#8b5cf6" />
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
+                  <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>
+                </div>
+              </div>
+            ) : "-"}
+          </td>
+        )}
+        {visibleColumns.net && (
+          <td className="mono-cell">{isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}</td>
+        )}
+        {visibleColumns.disk && (
+          <td className="mono-cell">{isRunning ? formatIO(r.diskread, r.diskwrite) : "-"}</td>
+        )}
+        {visibleColumns.pressure_cpu && (
+          <td className="mono-cell" style={{ color: r.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_cpu) : "-"}</td>
+        )}
+        {visibleColumns.pressure_ram && (
+          <td className="mono-cell" style={{ color: r.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_ram) : "-"}</td>
+        )}
+        {visibleColumns.pressure_io && (
+          <td className="mono-cell" style={{ color: r.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_io) : "-"}</td>
+        )}
+      </tr>
+      {(r.pool || r.node || r.tags || (r.ips && r.ips.length > 0)) && (
+        <tr style={{ backgroundColor: 'transparent' }}>
+          <td colSpan={activeColsCount} style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem' }}>
+            <div className="tags-container" style={{ margin: 0 }}>
+              {r.node && <span className="resource-tag node-tag">node: {r.node}</span>}
+              {r.pool && <span className="resource-tag pool-tag">pool: {r.pool}</span>}
+              {r.tags && r.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => {
+                const colors = getTagColor(tag);
+                return (
+                  <span 
+                    key={tag} 
+                    className="resource-tag"
+                    style={{
+                      backgroundColor: colors.bg,
+                      color: colors.text,
+                      borderColor: colors.border,
+                      border: '1px solid'
+                    }}
+                  >
+                    tag: {tag}
+                  </span>
+                );
+              })}
+              {r.ips && r.ips.map(ip => (
+                <span key={ip} className="resource-tag ip-tag">{ip}</span>
+              ))}
+            </div>
+          </td>
+        </tr>
+      )}
+    </React.Fragment>
+  );
+});
+
 export function ResourceSection({ title, typeFilter, resources, clusterName, globalHistory, metricsMap, searchQuery = "", onOpenTimeMachine, onOpenResource, sectionKey, userRole }) {
   const [showAll, setShowAll] = useState(false);
   const [collapsed, toggleCollapsed] = useCollapsedState(sectionKey || `rs-${typeFilter}`, false);
@@ -298,112 +414,29 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
   const running = sortedResources.filter(r => r.status === "running").length;
   const summary = `${running}/${sortedResources.length} running`;
 
-  const needsVirtualization = sortedResources.length > VIRTUAL_THRESHOLD && !showAll && groupBy === "none";
-  const visible = needsVirtualization ? sortedResources.slice(0, VIRTUAL_THRESHOLD) : sortedResources;
+  const containerRef = useRef(null);
+  const isVirtual = sortedResources.length > 100 && groupBy === "none";
+  const { virtualItems, offsetY, totalHeight } = useVirtualScroll({
+    itemCount: sortedResources.length,
+    itemHeight: 56,
+    containerRef: isVirtual ? containerRef : null,
+  });
 
-  const renderRow = (r, idx, keyPrefix = "") => {
-    const isRunning = r.status === "running";
-    const cpuPercent = isRunning && r.maxcpu > 0 ? (r.cpu * 100).toFixed(1) : 0;
-    const ramPercent = isRunning && r.maxmem > 0 ? (r.mem / r.maxmem * 100).toFixed(1) : 0;
+  const renderRow = (r, idx) => (
+    <ResourceRow
+      key={`${r.type}-${r.vmid}`}
+      r={r}
+      idx={idx}
+      visibleColumns={visibleColumns}
+      metricsMap={metricsMap}
+      clusterName={clusterName}
+      activeColsCount={activeColsCount}
+      onOpenResource={onOpenResource}
+      onOpenTimeMachine={onOpenTimeMachine}
+      handleRowContextMenu={handleRowContextMenu}
+    />
+  );
 
-    const cm = metricsMap[`${clusterName}-${r.type}-${r.vmid}`] || { cpu: [], ram: [] };
-    const cpuHistory = cm.cpu;
-    const ramHistory = cm.ram;
-
-    return (
-      <React.Fragment key={`${keyPrefix}${r.type}-${r.vmid}`}>
-        <tr
-          id={`row-${r.type}-${r.vmid}`}
-          onClick={() => onOpenResource ? onOpenResource(r) : onOpenTimeMachine && onOpenTimeMachine({ id: r.vmid, type: r.type, name: r.name })}
-          onContextMenu={(e) => handleRowContextMenu(e, r)}
-          style={{ cursor: 'pointer', '--row-index': idx }}
-          className="hoverable-row"
-        >
-          {visibleColumns.id && <td className="mono-cell">{r.vmid}</td>}
-          {visibleColumns.name && <td style={{ fontWeight: 500 }}>{r.name}</td>}
-          {visibleColumns.status && (
-            <td>
-              {isRunning
-                ? <span className="badge badge-online">🟢 Running</span>
-                : <span className="badge badge-offline">🔴 Stopped</span>
-              }
-            </td>
-          )}
-          {visibleColumns.cpu && (
-            <td>
-              {isRunning ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Sparkline data={cpuHistory} color="#3b82f6" />
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    <span style={{ fontWeight: 600, minWidth: '45px' }}>{cpuPercent}%</span>
-                    <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{r.maxcpu}C</span>
-                  </div>
-                </div>
-              ) : "-"}
-            </td>
-          )}
-          {visibleColumns.ram && (
-            <td>
-              {isRunning ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Sparkline data={ramHistory} color="#8b5cf6" />
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    <span style={{ fontWeight: 600, minWidth: '45px' }}>{ramPercent}%</span>
-                    <span className="mono-cell" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatBytesToGB(r.maxmem)}</span>
-                  </div>
-                </div>
-              ) : "-"}
-            </td>
-          )}
-          {visibleColumns.net && (
-            <td className="mono-cell">{isRunning ? `⬇ ${formatNetwork(r.netin)} / ⬆ ${formatNetwork(r.netout)}` : "-"}</td>
-          )}
-          {visibleColumns.disk && (
-            <td className="mono-cell">{isRunning ? formatIO(r.diskread, r.diskwrite) : "-"}</td>
-          )}
-          {visibleColumns.pressure_cpu && (
-            <td className="mono-cell" style={{ color: r.pressure_cpu > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_cpu) : "-"}</td>
-          )}
-          {visibleColumns.pressure_ram && (
-            <td className="mono-cell" style={{ color: r.pressure_ram > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_ram) : "-"}</td>
-          )}
-          {visibleColumns.pressure_io && (
-            <td className="mono-cell" style={{ color: r.pressure_io > 10 ? 'var(--warning)' : 'inherit' }}>{isRunning ? formatPressure(r.pressure_io) : "-"}</td>
-          )}
-        </tr>
-        {(r.pool || r.node || r.tags || (r.ips && r.ips.length > 0)) && (
-          <tr style={{ backgroundColor: 'transparent' }}>
-            <td colSpan={activeColsCount} style={{ paddingTop: '0.5rem', paddingBottom: '0.75rem' }}>
-              <div className="tags-container" style={{ margin: 0 }}>
-                {r.node && <span className="resource-tag node-tag">node: {r.node}</span>}
-                {r.pool && <span className="resource-tag pool-tag">pool: {r.pool}</span>}
-                {r.tags && r.tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => {
-                  const colors = getTagColor(tag);
-                  return (
-                    <span 
-                      key={tag} 
-                      className="resource-tag"
-                      style={{
-                        backgroundColor: colors.bg,
-                        color: colors.text,
-                        borderColor: colors.border,
-                        border: '1px solid'
-                      }}
-                    >
-                      tag: {tag}
-                    </span>
-                  );
-                })}
-                {r.ips && r.ips.map(ip => (
-                  <span key={ip} className="resource-tag ip-tag">{ip}</span>
-                ))}
-              </div>
-            </td>
-          </tr>
-        )}
-      </React.Fragment>
-    );
-  };
 
   const renderCard = (r) => {
     const isOnline = r.status === "running";
@@ -686,7 +719,14 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
       )}
 
       <div className="table-wrapper">
-        <div className="responsive-table">
+        <div 
+          ref={containerRef}
+          className="responsive-table"
+          style={{
+            maxHeight: isVirtual ? "600px" : "none",
+            overflowY: isVirtual ? "auto" : "visible"
+          }}
+        >
           <table style={{ tableLayout: "fixed", width: "100%" }}>
             <thead>
               <tr>
@@ -713,8 +753,16 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
             <tbody>
               {sortedResources.length === 0 ? (
                 <tr><td colSpan={activeColsCount} className="empty-state">No resources found</td></tr>
+              ) : isVirtual ? (
+                <>
+                  {offsetY > 0 && <tr style={{ height: `${offsetY}px` }}><td colSpan={activeColsCount} /></tr>}
+                  {virtualItems.map(({ index }) => renderRow(sortedResources[index], index))}
+                  {totalHeight - offsetY - (virtualItems.length * 56) > 0 && (
+                    <tr style={{ height: `${Math.max(0, totalHeight - offsetY - (virtualItems.length * 56))}px` }}><td colSpan={activeColsCount} /></tr>
+                  )}
+                </>
               ) : groupBy === "none" ? (
-                visible.map((r, idx) => renderRow(r, idx))
+                sortedResources.map((r, idx) => renderRow(r, idx))
               ) : (
                 Object.keys(groupedResources).map(groupKey => {
                   const groupItems = groupedResources[groupKey];
@@ -729,7 +777,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
                           {` (${groupItems.length})`}
                         </td>
                       </tr>
-                      {groupItems.map((r, idx) => renderRow(r, idx, `${groupKey}-`))}
+                      {groupItems.map((r, idx) => renderRow(r, idx))}
                     </React.Fragment>
                   );
                 })
@@ -744,7 +792,7 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
         {sortedResources.length === 0 ? (
           <div className="empty-state" style={{ padding: '2rem', textAlign: 'center' }}>No resources found</div>
         ) : groupBy === "none" ? (
-          visible.map((r) => renderCard(r))
+          sortedResources.map((r) => renderCard(r))
         ) : (
           Object.keys(groupedResources).map(groupKey => {
             const groupItems = groupedResources[groupKey];
@@ -763,14 +811,6 @@ export function ResourceSection({ title, typeFilter, resources, clusterName, glo
           })
         )}
       </div>
-
-      {needsVirtualization && (
-        <div style={{ textAlign: 'center', padding: '1rem' }}>
-          <button className="btn" onClick={() => setShowAll(true)}>
-            Show all {sortedResources.length} items ({sortedResources.length - VIRTUAL_THRESHOLD} hidden)
-          </button>
-        </div>
-      )}
 
       {contextMenu && (
         <div 

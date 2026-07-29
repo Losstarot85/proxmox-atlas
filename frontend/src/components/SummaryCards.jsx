@@ -87,7 +87,8 @@ function formatBytesToSize(bytes) {
   return gb.toFixed(1) + " GB";
 }
 
-export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateToAlerts }) {
+export const SummaryCards = React.memo(function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateToAlerts }) {
+
   const { t } = useI18n();
   // Aggregate VMs & LXCs
   let runningVMs = 0;
@@ -393,4 +394,5 @@ export function SummaryCards({ clusters, globalHistory, alerts = [], onNavigateT
       </div>
     </div>
   );
-}
+});
+

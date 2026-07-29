@@ -1,8 +1,62 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { API_BASE } from "../config";
 import { SkeletonTable } from "./Skeletons";
 import { useI18n } from "../i18n";
 import { EmptyState, Tooltip } from "./EmptyState";
+import { useVirtualScroll } from "../hooks/useVirtualScroll";
+
+const BackupRow = React.memo(({ res, getRelativeTimeString, formatTime, formatBytes }) => (
+  <tr 
+    style={{ 
+      borderBottom: "1px solid var(--border)", 
+      background: res.isStale ? "rgba(239, 68, 68, 0.02)" : "transparent"
+    }}
+  >
+    <td style={{ padding: "0.75rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span className={`badge ${res.type === 'VM' ? 'badge-online' : 'badge-offline'}`} style={{ border: "none" }}>
+          {res.type}
+        </span>
+        <span style={{ fontWeight: "600" }}>{res.name}</span>
+        <span className="mono-cell" style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>({res.vmid})</span>
+      </div>
+    </td>
+    <td style={{ padding: "0.75rem" }}>
+      <div style={{ fontSize: "0.9rem" }}>{res.clusterName}</div>
+      <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Node: {res.node}</div>
+    </td>
+    <td style={{ padding: "0.75rem" }}>
+      {res.isStale ? (
+        <span className="badge" style={{ backgroundColor: "var(--danger-bg)", color: "var(--danger)", border: "none" }}>
+          ⚠️ Lacking Backup
+        </span>
+      ) : (
+        <span className="badge" style={{ backgroundColor: "var(--success-bg)", color: "var(--success)", border: "none" }}>
+          ✅ Protected
+        </span>
+      )}
+    </td>
+    <td style={{ padding: "0.75rem" }}>
+      <div style={{ fontWeight: res.isStale ? "600" : "normal", color: res.isStale ? "var(--danger)" : "var(--text-primary)" }}>
+        {getRelativeTimeString(res.daysSince)}
+      </div>
+      {res.lastBackupTime && (
+        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+          {formatTime(res.lastBackupTime)}
+        </div>
+      )}
+    </td>
+    <td style={{ padding: "0.75rem" }}>
+      <span className="badge" style={{ background: "rgba(255, 255, 255, 0.05)", border: "none" }}>
+        {res.backupsCount} backup{res.backupsCount !== 1 ? "s" : ""}
+      </span>
+    </td>
+    <td style={{ padding: "0.75rem" }}>
+      {res.latestBackup ? formatBytes(res.latestBackup.size) : "—"}
+    </td>
+  </tr>
+));
+
 
 export function BackupStatus({ clusters }) {
   const { t } = useI18n();
@@ -256,7 +310,15 @@ export function BackupStatus({ clusters }) {
           )}
 
           {/* Details / Matrix Table */}
-          <div className="glass-card" style={{ padding: "1.5rem", overflowX: "auto" }}>
+          <div 
+            ref={tableContainerRef}
+            className="glass-card" 
+            style={{ 
+              padding: "1.5rem",
+              maxHeight: isVirtual ? "600px" : "auto",
+              overflowY: isVirtual ? "auto" : "visible"
+            }}
+          >
             <h3 style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               📋 Protection Inventory ({filteredResources.length})
             </h3>
@@ -278,58 +340,34 @@ export function BackupStatus({ clusters }) {
                       No resources match your search query.
                     </td>
                   </tr>
+                ) : isVirtual ? (
+                  <>
+                    {offsetY > 0 && <tr style={{ height: `${offsetY}px` }}><td colSpan={6} /></tr>}
+                    {virtualItems.map(({ index }) => {
+                      const res = filteredResources[index];
+                      return (
+                        <BackupRow
+                          key={`${res.clusterName}-${res.type}-${res.vmid}`}
+                          res={res}
+                          getRelativeTimeString={getRelativeTimeString}
+                          formatTime={formatTime}
+                          formatBytes={formatBytes}
+                        />
+                      );
+                    })}
+                    {totalHeight - offsetY - (virtualItems.length * 52) > 0 && (
+                      <tr style={{ height: `${Math.max(0, totalHeight - offsetY - (virtualItems.length * 52))}px` }}><td colSpan={6} /></tr>
+                    )}
+                  </>
                 ) : (
                   filteredResources.map((res) => (
-                    <tr 
-                      key={`${res.clusterName}-${res.type}-${res.vmid}`} 
-                      style={{ 
-                        borderBottom: "1px solid var(--border)", 
-                        background: res.isStale ? "rgba(239, 68, 68, 0.02)" : "transparent"
-                      }}
-                    >
-                      <td style={{ padding: "0.75rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <span className={`badge ${res.type === 'VM' ? 'badge-online' : 'badge-offline'}`} style={{ border: "none" }}>
-                            {res.type}
-                          </span>
-                          <span style={{ fontWeight: "600" }}>{res.name}</span>
-                          <span className="mono-cell" style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>({res.vmid})</span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "0.75rem" }}>
-                        <div style={{ fontSize: "0.9rem" }}>{res.clusterName}</div>
-                        <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Node: {res.node}</div>
-                      </td>
-                      <td style={{ padding: "0.75rem" }}>
-                        {res.isStale ? (
-                          <span className="badge" style={{ backgroundColor: "var(--danger-bg)", color: "var(--danger)", border: "none" }}>
-                            ⚠️ Lacking Backup
-                          </span>
-                        ) : (
-                          <span className="badge" style={{ backgroundColor: "var(--success-bg)", color: "var(--success)", border: "none" }}>
-                            ✅ Protected
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: "0.75rem" }}>
-                        <div style={{ fontWeight: res.isStale ? "600" : "normal", color: res.isStale ? "var(--danger)" : "var(--text-primary)" }}>
-                          {getRelativeTimeString(res.daysSince)}
-                        </div>
-                        {res.lastBackupTime && (
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                            {formatTime(res.lastBackupTime)}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: "0.75rem" }}>
-                        <span className="badge" style={{ background: "rgba(255, 255, 255, 0.05)", border: "none" }}>
-                          {res.backupsCount} backup{res.backupsCount !== 1 ? "s" : ""}
-                        </span>
-                      </td>
-                      <td style={{ padding: "0.75rem" }}>
-                        {res.latestBackup ? formatBytes(res.latestBackup.size) : "—"}
-                      </td>
-                    </tr>
+                    <BackupRow
+                      key={`${res.clusterName}-${res.type}-${res.vmid}`}
+                      res={res}
+                      getRelativeTimeString={getRelativeTimeString}
+                      formatTime={formatTime}
+                      formatBytes={formatBytes}
+                    />
                   ))
                 )}
               </tbody>

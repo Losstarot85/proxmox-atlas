@@ -1,11 +1,77 @@
-// Service Worker for Proxmox Atlas Push Notifications
+// Service Worker for Proxmox Atlas (Push Notifications & Offline Static Asset Caching)
 
-self.addEventListener("install", () => {
+const CACHE_NAME = "atlas-cache-v1.4";
+const PRECACHE_ASSETS = [
+  "/",
+  "/index.html",
+  "/favicon.svg",
+  "/logo.webp",
+  "/logo.png",
+  "/icons.svg"
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
+        console.warn("Pre-cache failed for some assets:", err);
+      });
+    })
+  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
+  // Skip API requests and SSE streams (let them go to network directly)
+  if (url.pathname.startsWith("/api") || event.request.method !== "GET") {
+    return;
+  }
+
+  // Cache-first strategy for static assets (JS, CSS, images, fonts)
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Fetch background update for stale-while-revalidate
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+        }).catch(() => {/* Offline fallback */});
+        return cachedResponse;
+      }
+
+      // Network fallback if not in cache
+      return fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== "basic") {
+          return networkResponse;
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        return networkResponse;
+      });
+    })
+  );
 });
 
 self.addEventListener("message", (event) => {
@@ -30,14 +96,12 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      // Find a window client that is already open
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url.includes(urlToOpen) && "focus" in client) {
           return client.focus();
         }
       }
-      // If we have any open window but url is different, navigate it
       if (windowClients.length > 0) {
         const client = windowClients[0];
         if ("focus" in client) {
@@ -47,7 +111,6 @@ self.addEventListener("notificationclick", (event) => {
           }
         }
       }
-      // If no windows are open, open a new one
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }

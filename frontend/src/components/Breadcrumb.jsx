@@ -8,7 +8,7 @@
 import React from "react";
 import { useI18n } from "../i18n";
 
-export function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavigate, onCloseModals }) {
+export const Breadcrumb = React.memo(function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavigate, onCloseModals }) {
   const { t } = useI18n();
   const TAB_LABELS = {
     dashboard: t("nav.dashboard"),
@@ -78,4 +78,5 @@ export function Breadcrumb({ activeTab, timeMachineTarget, whatIfTarget, onNavig
       ))}
     </nav>
   );
-}
+});
+

@@ -21,6 +21,7 @@ import { useToast } from "./components/Toast";
 import { CommandPalette, useCommandPalette } from "./components/CommandPalette";
 import { useKeyboardShortcuts, ShortcutsCheatSheet } from "./hooks/useKeyboardShortcuts.jsx";
 import { useHashRouter } from "./hooks/useHashRouter";
+import { useDebounce } from "./hooks/useDebounce";
 import "./App.css";
 
 // Lazy-loaded heavy components (Recharts, Canvas, drag handlers loaded on demand)
@@ -86,6 +87,7 @@ function App() {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
+  const debouncedDashboardSearch = useDebounce(dashboardSearch, 300);
   const [whatIfTarget, setWhatIfTarget] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const touchStartRef = useRef(null);
@@ -283,7 +285,10 @@ function App() {
         aria-label="Sidebar navigation"
       >
         <div className="logo-container">
-          <img src="/logo.png" alt="Proxmox Atlas Logo" className="logo-icon-img" />
+          <picture>
+            <source srcSet="/logo.webp" type="image/webp" />
+            <img src="/logo.png" alt="Proxmox Atlas Logo" className="logo-icon-img" />
+          </picture>
           <div className="logo-text-group">
             <h1 className="logo-title">{t('app.title')}</h1>
             <span className="logo-subtitle">{t('app.subtitle')}</span>
@@ -557,7 +562,7 @@ function App() {
                   cluster={cluster} 
                   globalHistory={globalHistory} 
                   metricsMap={metricsMap}
-                  searchQuery={dashboardSearch}
+                  searchQuery={debouncedDashboardSearch}
                   onOpenTimeMachine={openTimeMachine}
                   onOpenResource={(resource) => openResource(resource, cluster.name)}
                   userRole={auth.userRole}

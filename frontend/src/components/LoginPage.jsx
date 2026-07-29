@@ -128,11 +128,14 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
       <div className="login-card">
         {/* Logo & Title */}
         <div className="login-logo">
-          <img
-            src="/logo.png"
-            alt="Proxmox Atlas"
-            className="login-logo-img"
-          />
+          <picture>
+            <source srcSet="/logo.webp" type="image/webp" />
+            <img
+              src="/logo.png"
+              alt="Proxmox Atlas"
+              className="login-logo-img"
+            />
+          </picture>
           <h1 className="login-title">{t('login.title')}</h1>
           <p className="login-subtitle">
             <span className={`login-subtitle-typing${showCursor ? '' : ' done'}`}

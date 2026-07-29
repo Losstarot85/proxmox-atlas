@@ -5,9 +5,9 @@
  * Usage: <AnimatedCounter value={42} duration={600} />
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 
-export function AnimatedCounter({ value, duration = 600 }) {
+export const AnimatedCounter = memo(function AnimatedCounter({ value, duration = 600 }) {
   const [display, setDisplay] = useState(0);
   const prevRef = useRef(0);
   const rafRef = useRef(null);
@@ -41,4 +41,5 @@ export function AnimatedCounter({ value, duration = 600 }) {
   }, [value, duration]);
 
   return <>{display}</>;
-}
+});
+

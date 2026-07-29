@@ -53,7 +53,7 @@ const TIERS = [
   { key: "offline",  label: "Offline",  color: "#6b7280", icon: "○" },
 ];
 
-export function ClusterHealthBar({ nodes, resources, activeFilter, onFilterChange }) {
+export const ClusterHealthBar = React.memo(function ClusterHealthBar({ nodes, resources, activeFilter, onFilterChange }) {
   // Classify all entities
   const counts = useMemo(() => {
     const c = { healthy: 0, warning: 0, critical: 0, offline: 0 };
@@ -105,7 +105,8 @@ export function ClusterHealthBar({ nodes, resources, activeFilter, onFilterChang
       </div>
     </div>
   );
-}
+});
+
 
 // Export classifiers for use in filtering
 export { classifyNode, classifyResource };

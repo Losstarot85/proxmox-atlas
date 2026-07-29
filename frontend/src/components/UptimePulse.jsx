@@ -1,7 +1,7 @@
 import React from 'react';
 
 // Accepts an array of status strings (e.g. ["online", "online", "offline"])
-export const UptimePulse = ({ historyBlocks }) => {
+export const UptimePulse = React.memo(({ historyBlocks }) => {
   const maxBlocks = 40;
   // Pad with nulls if history is shorter
   const padCount = Math.max(0, maxBlocks - (historyBlocks ? historyBlocks.length : 0));
@@ -38,4 +38,5 @@ export const UptimePulse = ({ historyBlocks }) => {
       })}
     </div>
   );
-};
+});
+
