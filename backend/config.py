@@ -8,6 +8,13 @@ log = get_logger("config")
 
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
 CONFIG_PATH = os.path.join(DATA_DIR, "clusters.json")
+DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() in ("true", "1", "yes")
+
+
+def is_demo_mode() -> bool:
+    """Return whether the backend is running in Public Demo Mode."""
+    return DEMO_MODE
+
 
 try:
     with open(CONFIG_PATH) as f:

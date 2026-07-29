@@ -457,6 +457,33 @@ function App() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {auth.userRole === "demo" && (
+          <div 
+            style={{
+              background: "linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2))",
+              borderBottom: "1px solid var(--accent-glow)",
+              padding: "0.5rem 1.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "0.85rem",
+              color: "var(--accent-light)",
+              fontWeight: 500
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span>🎮</span>
+              <span><strong>Live Public Demo Mode</strong> — You are exploring Proxmox Atlas with synthetic cluster data in Read-Only mode.</span>
+            </div>
+            <button 
+              className="btn btn-sm"
+              onClick={auth.logout}
+              style={{ padding: "0.2rem 0.6rem", fontSize: "0.75rem", background: "rgba(255,255,255,0.1)", border: "none", color: "var(--text-primary)" }}
+            >
+              Exit Demo
+            </button>
+          </div>
+        )}
         <header className="top-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button

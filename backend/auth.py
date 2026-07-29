@@ -35,7 +35,8 @@ _auth_data = {}
 
 def init_auth():
     """Initialize auth system. Auto-migrates old single-user format.
-    Creates default admin user on first deploy."""
+    Creates default admin user on first deploy.
+    Auto-creates demo user when DEMO_MODE is active."""
     global _auth_data
 
     if os.path.exists(AUTH_FILE):
@@ -59,10 +60,12 @@ def init_auth():
                 }
                 _save_auth()
                 log.info("auth_migration_complete", users=list(_auth_data["users"].keys()))
+                _ensure_demo_user()
                 return
 
             _auth_data = raw
             log.info("auth_loaded", file=AUTH_FILE, users=list(_auth_data.get("users", {}).keys()))
+            _ensure_demo_user()
             return
         except (json.JSONDecodeError, Exception) as e:
             log.warning("auth_file_corrupted", error=str(e))
@@ -81,6 +84,27 @@ def init_auth():
     }
     _save_auth()
     log.info("auth_default_user_created", username="admin")
+    _ensure_demo_user()
+
+
+def _ensure_demo_user():
+    """Auto-create demo user if DEMO_MODE is active and user doesn't exist."""
+    from config import is_demo_mode
+
+    if not is_demo_mode():
+        return
+
+    users = _auth_data.get("users", {})
+    if "demo" not in users:
+        users["demo"] = {
+            "password_hash": hash_password("demo"),
+            "role": "demo",
+            "must_change_password": False,
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+        _save_auth()
+        log.info("demo_user_auto_created")
+
 
 
 def _save_auth():

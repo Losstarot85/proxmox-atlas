@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useI18n } from "../i18n";
+import { API_BASE } from "../config";
 import "./LoginPage.css";
 
 // ── SVG Eye Icons (inline to avoid external dependencies) ──
@@ -88,6 +89,37 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState(null);
+
+  const [demoAvailable, setDemoAvailable] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/auth/demo-status`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.demo_available) {
+          setDemoAvailable(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setLocalError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auth/demo`, { method: "POST" });
+      const data = await res.json();
+      if (data.token) {
+        onLogin(data.username, data.token, data.role, false);
+      } else {
+        setLocalError(data.error || "Demo login failed");
+      }
+    } catch (err) {
+      setLocalError("Network error during demo login");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const subtitleText = mustChangePassword
     ? t('login.must_change_password')
@@ -192,6 +224,35 @@ export function LoginPage({ onLogin, onChangePassword, mustChangePassword, error
             >
               {loading ? t('login.signing_in') : t('login.sign_in')}
             </button>
+
+            {demoAvailable && (
+              <div style={{ marginTop: "1rem", textAlign: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "1rem 0", color: "var(--text-secondary)", fontSize: "0.8rem" }}>
+                  <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+                  <span>OR</span>
+                  <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+                </div>
+                <button
+                  type="button"
+                  id="login-demo-btn"
+                  onClick={handleDemoLogin}
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    background: "rgba(59, 130, 246, 0.15)",
+                    color: "var(--accent-light)",
+                    border: "1px solid var(--accent-glow)",
+                    fontWeight: 600,
+                    borderRadius: "var(--radius-sm)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  🎮 Try Public Demo (Read-Only)
+                </button>
+              </div>
+            )}
           </form>
         ) : (
           /* ===== CHANGE PASSWORD FORM ===== */

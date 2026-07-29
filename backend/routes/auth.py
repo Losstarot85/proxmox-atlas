@@ -2,8 +2,32 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from auth import authenticate, change_password, create_token, get_current_user
+from config import is_demo_mode
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.get("/demo-status")
+async def demo_status():
+    """Public endpoint: tells the frontend whether demo mode is available."""
+    return {"demo_available": is_demo_mode()}
+
+
+@router.post("/demo")
+async def demo_login():
+    """Public endpoint: instant login as demo user with read-only access.
+    Only available when DEMO_MODE is enabled."""
+    if not is_demo_mode():
+        return {"error": "Demo mode is not enabled on this instance"}
+
+    token = create_token("demo")
+    return {
+        "token": token,
+        "username": "demo",
+        "role": "demo",
+        "must_change_password": False,
+    }
+
 
 
 class LoginRequest(BaseModel):
