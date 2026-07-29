@@ -94,6 +94,11 @@ function App() {
   const touchStartRef = useRef(null);
 
   const handleTouchStart = (e) => {
+    // Ignore touch events on canvas, charts, sliders, and scrollable table elements
+    if (e.target.closest('canvas, .recharts-wrapper, input[type="range"], .table-container, .modal-content')) {
+      touchStartRef.current = null;
+      return;
+    }
     touchStartRef.current = e.targetTouches[0].clientX;
   };
 
@@ -176,7 +181,9 @@ function App() {
     if (!auth.isAuthenticated) return;
     const fetchSettings = async () => {
       try {
-        const res = await fetch(`${API_BASE}/settings`);
+        const token = auth.token || localStorage.getItem("atlas-auth-token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(`${API_BASE}/settings`, { headers });
         if (res.ok) {
           const data = await res.json();
           setPollingIntervalSeconds(data.polling_interval || 15);
@@ -695,6 +702,7 @@ function App() {
         clusters={clusters}
         onNavigate={(tab) => { handleNavClick(tab); }}
         onOpenTimeMachine={openTimeMachine}
+        onOpenResource={openResource}
         onExportJSON={() => exportJSON(clusters)}
         onExportCSV={() => exportCSV(clusters)}
         onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}

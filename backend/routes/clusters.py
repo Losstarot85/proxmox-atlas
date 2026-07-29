@@ -79,12 +79,14 @@ def list_clusters():
     # Non esporre i token_secret in chiaro nel GET
     safe = []
     for c in clusters:
+        secret = c.get("token_secret", "") or ""
+        masked = secret[:8] + "••••••••" if secret else "••••••••"
         safe.append(
             {
-                "name": c["name"],
-                "host": c["host"],
-                "token_id": c["token_id"],
-                "token_secret_masked": c["token_secret"][:8] + "••••••••",
+                "name": c.get("name", ""),
+                "host": c.get("host", ""),
+                "token_id": c.get("token_id", ""),
+                "token_secret_masked": masked,
                 "verify_ssl": c.get("verify_ssl", False),
             }
         )

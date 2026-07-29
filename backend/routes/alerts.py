@@ -1,8 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from alerts.engine import load_rules, save_rules
+from alerts.notifier import get_webhook_logs
 from alerts.store import clear_alerts, delete_alert, get_alerts, mark_read, silence_resource
+from auth import require_role
 
 router = APIRouter()
+editor_or_admin = require_role("admin", "editor")
 
 
 @router.get("/alerts")
@@ -17,32 +21,26 @@ def read_alert(alert_id: str):
 
 
 @router.patch("/alerts/{alert_id}/silence")
-def silence_alert(alert_id: str, minutes: int = 60):
+def silence_alert(alert_id: str, minutes: int = 60, user: dict = Depends(editor_or_admin)):
     silence_resource(alert_id, minutes)
     return {"status": "ok"}
 
 
 @router.delete("/alerts/{alert_id}")
-def remove_alert(alert_id: str):
+def remove_alert(alert_id: str, user: dict = Depends(editor_or_admin)):
     delete_alert(alert_id)
     return {"status": "ok"}
 
 
 @router.delete("/alerts")
-def clear_all_alerts():
+def clear_all_alerts(user: dict = Depends(editor_or_admin)):
     clear_alerts()
     return {"status": "ok"}
-
-
-from alerts.notifier import get_webhook_logs
 
 
 @router.get("/alerts/webhook_logs")
 def fetch_webhook_logs():
     return {"logs": get_webhook_logs()}
-
-
-from alerts.engine import load_rules, save_rules
 
 
 @router.get("/alerts/rules")
@@ -51,7 +49,7 @@ def get_alert_rules():
 
 
 @router.post("/alerts/rules")
-def update_alert_rules(rules: dict):
+def update_alert_rules(rules: dict, user: dict = Depends(editor_or_admin)):
     success = save_rules(rules)
     if success:
         return {"status": "ok"}

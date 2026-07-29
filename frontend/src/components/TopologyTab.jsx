@@ -173,7 +173,7 @@ function TopologyCluster({ clusterBlock, rawCluster, onOpenTimeMachine, onOpenWh
       
       <div className="topo-cluster-body" style={{ width: Math.max(350, maxX), height: Math.max(200, maxY) }}>
         {clusterBlock.nodes.map(nb => {
-          const nodeData = rawCluster.nodes?.find(n => n.name === nb.id);
+          const nodeData = rawCluster.nodes?.find(n => (n.name || n.node) === nb.id);
           if (!nodeData) return null;
           const nodeVms = rawCluster.resources?.filter(r => r.node === nb.id) || [];
           const nodeDataWithVms = { ...nodeData, vms: nodeVms };

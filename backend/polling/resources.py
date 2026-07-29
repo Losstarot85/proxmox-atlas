@@ -136,10 +136,10 @@ async def fetch_resources_from_proxmox(cluster: dict):
         for r in all_resources:
             lbls = {
                 "cluster": cluster_name,
-                "node": r["node"],
+                "node": r["node"] or "unknown",
                 "vmid": str(r["vmid"]),
-                "type": r["type"],
-                "name": r["name"],
+                "type": r["type"] or "VM",
+                "name": r["name"] or str(r["vmid"]),
             }
             current_vm_labels.add(tuple(lbls.items()))
 
@@ -177,12 +177,9 @@ async def fetch_resources_from_proxmox(cluster: dict):
 
     except httpx.RequestError:
         cache[cluster_name]["resource_error"] = "Proxmox host unreachable"
-        cache[cluster_name]["resources"] = []
-        cache[cluster_name]["failed_nodes"] = []
+        # Retain stale cache instead of clearing — prevents UI flashing on transient errors
         log.error("host_unreachable", cluster=cluster_name)
 
     except Exception as e:
         cache[cluster_name]["resource_error"] = str(e)
-        cache[cluster_name]["resources"] = []
-        cache[cluster_name]["failed_nodes"] = []
         log.error("resources_polling_error", cluster=cluster_name, error=str(e))

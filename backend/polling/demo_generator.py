@@ -281,6 +281,7 @@ def _build_node(template: dict) -> dict:
     disk_used = int(template["maxdisk"] * random.uniform(0.30, 0.55))
 
     return {
+        "name": template["node"],
         "node": template["node"],
         "status": "online",
         "maxcpu": template["maxcpu"],
@@ -290,9 +291,24 @@ def _build_node(template: dict) -> dict:
         "maxdisk": template["maxdisk"],
         "disk": disk_used,
         "uptime": int(time.time()) - random.randint(86400 * 5, 86400 * 90),
+        "loadavg": round(_jitter(2.0 / template["maxcpu"], 0.02) * template["maxcpu"], 2),
+        "netin": random.uniform(1e6, 50e6),
+        "netout": random.uniform(0.5e6, 20e6),
+        "iowait": round(_jitter(1.0 / 100, 0.01) * 100, 2),
         "pressure_cpu": round(_jitter(3.0 / 100, 0.02) * 100, 2),
         "pressure_ram": round(_jitter(2.0 / 100, 0.015) * 100, 2),
         "pressure_io": round(_jitter(1.5 / 100, 0.01) * 100, 2),
+        "ips": [f"10.10.{random.randint(1, 5)}.{random.randint(1, 254)}"],
+        "storage_pools": [
+            {
+                "storage": "local-lvm",
+                "type": "lvmthin",
+                "active": 1,
+                "total": float(template["maxdisk"]),
+                "used": float(disk_used),
+                "avail": float(template["maxdisk"] - disk_used),
+            }
+        ],
     }
 
 

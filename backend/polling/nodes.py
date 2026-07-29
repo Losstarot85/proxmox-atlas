@@ -137,7 +137,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
             NODE_CPU.labels(**lbls).set(n["cpu"])
             NODE_MEM_TOTAL.labels(**lbls).set(n["maxmem"])
             NODE_MEM_USED.labels(**lbls).set(n["mem"])
-            if "uptime" in n:
+            if n.get("uptime") is not None:
                 NODE_UPTIME.labels(**lbls).set(n["uptime"])
 
             for sp in n.get("storage_pools", []):
@@ -176,7 +176,7 @@ async def fetch_nodes_from_proxmox(cluster: dict):
 
     except httpx.RequestError:
         cache[cluster_name]["node_error"] = "Proxmox host unreachable"
-        cache[cluster_name]["nodes"] = []
+        # Retain stale cache instead of clearing — prevents UI flashing on transient errors
         log.error("host_unreachable", cluster=cluster_name)
 
     except Exception as e:

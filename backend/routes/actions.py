@@ -99,10 +99,10 @@ async def migrate_resource(
         raise HTTPException(status_code=404, detail=f"Cluster cache for '{cluster}' is empty")
 
     nodes = cluster_cache.get("nodes", [])
-    target = next((n for n in nodes if n["name"] == target_node), None)
+    target = next((n for n in nodes if (n.get("name") or n.get("node")) == target_node), None)
     if not target:
         raise HTTPException(status_code=400, detail=f"Target node '{target_node}' not found in cluster '{cluster}'")
-    if target["status"] != "online":
+    if target.get("status") != "online":
         raise HTTPException(status_code=400, detail=f"Target node '{target_node}' is offline")
 
     # 4. Resolve secrets (token, host)
@@ -289,15 +289,19 @@ async def execute_guest_action(
 
     # 5. Sanity check & optimistic status updates
     cluster_cache = cache.get(cluster)
+    previous_status = None
+    target_resource = None
+
     if cluster_cache:
         resources = cluster_cache.get("resources", [])
-        resource = next((r for r in resources if str(r["vmid"]) == str(vmid)), None)
-        if resource:
+        target_resource = next((r for r in resources if str(r["vmid"]) == str(vmid)), None)
+        if target_resource:
+            previous_status = target_resource.get("status")
             # Update cache immediately for optimistic UI response
             if action == "start":
-                resource["status"] = "running"
-            elif action == "stop" or action == "shutdown":
-                resource["status"] = "stopped"
+                target_resource["status"] = "running"
+            elif action in ("stop", "shutdown"):
+                target_resource["status"] = "stopped"
             # Broadcast the updated status immediately
             from sse import broker
 
@@ -309,6 +313,13 @@ async def execute_guest_action(
             proxmox_url = f"{host}/api2/json/nodes/{node}/{pve_type}/{vmid}/status/{action}"
             res = await client.post(proxmox_url, headers=headers)
             if res.status_code != 200:
+                # Rollback optimistic cache update on API failure
+                if target_resource and previous_status is not None:
+                    target_resource["status"] = previous_status
+                    from sse import broker
+
+                    await broker.broadcast_cache()
+
                 error_detail = res.text
                 try:
                     error_detail = res.json().get("errors", res.text)
@@ -327,6 +338,13 @@ async def execute_guest_action(
                 )
                 raise HTTPException(status_code=res.status_code, detail=f"Proxmox API error: {error_detail}")
     except httpx.RequestError as e:
+        # Rollback optimistic cache update on network failure
+        if target_resource and previous_status is not None:
+            target_resource["status"] = previous_status
+            from sse import broker
+
+            await broker.broadcast_cache()
+
         log.error(
             "power_action_network_error",
             cluster=cluster,

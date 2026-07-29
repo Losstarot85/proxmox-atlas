@@ -23,22 +23,23 @@ let _onUnauthorized = null; // callback registered by useAuth hook
 
 window.fetch = async (input, init = {}) => {
   const url = typeof input === "string" ? input : input instanceof Request ? input.url : "";
+  const isApiCall = (url.includes("/api") || url.includes("/auth/")) && !url.includes("/auth/login") && !url.includes("/auth/demo");
 
-  // Inject Bearer token for API calls (skip login endpoint)
-  if (url.startsWith("/api") && !url.includes("/auth/login")) {
+  if (isApiCall) {
     const currentToken = localStorage.getItem(TOKEN_KEY);
     if (currentToken) {
-      init.headers = {
-        ...init.headers,
-        Authorization: `Bearer ${currentToken}`,
-      };
+      const headers = new Headers(init?.headers || {});
+      if (!headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${currentToken}`);
+      }
+      init = { ...init, headers };
     }
   }
 
   const response = await _originalFetch(input, init);
 
-  // Auto-logout on 401 (skip login endpoint to avoid logout on wrong password)
-  if (response.status === 401 && url.startsWith("/api") && !url.includes("/auth/login")) {
+  // Auto-logout on 401 (skip login/demo endpoints to avoid logout on wrong password)
+  if (response.status === 401 && isApiCall) {
     console.warn("API returned 401 Unauthorized, automatically logging out.");
     if (_onUnauthorized) {
       // Defer to avoid triggering state updates during React render cycles

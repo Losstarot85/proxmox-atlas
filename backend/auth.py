@@ -277,7 +277,14 @@ async def get_current_user(request: Request) -> dict:
 
     try:
         payload = decode_token(token)
-        return {"username": payload["sub"], "role": payload.get("role", "viewer")}
+        username = payload.get("sub")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+        users = _auth_data.get("users", {})
+        if username not in users:
+            raise HTTPException(status_code=401, detail="User account no longer exists")
+        live_role = users[username].get("role", payload.get("role", "viewer"))
+        return {"username": username, "role": live_role}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired") from None
     except (jwt.InvalidTokenError, KeyError):

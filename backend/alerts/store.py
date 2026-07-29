@@ -56,21 +56,26 @@ def clear_alerts():
     save_alert_state()
 
 
-def _clear_cooldown_for_alert(alert, active_alerts):
-    """Remove all cooldown keys that match this alert's cluster/resource."""
+def _derive_resource_key(alert):
     cluster = alert.get("cluster", "")
     node = alert.get("node", "")
     resource = alert.get("resource", "")
 
-    # Build the base key used by the engine
-    if "VM" in resource or "LXC" in resource:
-        try:
-            vmid = resource.split(" ")[1]
-        except IndexError:
-            vmid = "unknown"
-        prefix = f"{cluster}:{vmid}:vm"
-    else:
-        prefix = f"{cluster}:{node}:node"
+    if resource == "VM GROUP" or resource == "STORAGE" or resource == "NODE":
+        return f"{cluster}:{node}:node"
+
+    # For individual VM / LXC: "VM 100 (k8s-control-plane)" or "LXC 200 (db)"
+    parts = resource.split(" ")
+    if len(parts) >= 2 and parts[1].isdigit():
+        vmid = parts[1]
+        return f"{cluster}:{vmid}:vm"
+
+    return f"{cluster}:{node}:node"
+
+
+def _clear_cooldown_for_alert(alert, active_alerts):
+    """Remove all cooldown keys that match this alert's cluster/resource."""
+    prefix = _derive_resource_key(alert)
 
     # Remove all cooldown entries that start with this prefix
     keys_to_remove = [k for k in active_alerts if k.startswith(prefix)]
@@ -81,20 +86,7 @@ def _clear_cooldown_for_alert(alert, active_alerts):
 def silence_resource(alert_id: str, minutes: int = 60):
     for a in alerts_store:
         if a["id"] == alert_id:
-            # Build a unique resource key based on content
-            # For nodes: cluster:node:node
-            # For VMs: cluster:vmid:vm
-            # We build a generic key string for simplicity
-            if "VM" in a["resource"] or "LXC" in a["resource"]:
-                # Extract vmid from resource name "VM/LXC vmid (name)"
-                try:
-                    vmid = a["resource"].split(" ")[1]
-                except IndexError:
-                    vmid = "unknown"
-                key = f"{a['cluster']}:{vmid}:vm"
-            else:
-                key = f"{a['cluster']}:{a['node']}:node"
-
+            key = _derive_resource_key(a)
             silenced_resources[key] = time.time() + (minutes * 60)
             a["read"] = True
             break

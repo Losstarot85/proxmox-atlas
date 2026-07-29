@@ -67,18 +67,24 @@ async def dispatch_worker():
                 if filter_sev != "all" and alert.get("severity") != filter_sev:
                     continue
 
-                # Basic template substitution
+                # Basic template substitution with JSON-safe escaping
                 template = wh.get("json_template", '{"text": "[{{severity}}] {{message}}"}')
-                payload_str = template.replace("{{message}}", alert.get("message", ""))
-                payload_str = payload_str.replace("{{severity}}", alert.get("severity", ""))
-                payload_str = payload_str.replace("{{cluster}}", alert.get("cluster", ""))
-                payload_str = payload_str.replace("{{node}}", alert.get("node", ""))
+                # JSON-encode each value to escape quotes, newlines, backslashes etc.
+                # json.dumps adds surrounding quotes, so strip them to get the inner escaped string
+                safe_message = json.dumps(alert.get("message", ""))[1:-1]
+                safe_severity = json.dumps(alert.get("severity", ""))[1:-1]
+                safe_cluster = json.dumps(alert.get("cluster", ""))[1:-1]
+                safe_node = json.dumps(alert.get("node", ""))[1:-1]
+                payload_str = template.replace("{{message}}", safe_message)
+                payload_str = payload_str.replace("{{severity}}", safe_severity)
+                payload_str = payload_str.replace("{{cluster}}", safe_cluster)
+                payload_str = payload_str.replace("{{node}}", safe_node)
 
                 try:
                     payload = json.loads(payload_str)
                 except Exception:
                     # Fallback if invalid JSON
-                    payload = {"text": f"Error parsing template JSON: {payload_str}"}
+                    payload = {"text": f"[{alert.get('severity', 'warning')}] {alert.get('message', '')}"}
 
                 # Send with retry (max 3)
                 max_retries = 3

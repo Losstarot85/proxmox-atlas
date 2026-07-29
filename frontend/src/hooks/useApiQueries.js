@@ -10,7 +10,12 @@ import { API_BASE } from "../config";
 // ── Helpers ──
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, options);
+  const token = localStorage.getItem("atlas-auth-token");
+  const headers = new Headers(options.headers || {});
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.detail || `HTTP ${res.status}`);

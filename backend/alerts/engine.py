@@ -177,8 +177,10 @@ async def evaluate_alerts():
     for k, v in active_alerts.items():
         if current_time - v > ALERT_COOLDOWN:
             keys_to_remove.append(k)
-    for k in keys_to_remove:
-        del active_alerts[k]
+    if keys_to_remove:
+        _state_dirty = True
+        for k in keys_to_remove:
+            del active_alerts[k]
 
     # Collect offline nodes across clusters
     offline_nodes = set()

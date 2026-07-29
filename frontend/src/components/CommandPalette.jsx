@@ -105,8 +105,8 @@ function buildItems(clusters, activeTab) {
         name: `${r.name} (${r.vmid})`,
         icon,
         sub: `${r.type} · ${cluster.name} · ${status}`,
-        action: "time-machine",
-        data: { id: r.vmid, type: r.type, name: r.name },
+        action: "resource",
+        data: { id: r.vmid, type: r.type, name: r.name, resource: r, clusterName: cluster.name },
       });
     });
   });
@@ -114,7 +114,7 @@ function buildItems(clusters, activeTab) {
   return items;
 }
 
-export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTimeMachine, onExportJSON, onExportCSV, onToggleTheme }) {
+export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTimeMachine, onOpenResource, onExportJSON, onExportCSV, onToggleTheme }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -187,6 +187,13 @@ export function CommandPalette({ isOpen, onClose, clusters, onNavigate, onOpenTi
       switch (item.action) {
         case "navigate":
           onNavigate(item.tab);
+          break;
+        case "resource":
+          if (onOpenResource && item.data?.resource) {
+            onOpenResource(item.data.resource, item.data.clusterName);
+          } else if (onOpenTimeMachine) {
+            onOpenTimeMachine(item.data);
+          }
           break;
         case "time-machine":
           onOpenTimeMachine(item.data);

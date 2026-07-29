@@ -70,7 +70,9 @@ export function BackupStatus({ clusters }) {
   const fetchBackups = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/backups`);
+      const token = localStorage.getItem("atlas-auth-token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API_BASE}/backups`, { headers });
       if (res.ok) {
         const data = await res.json();
         setBackupsData(data.clusters || []);
